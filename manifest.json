@@ -7,6 +7,7 @@
     {
       "matches": ["*://learn.inside.dtu.dk/*"],
       "css": ["darkmode.css"],
+      "js": ["darkmode.js"],
       "run_at": "document_start"
     }
   ]
