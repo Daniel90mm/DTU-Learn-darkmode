@@ -177,11 +177,11 @@ input[type="search"],
   color: #e0e0e0 !important;
 }
 
-/* Headers and top navigation - keep relatively dark but visible */
+/* Headers and top navigation - consistent with rest of interface */
 header,
 .d2l-navigation-s,
 .d2l-navigation-s-header {
-  background-color: #1e1e1e !important;
+  background-color: #2d2d2d !important;
   border-color: #404040 !important;
 }
 
@@ -281,6 +281,7 @@ div[style*="background-color"] {
 }
 
 /* CRITICAL: Fix the top navigation bar (Calendar, Student Resources, etc.) */
+/* Using consistent #2d2d2d to match the rest of the interface */
 .d2l-labs-navigation-centerer,
 .d2l-labs-navigation-centerer > *,
 .d2l-labs-navigation-centerer div,
@@ -290,7 +291,7 @@ div[style*="background-color"] {
 .d2l-labs-navigation-main-footer,
 .d2l-labs-navigation-main-footer > *,
 .d2l-labs-navigation {
-  background-color: #3d3d3d !important;
+  background-color: #2d2d2d !important;
   color: #e0e0e0 !important;
 }
 
@@ -298,17 +299,20 @@ div[style*="background-color"] {
 slot[name="main"],
 .d2l-labs-navigation-centerer slot,
 .d2l-labs-navigation-gutters slot {
-  background-color: #3d3d3d !important;
+  background-color: #2d2d2d !important;
 }
 
 /* CRITICAL: Fix additional course card elements */
 .d2l-card-container,
 .d2l-card-container > *,
 .d2l-card-container div,
+.d2l-card-header,
+.d2l-card-content,
+.d2l-card-badge,
+.d2l-card-actions,
+.d2l-card-footer,
 .d2l-enrollment-card,
 .d2l-enrollment-card-content-flex,
-.d2l-card-footer,
-.d2l-card-actions,
 d2l-enrollment-card,
 d2l-card {
   background-color: #2d2d2d !important;
@@ -326,7 +330,7 @@ d2l-card {
 d2l-labs-navigation,
 d2l-labs-navigation-centerer,
 d2l-labs-navigation-main-footer {
-  background-color: #3d3d3d !important;
+  background-color: #2d2d2d !important;
 }
 
 /* Ultra-aggressive: Target anything with a bright background */
