@@ -348,3 +348,37 @@ div[style*="#fff"],
 div[style*="white"] {
   background-color: #2d2d2d !important;
 }
+
+/* ===== EXCLUSIONS - Override dark mode for specific elements ===== */
+/* These rules must come LAST to override all previous dark mode rules */
+
+/* Course banner - keep original colorful styling */
+.d2l-image-banner-overlay-content,
+.d2l-image-banner-overlay-content *,
+.d2l-image-banner-course-name-container,
+.d2l-image-banner-course-name-container *,
+.d2l-image-banner-course-name,
+#overlayContent,
+#overlayContent *,
+#bannerTitle {
+  background-color: revert !important;
+  color: revert !important;
+  background: revert !important;
+}
+
+/* Teams widget - keep original white/light styling */
+.team-widget-container,
+.team-widget-container *,
+.box-section.bg-white,
+.box-section.bg-white *,
+#student-no-team,
+#student-no-team *,
+#student-view-team,
+#student-view-team *,
+.card.teamH,
+.panel-section.side-panel,
+.panel-section.side-panel * {
+  background-color: revert !important;
+  color: revert !important;
+  background: revert !important;
+}
