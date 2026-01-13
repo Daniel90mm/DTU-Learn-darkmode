@@ -279,3 +279,30 @@ div[style*="background"],
 div[style*="background-color"] {
   background-color: #2d2d2d !important;
 }
+
+/* CRITICAL: Fix the top navigation bar (Calendar, Student Resources, etc.) */
+.d2l-labs-navigation-centerer,
+.d2l-labs-navigation-centerer *,
+.d2l-labs-navigation-gutter,
+.d2l-labs-navigation {
+  background-color: #3d3d3d !important;
+  color: #e0e0e0 !important;
+}
+
+/* CRITICAL: Fix additional course card elements */
+.d2l-card-container,
+.d2l-enrollment-card,
+.d2l-enrollment-card-content-flex,
+.d2l-card-footer,
+.d2l-card-actions,
+d2l-enrollment-card,
+d2l-card {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Fix custom elements (web components) */
+d2l-labs-navigation,
+d2l-labs-navigation-centerer {
+  background-color: #3d3d3d !important;
+}
