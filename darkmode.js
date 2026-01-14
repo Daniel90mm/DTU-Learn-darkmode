@@ -52,9 +52,56 @@
         }
     `;
 
+    // Elements that should NOT have dark mode injected (keep original styling)
+    const EXCLUDED_ELEMENTS = [
+        'd2l-image-banner-overlay',      // Course banner
+        'd2l-image-banner',               // Course banner components
+        'team-widget',                    // Teams widget
+        'd2l-organization-image',         // Course images
+        'd2l-course-image'                // Course images
+    ];
+
+    // Function to check if element should be excluded from dark mode
+    function shouldExcludeElement(element) {
+        if (!element || !element.tagName) return false;
+
+        const tagName = element.tagName.toLowerCase();
+
+        // Check if element tag is in exclusion list
+        if (EXCLUDED_ELEMENTS.includes(tagName)) {
+            return true;
+        }
+
+        // Check if element has excluded classes
+        if (element.classList) {
+            if (element.classList.contains('team-widget-container') ||
+                element.classList.contains('d2l-image-banner-overlay') ||
+                element.classList.contains('bg-white')) {
+                return true;
+            }
+        }
+
+        // Check if element ID suggests it should be excluded
+        if (element.id) {
+            if (element.id.includes('banner') ||
+                element.id.includes('team') ||
+                element.id.includes('overlayContent')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     // Function to inject styles into a shadow root
-    function injectStylesIntoShadowRoot(shadowRoot) {
+    function injectStylesIntoShadowRoot(shadowRoot, element) {
         if (!shadowRoot || shadowRoot._darkModeInjected) return;
+
+        // Skip if element should be excluded
+        if (shouldExcludeElement(element)) {
+            shadowRoot._darkModeInjected = true; // Mark as processed but don't inject
+            return;
+        }
 
         const style = document.createElement('style');
         style.textContent = shadowDOMStyles;
@@ -65,14 +112,14 @@
     // Function to find and inject into all shadow roots
     function processElement(element) {
         if (element.shadowRoot) {
-            injectStylesIntoShadowRoot(element.shadowRoot);
+            injectStylesIntoShadowRoot(element.shadowRoot, element);
         }
 
         // Check all children
         const children = element.querySelectorAll('*');
         children.forEach(child => {
             if (child.shadowRoot) {
-                injectStylesIntoShadowRoot(child.shadowRoot);
+                injectStylesIntoShadowRoot(child.shadowRoot, child);
             }
         });
     }
