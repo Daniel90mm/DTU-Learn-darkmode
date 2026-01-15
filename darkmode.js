@@ -278,6 +278,15 @@
                 mutation.addedNodes.forEach(node => {
                     if (node.nodeType === 1) { // Element node
                         processElement(node);
+
+                        // Also check if this is a card element or contains cards
+                        if (node.tagName &&
+                            (node.tagName.toLowerCase() === 'd2l-enrollment-card' ||
+                             node.tagName.toLowerCase() === 'd2l-card')) {
+                            // Process immediately for cards
+                            setTimeout(() => processElement(node), 50);
+                            setTimeout(() => processElement(node), 100);
+                        }
                     }
                 });
             });
@@ -285,13 +294,15 @@
 
         observer.observe(document.body, {
             childList: true,
-            subtree: true
+            subtree: true,
+            attributes: false,
+            characterData: false
         });
 
-        // Also check periodically for new shadow roots (backup method)
+        // Aggressive periodic check for cards (more frequent than before)
         setInterval(() => {
             processElement(document.body);
-        }, 1000);
+        }, 500);  // Check every 500ms instead of 1000ms
     }
 
     // Wait for DOM to be ready
@@ -301,7 +312,7 @@
         initialize();
     }
 
-    // Also try to process on load with multiple checks
+    // Also try to process on load with multiple checks extending longer
     // Cards are loaded dynamically, so we need multiple attempts
     window.addEventListener('load', () => {
         setTimeout(() => processElement(document.body), 100);
@@ -310,5 +321,23 @@
         setTimeout(() => processElement(document.body), 1000);
         setTimeout(() => processElement(document.body), 2000);
         setTimeout(() => processElement(document.body), 3000);
+        setTimeout(() => processElement(document.body), 4000);
+        setTimeout(() => processElement(document.body), 5000);
     });
+
+    // Listen for visibility changes (when user switches tabs back)
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            setTimeout(() => processElement(document.body), 100);
+            setTimeout(() => processElement(document.body), 500);
+        }
+    });
+
+    // Listen for clicks on the page (like semester chevron clicks)
+    document.addEventListener('click', () => {
+        // Check for new cards after a click (semester switch, etc.)
+        setTimeout(() => processElement(document.body), 500);
+        setTimeout(() => processElement(document.body), 1500);
+        setTimeout(() => processElement(document.body), 3000);
+    }, true);  // Use capture phase to catch all clicks
 })();
