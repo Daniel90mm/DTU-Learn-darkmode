@@ -73,6 +73,44 @@
         }
     `;
 
+    // Styles specifically for enrollment card shadow roots
+    const enrollmentCardShadowStyles = `
+        /* Override white backgrounds in enrollment cards */
+        .d2l-enrollment-card-status-indicator {
+            background-color: ${DARK_BG} !important;
+            box-shadow: 0 0 0 2px ${DARK_BG} !important;
+        }
+
+        .d2l-enrollment-card-icon-container {
+            background-color: ${DARK_BG} !important;
+        }
+
+        .d2l-enrollment-card-content-flex {
+            background-color: transparent !important;
+        }
+
+        /* Keep dark backgrounds for all card elements */
+        * {
+            background-color: ${DARK_BG} !important;
+        }
+
+        /* Ensure text is visible */
+        .enrollment-content-block,
+        .d2l-enrollment-card-content-flex {
+            color: ${DARK_TEXT} !important;
+        }
+
+        /* Don't override the course image container */
+        .d2l-enrollment-card-image-container {
+            background-color: transparent !important;
+        }
+
+        /* Course overlay should remain dark overlay */
+        .d2l-enrollment-card-overlay {
+            background-color: rgba(0, 0, 0, 0.7) !important;
+        }
+    `;
+
     // Elements that should NOT have dark mode injected (keep original styling)
     const EXCLUDED_ELEMENTS = [
         'd2l-image-banner-overlay',      // Course banner
@@ -126,9 +164,17 @@
 
         const style = document.createElement('style');
 
-        // Use icon-specific styles for d2l-icon elements
-        if (element && element.tagName && element.tagName.toLowerCase() === 'd2l-icon') {
-            style.textContent = iconShadowStyles;
+        // Use element-specific styles based on tag name
+        if (element && element.tagName) {
+            const tagName = element.tagName.toLowerCase();
+
+            if (tagName === 'd2l-icon') {
+                style.textContent = iconShadowStyles;
+            } else if (tagName === 'd2l-enrollment-card') {
+                style.textContent = enrollmentCardShadowStyles;
+            } else {
+                style.textContent = shadowDOMStyles;
+            }
         } else {
             style.textContent = shadowDOMStyles;
         }
