@@ -1,0 +1,384 @@
+/* DTU Learn Dark Mode - Making your courses easier on the eyes! */
+
+/* Main body and background */
+body,
+body.d2l-body-flex,
+body.daylight,
+html {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Main content wrapper */
+.d2l-body-main-wrapper,
+.d2l-page-main,
+.d2l-page-main-padding,
+div[role="main"] {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Course tiles/cards */
+.d2l-tile,
+.d2l-card,
+.d2l-card-container,
+.d2l-card-content,
+.d2l-widget,
+.d2l-widget-container {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+/* Course card images - reduce brightness */
+.d2l-tile img,
+.d2l-card img {
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+
+.d2l-tile:hover img,
+.d2l-card:hover img {
+  opacity: 1;
+}
+
+/* Sidebar and announcements */
+.d2l-navigation-s-item,
+.d2l-widget-sidebar,
+aside,
+.d2l-announcement,
+.d2l-widget-header {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+/* Text elements */
+h1, h2, h3, h4, h5, h6,
+.d2l-heading,
+.d2l-body-standard,
+p, span, div, label {
+  color: #e0e0e0 !important;
+}
+
+/* Links - keep them visible but not DTU red to avoid confusion */
+a {
+  color: #66b3ff !important;
+}
+
+a:hover {
+  color: #99ccff !important;
+}
+
+/* Buttons */
+button,
+.d2l-button,
+input[type="button"],
+input[type="submit"] {
+  background-color: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+button:hover,
+.d2l-button:hover {
+  background-color: #4d4d4d !important;
+}
+
+/* Primary buttons (like "View All Work") - keep DTU red style but darker */
+.d2l-button-primary,
+button[primary],
+.d2l-button[primary] {
+  background-color: #c62828 !important;
+  color: #ffffff !important;
+}
+
+.d2l-button-primary:hover {
+  background-color: #d32f2f !important;
+}
+
+/* Input fields and forms */
+input,
+textarea,
+select,
+.d2l-input,
+.d2l-textbox {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #888888 !important;
+}
+
+/* Dropdowns and menus */
+.d2l-dropdown,
+.d2l-menu,
+.d2l-dropdown-content,
+ul, ol {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Tables */
+table,
+.d2l-table,
+thead,
+tbody,
+tr,
+td,
+th {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+tr:hover,
+.d2l-table tr:hover {
+  background-color: #3d3d3d !important;
+}
+
+/* Navigation tabs (All, Pinned, 2026 SPRING, etc.) */
+.d2l-tabs,
+.d2l-tab,
+[role="tab"] {
+  background-color: transparent !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+.d2l-tab-selected,
+[role="tab"][aria-selected="true"] {
+  color: #ffffff !important;
+  border-bottom-color: #c62828 !important;
+}
+
+/* Badges and notifications */
+.d2l-badge,
+.d2l-notification-count {
+  background-color: #c62828 !important;
+  color: #ffffff !important;
+}
+
+/* Search box */
+input[type="search"],
+.d2l-search-input {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+/* "Work To Do" widget and similar */
+.d2l-widget-work-to-do,
+.d2l-empty-state {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Headers and top navigation - consistent with rest of interface */
+header,
+.d2l-navigation-s,
+.d2l-navigation-s-header {
+  background-color: #2d2d2d !important;
+  border-color: #404040 !important;
+}
+
+/* Course titles and text */
+.d2l-card-title,
+.d2l-tile-title,
+.d2l-heading-1,
+.d2l-heading-2 {
+  color: #ffffff !important;
+}
+
+/* Misc elements */
+.d2l-divider,
+hr {
+  border-color: #404040 !important;
+  background-color: #404040 !important;
+}
+
+/* Icons - ensure they're visible */
+svg,
+.d2l-icon {
+  fill: #e0e0e0 !important;
+  color: #e0e0e0 !important;
+}
+
+/* Scrollbars for better look */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4d4d4d;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5d5d5d;
+}
+
+/* Calendar and date elements */
+.d2l-calendar,
+.d2l-calendar-date {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Ensure white/light backgrounds are darkened */
+[style*="background-color: white"],
+[style*="background-color: #fff"],
+[style*="background-color: #ffffff"],
+[style*="background: white"],
+[style*="background: #fff"] {
+  background-color: #2d2d2d !important;
+}
+
+/* Ensure black/dark text on now-dark backgrounds is visible */
+[style*="color: black"],
+[style*="color: #000"],
+[style*="color: #000000"] {
+  color: #e0e0e0 !important;
+}
+
+/* Fix any remaining bright areas */
+.d2l-page-header,
+.d2l-page-content,
+.d2l-page-collapsepane {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* CRITICAL: Fix the navigation sidebar (Study Announcements) */
+.d2l-navigation-s-main-wrapper,
+.d2l-navigation-s-main-wrapper * {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* CRITICAL: Fix course card containers (the white areas inside course cards) */
+.d2l-card-link-container,
+.d2l-card-link-container *,
+.d2l-card-link,
+.d2l-card-content-titlebar,
+.d2l-card-content-body {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Fix any divs that still have white/light backgrounds */
+div[style*="background"],
+div[style*="background-color"] {
+  background-color: #2d2d2d !important;
+}
+
+/* CRITICAL: Fix the top navigation bar (Calendar, Student Resources, etc.) */
+/* Using consistent #2d2d2d to match the rest of the interface */
+.d2l-labs-navigation-centerer,
+.d2l-labs-navigation-centerer > *,
+.d2l-labs-navigation-centerer div,
+.d2l-labs-navigation-gutters,
+.d2l-labs-navigation-gutters > *,
+.d2l-labs-navigation-gutters div,
+.d2l-labs-navigation-main-footer,
+.d2l-labs-navigation-main-footer > *,
+.d2l-labs-navigation {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Fix slot elements in navigation */
+slot[name="main"],
+.d2l-labs-navigation-centerer slot,
+.d2l-labs-navigation-gutters slot {
+  background-color: #2d2d2d !important;
+}
+
+/* CRITICAL: Fix additional course card elements */
+.d2l-card-container,
+.d2l-card-container > *,
+.d2l-card-container div,
+.d2l-card-header,
+.d2l-card-content,
+.d2l-card-badge,
+.d2l-card-actions,
+.d2l-card-footer,
+.d2l-enrollment-card,
+.d2l-enrollment-card-content-flex,
+d2l-enrollment-card,
+d2l-card {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Fix all nested divs in card link containers */
+.d2l-card-link-container div,
+.d2l-card-link-container > div,
+.d2l-card-link-container * {
+  background-color: #2d2d2d !important;
+}
+
+/* Fix custom elements (web components) */
+d2l-labs-navigation,
+d2l-labs-navigation-centerer,
+d2l-labs-navigation-main-footer {
+  background-color: #2d2d2d !important;
+}
+
+/* Ultra-aggressive: Target anything with a bright background */
+div[class*="d2l-labs-navigation"],
+div[class*="d2l-card"] {
+  background-color: #2d2d2d !important;
+}
+
+/* Catch divs with light/white backgrounds by RGB values */
+div[style*="rgb(255, 255, 255)"],
+div[style*="rgb(240, 240, 240)"],
+div[style*="rgba(255, 255, 255"],
+div[style*="#ffffff"],
+div[style*="#fff"],
+div[style*="white"] {
+  background-color: #2d2d2d !important;
+}
+
+/* ===== EXCLUSIONS - Override dark mode for specific elements ===== */
+/* These rules must come LAST to override all previous dark mode rules */
+
+/* Course banner - keep original colorful styling */
+.d2l-image-banner-overlay-content,
+.d2l-image-banner-overlay-content *,
+.d2l-image-banner-course-name-container,
+.d2l-image-banner-course-name-container *,
+.d2l-image-banner-course-name,
+#overlayContent,
+#overlayContent *,
+#bannerTitle {
+  background-color: revert !important;
+  color: revert !important;
+  background: revert !important;
+}
+
+/* Teams widget - keep original white/light styling */
+.team-widget-container,
+.team-widget-container *,
+.box-section.bg-white,
+.box-section.bg-white *,
+#student-no-team,
+#student-no-team *,
+#student-view-team,
+#student-view-team *,
+.card.teamH,
+.panel-section.side-panel,
+.panel-section.side-panel * {
+  background-color: revert !important;
+  color: revert !important;
+  background: revert !important;
+}
