@@ -177,6 +177,14 @@ input[type="search"],
   color: #e0e0e0 !important;
 }
 
+/* Side panel boxes (e.g. team widgets) */
+.box-section.bg-white.rounded,
+.panel-section .box-section {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
 /* Headers and top navigation - consistent with rest of interface */
 header,
 .d2l-navigation-s,
