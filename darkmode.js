@@ -75,6 +75,18 @@
 
     // Styles specifically for enrollment card shadow roots
     const enrollmentCardShadowStyles = `
+        :host {
+            background-color: ${DARK_BG} !important;
+            color: ${DARK_TEXT} !important;
+        }
+
+        .d2l-enrollment-card-container,
+        .d2l-enrollment-card-content,
+        .d2l-enrollment-card-content-flex {
+            background-color: ${DARK_BG} !important;
+            color: ${DARK_TEXT} !important;
+        }
+
         /* Override white backgrounds in enrollment cards */
         .d2l-enrollment-card-status-indicator {
             background-color: ${DARK_BG} !important;
@@ -83,10 +95,6 @@
 
         .d2l-enrollment-card-icon-container {
             background-color: ${DARK_BG} !important;
-        }
-
-        .d2l-enrollment-card-content-flex {
-            background-color: transparent !important;
         }
 
         /* Don't override the course image container */
@@ -114,22 +122,30 @@
         /* Override the white background from d2l-card */
         :host {
             background-color: ${DARK_BG} !important;
+            color: ${DARK_TEXT} !important;
+            border-color: ${DARK_BORDER} !important;
         }
 
         .d2l-card-container {
-            background-color: ${DARK_BG} !important;
+            background: ${DARK_BG} !important;
+            color: ${DARK_TEXT} !important;
+            border-color: ${DARK_BORDER} !important;
         }
 
         .d2l-card-link-container {
-            background-color: ${DARK_BG} !important;
+            background: ${DARK_BG} !important;
+            color: ${DARK_TEXT} !important;
         }
 
         .d2l-card-content {
-            background-color: ${DARK_BG} !important;
+            background: ${DARK_BG} !important;
+            color: ${DARK_TEXT} !important;
         }
 
         .d2l-card-footer {
-            background-color: ${DARK_BG} !important;
+            background: ${DARK_BG} !important;
+            color: ${DARK_TEXT} !important;
+            border-color: ${DARK_BORDER} !important;
         }
 
         /* Keep header, actions, and badge transparent (for images) */
@@ -143,6 +159,18 @@
 
         .d2l-card-badge {
             background-color: transparent !important;
+        }
+
+        .d2l-card-title,
+        .d2l-card-subtitle,
+        .d2l-card-link-text,
+        .d2l-card-text {
+            color: ${DARK_TEXT} !important;
+        }
+
+        .d2l-card-divider,
+        .d2l-card-separator {
+            border-color: ${DARK_BORDER} !important;
         }
 
         /* Don't touch images, icons, or course headers */
