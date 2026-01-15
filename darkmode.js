@@ -52,6 +52,27 @@
         }
     `;
 
+    // Styles specifically for icon shadow roots
+    const iconShadowStyles = `
+        :host {
+            color: ${DARK_TEXT} !important;
+        }
+
+        svg {
+            fill: ${DARK_TEXT} !important;
+        }
+
+        path {
+            fill: ${DARK_TEXT} !important;
+        }
+
+        /* Make sure icons are visible on dark backgrounds */
+        * {
+            fill: ${DARK_TEXT} !important;
+            color: ${DARK_TEXT} !important;
+        }
+    `;
+
     // Elements that should NOT have dark mode injected (keep original styling)
     const EXCLUDED_ELEMENTS = [
         'd2l-image-banner-overlay',      // Course banner
@@ -104,7 +125,14 @@
         }
 
         const style = document.createElement('style');
-        style.textContent = shadowDOMStyles;
+
+        // Use icon-specific styles for d2l-icon elements
+        if (element && element.tagName && element.tagName.toLowerCase() === 'd2l-icon') {
+            style.textContent = iconShadowStyles;
+        } else {
+            style.textContent = shadowDOMStyles;
+        }
+
         shadowRoot.appendChild(style);
         shadowRoot._darkModeInjected = true;
     }
