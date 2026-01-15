@@ -52,6 +52,22 @@
         }
     `;
 
+    // Styles for same-origin iframes
+    const iframeStyles = `
+        body,
+        html {
+            background-color: ${DARK_BG} !important;
+            color: ${DARK_TEXT} !important;
+        }
+
+        .box-section.bg-white.rounded,
+        .panel-section .box-section {
+            background-color: ${DARK_BG} !important;
+            color: ${DARK_TEXT} !important;
+            border-color: ${DARK_BORDER} !important;
+        }
+    `;
+
     // Styles specifically for icon shadow roots
     const iconShadowStyles = `
         :host {
@@ -137,6 +153,13 @@
             color: ${DARK_TEXT} !important;
         }
 
+        .d2l-card-container a,
+        .d2l-card-container a:link,
+        .d2l-card-container a:visited {
+            background-color: transparent !important;
+            color: ${DARK_TEXT} !important;
+        }
+
         .d2l-card-content {
             background: ${DARK_BG} !important;
             color: ${DARK_TEXT} !important;
@@ -166,6 +189,7 @@
         .d2l-card-link-text,
         .d2l-card-text {
             color: ${DARK_TEXT} !important;
+            background-color: transparent !important;
         }
 
         .d2l-card-divider,
@@ -239,49 +263,35 @@
             return;
         }
 
-        // Check if we already injected styles
-        const alreadyInjected = shadowRoot._darkModeInjected;
+        let styleId = 'dark-mode-shadow-styles';
+        let styleText = shadowDOMStyles;
 
-        // For enrollment cards, ALWAYS reprocess nested shadow roots
-        // even if we already injected styles, because d2l-card might be added later
-        const isEnrollmentCard = element && element.tagName &&
-                                 element.tagName.toLowerCase() === 'd2l-enrollment-card';
+        if (element && element.tagName) {
+            const tagName = element.tagName.toLowerCase();
 
-        if (alreadyInjected && !isEnrollmentCard) {
-            // Already processed and it's not an enrollment card, skip
-            return;
-        }
-
-        if (!alreadyInjected) {
-            // First time processing - inject styles
-            const style = document.createElement('style');
-
-            // Use element-specific styles based on tag name
-            if (element && element.tagName) {
-                const tagName = element.tagName.toLowerCase();
-
-                if (tagName === 'd2l-icon') {
-                    style.textContent = iconShadowStyles;
-                } else if (tagName === 'd2l-enrollment-card') {
-                    style.textContent = enrollmentCardShadowStyles;
-                } else if (tagName === 'd2l-card') {
-                    style.textContent = cardShadowStyles;
-                } else {
-                    style.textContent = shadowDOMStyles;
-                }
-            } else {
-                style.textContent = shadowDOMStyles;
+            if (tagName === 'd2l-icon') {
+                styleId = 'dark-mode-shadow-styles-icon';
+                styleText = iconShadowStyles;
+            } else if (tagName === 'd2l-enrollment-card') {
+                styleId = 'dark-mode-shadow-styles-enrollment-card';
+                styleText = enrollmentCardShadowStyles;
+            } else if (tagName === 'd2l-card') {
+                styleId = 'dark-mode-shadow-styles-card';
+                styleText = cardShadowStyles;
             }
+        }
 
+        let style = shadowRoot.getElementById(styleId);
+        if (!style) {
+            style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = styleText;
             shadowRoot.appendChild(style);
-            shadowRoot._darkModeInjected = true;
+        } else if (style.textContent !== styleText) {
+            style.textContent = styleText;
         }
 
-        // ALWAYS process nested shadow roots for enrollment cards
-        // This catches d2l-card elements that were created after initial processing
-        if (isEnrollmentCard || !alreadyInjected) {
-            processNestedShadowRoots(shadowRoot);
-        }
+        processNestedShadowRoots(shadowRoot);
     }
 
     // Function to process shadow roots nested inside a shadow root
@@ -308,6 +318,30 @@
         children.forEach(child => {
             if (child.shadowRoot) {
                 injectStylesIntoShadowRoot(child.shadowRoot, child);
+            }
+        });
+
+        processIframes(element);
+    }
+
+    function processIframes(root) {
+        const iframes = root.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+            try {
+                const doc = iframe.contentDocument;
+                if (!doc || !doc.documentElement) return;
+
+                let style = doc.getElementById('dark-mode-iframe-styles');
+                if (!style) {
+                    style = doc.createElement('style');
+                    style.id = 'dark-mode-iframe-styles';
+                    style.textContent = iframeStyles;
+                    doc.head.appendChild(style);
+                } else if (style.textContent !== iframeStyles) {
+                    style.textContent = iframeStyles;
+                }
+            } catch (error) {
+                // Ignore cross-origin iframe access errors
             }
         });
     }
