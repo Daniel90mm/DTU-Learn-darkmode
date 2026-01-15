@@ -177,6 +177,31 @@ input[type="search"],
   color: #e0e0e0 !important;
 }
 
+/* Module content blocks should keep original (light) styling */
+#content-block,
+#content-block .module-display,
+#content-block .module-inner-container {
+  background-color: #ffffff !important;
+  color: #1a1a1a !important;
+}
+
+#content-block h1,
+#content-block h2,
+#content-block h3,
+#content-block p,
+#content-block span,
+#content-block div {
+  color: #1a1a1a !important;
+}
+
+/* Side panel boxes (e.g. team widgets) */
+.box-section.bg-white.rounded,
+.panel-section .box-section {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
 /* Headers and top navigation - consistent with rest of interface */
 header,
 .d2l-navigation-s,
