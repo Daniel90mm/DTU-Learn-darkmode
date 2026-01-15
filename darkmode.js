@@ -89,17 +89,6 @@
             background-color: transparent !important;
         }
 
-        /* Keep dark backgrounds for all card elements */
-        * {
-            background-color: ${DARK_BG} !important;
-        }
-
-        /* Ensure text is visible */
-        .enrollment-content-block,
-        .d2l-enrollment-card-content-flex {
-            color: ${DARK_TEXT} !important;
-        }
-
         /* Don't override the course image container */
         .d2l-enrollment-card-image-container {
             background-color: transparent !important;
@@ -109,6 +98,15 @@
         .d2l-enrollment-card-overlay {
             background-color: rgba(0, 0, 0, 0.7) !important;
         }
+
+        /* Don't touch images */
+        img,
+        svg,
+        d2l-organization-image,
+        d2l-course-image {
+            background-color: transparent !important;
+            filter: none !important;
+        }
     `;
 
     // Styles specifically for d2l-card shadow roots
@@ -116,7 +114,6 @@
         /* Override the white background from d2l-card */
         :host {
             background-color: ${DARK_BG} !important;
-            border-color: ${DARK_BORDER} !important;
         }
 
         .d2l-card-container {
@@ -127,18 +124,17 @@
             background-color: ${DARK_BG} !important;
         }
 
-        .d2l-card-header {
-            background-color: transparent !important;
-        }
-
         .d2l-card-content {
             background-color: ${DARK_BG} !important;
-            color: ${DARK_TEXT} !important;
         }
 
         .d2l-card-footer {
             background-color: ${DARK_BG} !important;
-            color: ${DARK_TEXT} !important;
+        }
+
+        /* Keep header, actions, and badge transparent (for images) */
+        .d2l-card-header {
+            background-color: transparent !important;
         }
 
         .d2l-card-actions {
@@ -149,15 +145,19 @@
             background-color: transparent !important;
         }
 
-        /* All elements inside card should be dark */
-        * {
-            background-color: ${DARK_BG} !important;
-            border-color: ${DARK_BORDER} !important;
+        /* Don't touch images, icons, or course headers */
+        img,
+        svg,
+        d2l-organization-image,
+        d2l-course-image,
+        [slot="header"] {
+            background-color: transparent !important;
+            filter: none !important;
         }
 
-        /* Text should be visible */
-        div, span, p {
-            color: ${DARK_TEXT} !important;
+        /* Keep links visible */
+        a {
+            background-color: transparent !important;
         }
     `;
 
@@ -301,10 +301,14 @@
         initialize();
     }
 
-    // Also try to process on load
+    // Also try to process on load with multiple checks
+    // Cards are loaded dynamically, so we need multiple attempts
     window.addEventListener('load', () => {
-        setTimeout(initialize, 500);
+        setTimeout(() => processElement(document.body), 100);
+        setTimeout(() => processElement(document.body), 250);
+        setTimeout(() => processElement(document.body), 500);
         setTimeout(() => processElement(document.body), 1000);
         setTimeout(() => processElement(document.body), 2000);
+        setTimeout(() => processElement(document.body), 3000);
     });
 })();
