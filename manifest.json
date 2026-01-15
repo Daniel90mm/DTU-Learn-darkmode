@@ -1,0 +1,14 @@
+{
+  "manifest_version": 2,
+  "name": "DTU Learn Dark Mode",
+  "version": "1.0",
+  "description": "Dark mode for DTU Learn (learn.inside.dtu.dk) - Makes your courses easier on the eyes!",
+  "content_scripts": [
+    {
+      "matches": ["*://learn.inside.dtu.dk/*"],
+      "css": ["darkmode.css"],
+      "js": ["darkmode.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
