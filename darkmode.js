@@ -281,6 +281,13 @@
         /* Light text for readability on dark backgrounds */
         :host {
             color: ${DARK_TEXT} !important;
+            background-color: transparent !important;
+        }
+
+        /* Ultra-aggressive text color override */
+        * {
+            color: ${DARK_TEXT} !important;
+            background-color: transparent !important;
         }
 
         .d2l-html-block-rendered,
@@ -290,17 +297,24 @@
         }
 
         /* Ensure all text elements are visible */
-        p, span, div, h1, h2, h3, h4, h5, h6,
-        strong, em, b, i, ul, ol, li {
+        p, p *, span, span *, div, div *,
+        h1, h1 *, h2, h2 *, h3, h3 *, h4, h4 *, h5, h5 *, h6, h6 *,
+        strong, strong *, em, em *, b, b *, i, i *,
+        ul, ul *, ol, ol *, li, li * {
+            color: ${DARK_TEXT} !important;
+        }
+
+        /* Override any inline styles */
+        [style*="color"] {
             color: ${DARK_TEXT} !important;
         }
 
         /* Keep links visible with blue color */
-        a {
+        a, a * {
             color: #66b3ff !important;
         }
 
-        a:hover {
+        a:hover, a:hover * {
             color: #99ccff !important;
         }
     `;
