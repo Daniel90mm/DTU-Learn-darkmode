@@ -276,12 +276,40 @@
         }
     `;
 
+    // Styles for HTML block content (module descriptions, lecturer info, etc.)
+    const htmlBlockStyles = `
+        /* Light text for readability on dark backgrounds */
+        :host {
+            color: ${DARK_TEXT} !important;
+        }
+
+        .d2l-html-block-rendered,
+        .d2l-html-block-rendered * {
+            color: ${DARK_TEXT} !important;
+            background-color: transparent !important;
+        }
+
+        /* Ensure all text elements are visible */
+        p, span, div, h1, h2, h3, h4, h5, h6,
+        strong, em, b, i, ul, ol, li {
+            color: ${DARK_TEXT} !important;
+        }
+
+        /* Keep links visible with blue color */
+        a {
+            color: #66b3ff !important;
+        }
+
+        a:hover {
+            color: #99ccff !important;
+        }
+    `;
+
     // Elements that should NOT have dark mode injected (keep original styling)
     const EXCLUDED_ELEMENTS = [
         'd2l-image-banner-overlay',      // Course banner
         'd2l-image-banner',               // Course banner components
         'team-widget',                    // Teams widget
-        'd2l-html-block',                 // Module content blocks
         'd2l-organization-image',         // Course images
         'd2l-course-image'                // Course images
     ];
@@ -348,6 +376,9 @@
             } else if (tagName === 'd2l-menu' || tagName === 'd2l-menu-item' || tagName === 'd2l-menu-item-link') {
                 styleId = 'dark-mode-shadow-styles-menu';
                 styleText = menuStyles;
+            } else if (tagName === 'd2l-html-block') {
+                styleId = 'dark-mode-shadow-styles-html-block';
+                styleText = htmlBlockStyles;
             }
         }
 
