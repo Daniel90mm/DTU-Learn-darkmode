@@ -213,6 +213,35 @@
         }
     `;
 
+    // Styles for expand/collapse content and LTI launch elements
+    const expandCollapseStyles = `
+        /* Dark background for expand/collapse containers */
+        :host {
+            background-color: ${DARK_BG} !important;
+        }
+
+        .d2l-expand-collapse-content-container {
+            background-color: ${DARK_BG} !important;
+        }
+
+        .d2l-expand-collapse-content-inner {
+            background-color: ${DARK_BG} !important;
+        }
+
+        .d2l-widget-content {
+            background-color: ${DARK_BG} !important;
+        }
+
+        .d2l-widget-content-padding {
+            background-color: ${DARK_BG} !important;
+        }
+
+        /* Don't style the iframe itself - just its container */
+        iframe {
+            background-color: transparent !important;
+        }
+    `;
+
     // Elements that should NOT have dark mode injected (keep original styling)
     const EXCLUDED_ELEMENTS = [
         'd2l-image-banner-overlay',      // Course banner
@@ -279,6 +308,9 @@
             } else if (tagName === 'd2l-card') {
                 styleId = 'dark-mode-shadow-styles-card';
                 styleText = cardShadowStyles;
+            } else if (tagName === 'd2l-expand-collapse-content' || tagName === 'd2l-lti-launch') {
+                styleId = 'dark-mode-shadow-styles-expand-collapse';
+                styleText = expandCollapseStyles;
             }
         }
 
