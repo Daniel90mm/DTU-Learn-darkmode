@@ -390,6 +390,16 @@ div[style*="white"] {
   color: #e0e0e0 !important;
 }
 
+/* Panels and page backgrounds */
+.d2l-panel,
+[class*="d2l-panel"],
+.d2l-page-bg,
+.d2l-column-side-bg {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
 /* Datalist list items */
 ul.d2l-datalist,
 .vui-list,
