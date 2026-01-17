@@ -374,6 +374,37 @@ div[style*="white"] {
   background-color: #2d2d2d !important;
 }
 
+/* Notifications and datalist elements (hover states) */
+.d2l-placeholder,
+.d2l-placeholder-live,
+.d2l-datalist-container,
+.d2l-datalist,
+.d2l-datalist-item,
+.d2l-datalist-item-actionable,
+.d2l-datalist-simpleitem,
+.d2l-list-item-action-hover,
+.d2l-datalist-summary,
+.d2l-datalist-empty,
+#AB_DL_PH_Grades {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Datalist list items */
+ul.d2l-datalist,
+.vui-list,
+li.d2l-datalist-item {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Datalist hover state */
+.d2l-datalist-item:hover,
+.d2l-datalist-item-actionable:hover,
+.d2l-list-item-action-hover {
+  background-color: #3d3d3d !important;
+}
+
 /* ===== EXCLUSIONS - Override dark mode for specific elements ===== */
 /* These rules must come LAST to override all previous dark mode rules */
 
