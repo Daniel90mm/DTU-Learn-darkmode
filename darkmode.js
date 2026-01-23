@@ -454,18 +454,12 @@
 
         /* Ensure all text elements are visible */
         p, span, div, h1, h2, h3, h4, h5, h6,
-        strong, em, b, i, ul, ol, li, table, tr, td, th {
-            color: #e0e0e0 !important;
-        }
-
-        /* Override any inline color styles */
-        [style*="color"],
-        [style] {
-            color: #e0e0e0 !important;
+        strong, em, b, i, ul, ol, li {
+            color: ${DARK_TEXT} !important;
         }
 
         /* Keep links visible with blue color */
-        a, a *, a span, a strong, a em {
+        a {
             color: #66b3ff !important;
         }
 
