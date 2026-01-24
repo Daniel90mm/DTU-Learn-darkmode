@@ -415,7 +415,7 @@ div[style*="white"] {
 .d2l-datalist-summary,
 .d2l-datalist-empty,
 #AB_DL_PH_Grades {
-  background-color: #2d2d2d !important;
+  background-color: #1a1a1a !important;
   color: #e0e0e0 !important;
 }
 
@@ -972,6 +972,216 @@ d2l-icon[icon="tier1:chevron-right"] {
 
 .vui-fileviewer-generic-header {
   color: #ffffff !important;
+}
+
+/* ===== DTU Evaluation Site (evaluering.dtu.dk) ===== */
+header.header,
+header.header *,
+.header__title,
+.header__actions,
+.header__logo {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+div.main.row,
+nav.navigation,
+.navigation__items,
+.navigation__item,
+main.main__content,
+.tsMasterContent {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.navigation__item:hover {
+  background-color: #3d3d3d !important;
+}
+
+.page__title,
+.page__title.text--pre-wrap {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+
+.AnswerSurvey,
+.question__list,
+#QuestionZone {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.question,
+article.question {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+.question__header,
+.question__title,
+.question__number,
+.question__content,
+.question__item,
+.question__text {
+  background-color: transparent !important;
+  color: #e0e0e0 !important;
+}
+
+.question__title {
+  color: #ffffff !important;
+}
+
+.item__list,
+.item__scale,
+.item--sum {
+  background-color: transparent !important;
+  color: #e0e0e0 !important;
+}
+
+.scale__radios,
+.scale__label,
+.scale__options {
+  background-color: transparent !important;
+  color: #e0e0e0 !important;
+}
+
+/* Matrix/battery questions */
+.matrix,
+.matrix__header,
+.matrix__item,
+.matrix__option,
+.matrix__items,
+.matrix__column {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+.option__text,
+.item__text {
+  color: #e0e0e0 !important;
+}
+
+/* Evaluation textareas */
+.AnswerSurvey textarea,
+.question textarea,
+.question__item textarea {
+  background-color: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+/* Dropdown menu */
+.dropdown,
+.dropdown__list,
+.dropdown__list-item {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+.dropdown__list-item:hover {
+  background-color: #3d3d3d !important;
+}
+
+/* Modal dialogs */
+.modal,
+.modal__dialog,
+.modal__content,
+.modal__header,
+.modal__footer,
+.modal__body {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+/* Confirm dialogs */
+.arc-confirm,
+.confirm__dialog,
+.confirm__content,
+.confirm__body,
+.confirm__footer {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Footer */
+footer.footer,
+footer.footer *,
+footer.footer .row,
+footer.footer address {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Forms */
+form[action*="/Answer/Exclude/"],
+form[action*="/Answer/SaveAnswers/"],
+.excludeForm,
+#answerForm {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+#AnswerZone {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Buttons on evaluation page */
+.button,
+.button--hollow,
+.button--primary,
+.button--small,
+.excludeButton {
+  background-color: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+.button--primary {
+  background-color: #c62828 !important;
+  color: #ffffff !important;
+}
+
+.button--hollow:hover,
+.button:hover {
+  background-color: #4d4d4d !important;
+}
+
+/* Help text */
+.text--help,
+.text--help--noopacity,
+.text--pre-wrap {
+  color: #b0b0b0 !important;
+}
+
+/* Radio buttons and checkboxes labels */
+.QuestionRadioText,
+.QuestionRadioTextDisabled {
+  color: #e0e0e0 !important;
+}
+
+/* Burger menu */
+.burger,
+article.burger {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Info request spans */
+.js-info-request,
+span.click {
+  color: #66b3ff !important;
+}
+
+/* Sum total input */
+.sum__total {
+  background-color: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
 }
 
 /* ===== EXCLUSIONS - Override dark mode for specific elements ===== */
