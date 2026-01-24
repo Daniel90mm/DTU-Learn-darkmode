@@ -335,7 +335,7 @@ div[style*="background-color"] {
 }
 
 /* CRITICAL: Fix the top navigation bar (Calendar, Student Resources, etc.) */
-/* Using consistent #2d2d2d to match the rest of the interface */
+/* Using consistent #1a1a1a for the darkest dark */
 .d2l-labs-navigation-centerer,
 .d2l-labs-navigation-centerer > *,
 .d2l-labs-navigation-centerer div,
@@ -344,8 +344,24 @@ div[style*="background-color"] {
 .d2l-labs-navigation-gutters div,
 .d2l-labs-navigation-main-footer,
 .d2l-labs-navigation-main-footer > *,
-.d2l-labs-navigation {
-  background-color: #2d2d2d !important;
+.d2l-labs-navigation,
+d2l-labs-navigation-main-header,
+d2l-labs-navigation-main-header *,
+.d2l-labs-navigation-header-left,
+.d2l-labs-navigation-header-right,
+.d2l-navigation-s-header-open-button-wrapper,
+.d2l-navigation-s-header-logo-area,
+.d2l-navigation-s-course-menu,
+.d2l-navigation-s-notifications,
+.d2l-navigation-s-notifications-wrapper,
+.d2l-navigation-s-notification,
+.d2l-navigation-s-personal-menu,
+.d2l-navigation-s-personal-menu-wrapper,
+.d2l-navigation-s-admin-menu,
+.d2l-personal-tools-list,
+.d2l-personal-tools-category-item,
+.d2l-personal-tools-separated-item {
+  background-color: #1a1a1a !important;
   color: #e0e0e0 !important;
 }
 
@@ -429,11 +445,17 @@ div[style*="white"] {
   border-color: #404040 !important;
 }
 
-/* Datalist list items */
+/* Datalist list items / Course selector dropdown */
 ul.d2l-datalist,
+ul.d2l-datalist.vui-list,
 .vui-list,
-li.d2l-datalist-item {
-  background-color: #2d2d2d !important;
+li.d2l-datalist-item,
+.d2l-datalist-item-content,
+.d2l-course-selector-item,
+.d2l-course-selector-item-name,
+.d2l-button-toggle-container,
+.d2l-clear {
+  background-color: #1a1a1a !important;
   color: #e0e0e0 !important;
 }
 
@@ -838,6 +860,14 @@ div#header {
 #error,
 .error {
   color: #ff6b6b !important;
+}
+
+/* Replace DTU login illustration with custom image */
+#branding.illustrationClass,
+.illustrationClass {
+  background-image: url(dtuaften.jpg) !important;
+  background-size: cover !important;
+  background-position: center !important;
 }
 
 /* Assignment info table */

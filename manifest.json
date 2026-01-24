@@ -3,6 +3,7 @@
   "name": "DTU Learn Dark Mode",
   "version": "1.0",
   "description": "Dark mode for DTU Learn (learn.inside.dtu.dk) - Makes your courses easier on the eyes!",
+  "web_accessible_resources": ["dtuaften.jpg"],
   "content_scripts": [
     {
       "matches": ["*://learn.inside.dtu.dk/*"],
