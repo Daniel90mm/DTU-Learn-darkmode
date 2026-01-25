@@ -870,6 +870,12 @@ div#header {
   background-position: center !important;
 }
 
+/* Replace DTU login logo with custom logo */
+img#companyLogo,
+img.logoImage {
+  content: url(logo_dark.png) !important;
+}
+
 /* Assignment info table */
 table.d_FG,
 table.d_FG tbody,
