@@ -3,7 +3,7 @@
   "name": "DTU Learn Dark Mode",
   "version": "1.0",
   "description": "Dark mode for DTU Learn (learn.inside.dtu.dk) - Makes your courses easier on the eyes!",
-  "web_accessible_resources": ["dtuaften.jpg", "logo.png"],
+  "web_accessible_resources": ["dtuaften.jpg", "logo.png", "logo_dark.png"],
   "content_scripts": [
     {
       "matches": ["*://learn.inside.dtu.dk/*"],
@@ -30,6 +30,20 @@
     },
     {
       "matches": ["*://evaluering.dtu.dk/*"],
+      "css": ["darkmode.css"],
+      "js": ["darkmode.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": ["*://studieplan.dtu.dk/*"],
+      "css": ["darkmode.css"],
+      "js": ["darkmode.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": ["*://kurser.dtu.dk/*"],
       "css": ["darkmode.css"],
       "js": ["darkmode.js"],
       "run_at": "document_start",

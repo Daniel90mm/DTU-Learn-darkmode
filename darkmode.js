@@ -1113,4 +1113,61 @@
             });
         }, 100);
     }, true);  // Use capture phase to catch all clicks
+
+    // ===== TYPEBOX PRESERVATION (kurser.dtu.dk, studieplan.dtu.dk, etc.) =====
+    // Preserve custom colors on .typebox elements by reapplying inline styles with !important
+    function preserveTypeboxColors() {
+        const typeboxes = document.querySelectorAll('.typebox');
+        typeboxes.forEach(typebox => {
+            // Get the background-color from the element's style attribute
+            const inlineStyle = typebox.getAttribute('style');
+            if (inlineStyle) {
+                // Extract background-color value
+                const match = inlineStyle.match(/background-color:\s*([^;]+)/i);
+                if (match && match[1]) {
+                    const bgColor = match[1].trim();
+                    // Reapply with !important to override CSS rules
+                    typebox.style.setProperty('background-color', bgColor, 'important');
+                }
+            }
+        });
+    }
+
+    // Run typebox preservation on ALL pages (only affects pages that have .typebox elements)
+    // Run immediately and on intervals
+    preserveTypeboxColors();
+    setInterval(preserveTypeboxColors, 100); // More frequent - every 100ms
+
+    // Also run after DOM changes
+    const typeboxObserver = new MutationObserver(() => {
+        preserveTypeboxColors();
+    });
+
+    if (document.body) {
+        typeboxObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['style', 'class']
+        });
+    } else {
+        document.addEventListener('DOMContentLoaded', () => {
+            preserveTypeboxColors();
+            typeboxObserver.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style', 'class']
+            });
+        });
+    }
+
+    // Run on window load as well
+    window.addEventListener('load', () => {
+        preserveTypeboxColors();
+        // Run multiple times after load
+        setTimeout(preserveTypeboxColors, 100);
+        setTimeout(preserveTypeboxColors, 500);
+        setTimeout(preserveTypeboxColors, 1000);
+    });
 })();

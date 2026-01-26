@@ -328,14 +328,14 @@ svg,
   color: #e0e0e0 !important;
 }
 
-/* Fix any divs that still have white/light backgrounds */
-div[style*="background"],
-div[style*="background-color"] {
+/* Fix any divs that still have white/light backgrounds (exclude .typebox) */
+div[style*="background"]:not(.typebox),
+div[style*="background-color"]:not(.typebox) {
   background-color: #2d2d2d !important;
 }
 
 /* CRITICAL: Fix the top navigation bar (Calendar, Student Resources, etc.) */
-/* Using consistent #1a1a1a for the darkest dark */
+/* Using #2d2d2d (dark 2) for main header */
 .d2l-labs-navigation-centerer,
 .d2l-labs-navigation-centerer > *,
 .d2l-labs-navigation-centerer div,
@@ -361,7 +361,7 @@ d2l-labs-navigation-main-header *,
 .d2l-personal-tools-list,
 .d2l-personal-tools-category-item,
 .d2l-personal-tools-separated-item {
-  background-color: #1a1a1a !important;
+  background-color: #2d2d2d !important;
   color: #e0e0e0 !important;
 }
 
@@ -409,28 +409,34 @@ div[class*="d2l-card"] {
   background-color: #2d2d2d !important;
 }
 
-/* Catch divs with light/white backgrounds by RGB values */
-div[style*="rgb(255, 255, 255)"],
-div[style*="rgb(240, 240, 240)"],
-div[style*="rgba(255, 255, 255"],
-div[style*="#ffffff"],
-div[style*="#fff"],
-div[style*="white"] {
+/* Catch divs with light/white backgrounds by RGB values (exclude .typebox) */
+div[style*="rgb(255, 255, 255)"]:not(.typebox),
+div[style*="rgb(240, 240, 240)"]:not(.typebox),
+div[style*="rgba(255, 255, 255"]:not(.typebox),
+div[style*="#ffffff"]:not(.typebox),
+div[style*="#fff"]:not(.typebox),
+div[style*="white"]:not(.typebox) {
   background-color: #2d2d2d !important;
 }
 
-/* Notifications and datalist elements (hover states) */
+/* Notifications and datalist elements - announcements dark 2 */
 .d2l-placeholder,
 .d2l-placeholder-live,
 .d2l-datalist-container,
 .d2l-datalist,
-.d2l-datalist-item,
-.d2l-datalist-item-actionable,
-.d2l-datalist-simpleitem,
+.d2l-datalist-item:not(.d2l-datalist-item-actionable),
+.d2l-datalist-simpleitem:not(.d2l-datalist-item-actionable),
 .d2l-list-item-action-hover,
 .d2l-datalist-summary,
 .d2l-datalist-empty,
 #AB_DL_PH_Grades {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Course selector items - dark 1 */
+.d2l-datalist-item-actionable,
+li.d2l-datalist-item.d2l-datalist-item-actionable {
   background-color: #1a1a1a !important;
   color: #e0e0e0 !important;
 }
@@ -445,11 +451,10 @@ div[style*="white"] {
   border-color: #404040 !important;
 }
 
-/* Datalist list items / Course selector dropdown */
+/* Datalist list items / Course selector dropdown - dark 1 */
 ul.d2l-datalist,
 ul.d2l-datalist.vui-list,
 .vui-list,
-li.d2l-datalist-item,
 .d2l-datalist-item-content,
 .d2l-course-selector-item,
 .d2l-course-selector-item-name,
@@ -459,11 +464,26 @@ li.d2l-datalist-item,
   color: #e0e0e0 !important;
 }
 
+/* Course selector links */
+a.d2l-datalist-item-actioncontrol {
+  background-color: #1a1a1a !important;
+  color: #66b3ff !important;
+}
+
+a.d2l-datalist-item-actioncontrol:hover {
+  color: #99ccff !important;
+}
+
 /* Datalist hover state */
 .d2l-datalist-item:hover,
-.d2l-datalist-item-actionable:hover,
 .d2l-list-item-action-hover {
   background-color: #3d3d3d !important;
+}
+
+/* Course selector hover - slightly lighter than dark 1 */
+.d2l-datalist-item-actionable:hover,
+li.d2l-datalist-item.d2l-datalist-item-actionable:hover {
+  background-color: #2d2d2d !important;
 }
 
 /* Menu and menu items */
@@ -967,20 +987,31 @@ span[aria-current="page"] {
   color: #e0e0e0 !important;
 }
 
-/* Inline links - lighter dark */
+/* Inline links - dark 1 */
 a.d2l-link-inline,
 a.d2l-link.d2l-link-inline,
 .dco a.d2l-link,
 .dco_c a.d2l-link,
 td.d_gn a.d2l-link,
 td.d_gc a.d2l-link {
+  background-color: #1a1a1a !important;
+}
+
+/* Show All Announcements link - dark 2 */
+a.d2l-link[href*="/news/main.d2l"],
+a.d2l-link[title="Show All Announcements"] {
+  background-color: #2d2d2d !important;
+  color: #66b3ff !important;
+}
+
+/* Dialog iframes - dark 2 */
+iframe.ddial_c_frame {
   background-color: #2d2d2d !important;
 }
 
 /* Breadcrumb icons */
 d2l-breadcrumbs d2l-icon,
-d2l-breadcrumb d2l-icon,
-d2l-icon[icon="tier1:chevron-right"] {
+d2l-breadcrumb d2l-icon {
   background-color: #1a1a1a !important;
 }
 
@@ -1220,8 +1251,837 @@ span.click {
   border-color: #505050 !important;
 }
 
+/* Results page heading - dark 2 with white text (evaluering.dtu.dk only) */
+.tsMasterContent h2,
+.main__content h2,
+#CourseResultsPublicContainer h2 {
+  background-color: #2d2d2d !important;
+  color: #ffffff !important;
+}
+
+/* D2L headings - dark 2 (DTU Learn) */
+h2.d2l-heading,
+h2.vui-heading-4,
+h2.d2l-heading.vui-heading-4 {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* D2L datalist item content - dark 2 (DTU Learn announcements) */
+.d2l-datalist-item-content,
+.d2l-datalist-item-content *,
+.d2l-datalist-item-content h3,
+.d2l-datalist-item-content .d2l-heading-2,
+.d2l-datalist-item-content .d2l-linkheading-half,
+.d2l-datalist-item-content .d2l-textblock,
+.d2l-datalist-item-content .d2l-htmlblock-untrusted,
+.d2l-datalist-item-content .d2l-clear {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+.d2l-datalist-item-content a.d2l-linkheading-link {
+  color: #66b3ff !important;
+}
+
+.d2l-datalist-item-content a.d2l-linkheading-link:hover {
+  color: #99ccff !important;
+}
+
+/* Results table - dark 2 */
+.tsMasterContent table,
+.tsMasterContent table tbody,
+.tsMasterContent table tr,
+.tsMasterContent table td,
+.main__content table,
+.main__content table tbody,
+.main__content table tr,
+.main__content table td,
+#CourseResultsPublicContainer table,
+#CourseResultsPublicContainer table tbody,
+#CourseResultsPublicContainer table tr,
+#CourseResultsPublicContainer table td {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+/* Course results container - dark 2 (evaluering.dtu.dk) */
+#CourseResultsPublicContainer,
+#CourseResultsPublicContainer *,
+.grid_6.clearright,
+.grid_6.clearleft,
+.pad,
+.table-slide-container,
+.noprint,
+#ResultsMeasurableBarContainer,
+#PercentageResult {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Keep the red results bar */
+.ResultsMeasurableBarRed {
+  background-color: #990000 !important;
+}
+
+/* Statistics heading */
+#CourseResultsPublicContainer h5 {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+
+/* Course selector container - dark 2 (evaluering.dtu.dk) */
+#CourseSelectorContainer,
+#CourseSelectorContainer *,
+#CourseSelectorContainer span,
+.clearleft.clearright {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Course selector input */
+#CourseCodeTextbox {
+  background-color: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+/* Period dropdown */
+#PeriodDropDownList {
+  background-color: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+#PeriodDropDownList option {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Search button */
+#SearchButton {
+  background-color: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+#SearchButton:hover {
+  background-color: #4d4d4d !important;
+}
+
+/* Link headings in announcements */
+a.d2l-linkheading-link,
+a.d2l-linkheading-link.d2l-clickable,
+a.d2l-linkheading-link.d2l-link {
+  background-color: #2d2d2d !important;
+  color: #66b3ff !important;
+}
+
+a.d2l-linkheading-link:hover {
+  color: #99ccff !important;
+}
+
+/* Chevron icons - dark 2 background */
+d2l-icon[icon="tier1:chevron-right"],
+d2l-icon[icon="tier1:chevron-left"],
+d2l-icon[icon="tier1:chevron-down"],
+d2l-icon[icon="tier1:chevron-up"] {
+  background-color: #2d2d2d !important;
+}
+
+/* ===== DTU Studieplanlægger (studieplaner.dtu.dk) ===== */
+/* Main body and backgrounds */
+.dturedbackground {
+  background-color: #990000 !important;
+}
+
+.dtugreybackground {
+  background-color: #2d2d2d !important;
+}
+
+.container.body-content,
+.body-content {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Rows and columns */
+.row,
+.col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6,
+.col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12 {
+  background-color: transparent !important;
+  color: #e0e0e0 !important;
+}
+
+/* Box sections (study year containers) */
+.box {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+/* Semester sections */
+.inverse {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Tables */
+.table,
+.table-bordered,
+.table-bordered thead,
+.table-bordered tbody,
+.table-bordered tr,
+.table-bordered th,
+.table-bordered td {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #2d2d2d !important;
+  border: 1px solid #2d2d2d !important;
+}
+
+/* Drop zone tables */
+.dropZoneSpring13,
+.dropZoneSpring3,
+.dropZoneAutumn13,
+.dropZoneAutumn3,
+.ui-droppable {
+  border-color: #2d2d2d !important;
+}
+
+.table-bordered th {
+  background-color: #3d3d3d !important;
+  color: #ffffff !important;
+  border-color: #2d2d2d !important;
+  border: 1px solid #2d2d2d !important;
+}
+
+.closedPeriod {
+  background-color: #252525 !important;
+}
+
+/* Overlay areas */
+.overlayArea {
+  background-color: transparent !important;
+}
+
+/* Headings */
+.box h2,
+.inverse h3 {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+
+/* Study year headings - dark 2 border */
+.box h2,
+h2[data-bind*="StartDate"],
+h2[data-bind*="EndDate"] {
+  border-color: #2d2d2d !important;
+  border-bottom: 1px solid #2d2d2d !important;
+}
+
+/* Semester headings - dark 2 border */
+.inverse h3,
+h3[data-bind*="SemesterNumber"] {
+  border-color: #2d2d2d !important;
+  border-bottom: 1px solid #2d2d2d !important;
+}
+
+/* Course codes and links */
+a.coursecode {
+  color: #66b3ff !important;
+  background-color: transparent !important;
+}
+
+a.coursecode:hover {
+  color: #99ccff !important;
+}
+
+/* Type boxes - keep their original colors for course type indicators */
+
+/* Result cells */
+.result {
+  background-color: transparent !important;
+}
+
+.result .red {
+  color: #ff6b6b !important;
+}
+
+/* Grey text */
+.greytext {
+  color: #888888 !important;
+}
+
+/* Dropdown menus */
+.dropdown-menu {
+  background-color: #2d2d2d !important;
+  border-color: #404040 !important;
+}
+
+.dropdown-menu li a {
+  color: #e0e0e0 !important;
+  background-color: transparent !important;
+}
+
+.dropdown-menu li a:hover,
+.dropdown-menu li a:focus {
+  background-color: #3d3d3d !important;
+  color: #ffffff !important;
+}
+
+.dropdown-menu .dropdown-header {
+  color: #b0b0b0 !important;
+}
+
+.dropdown-menu .divider {
+  background-color: #404040 !important;
+}
+
+/* Red dropdown (DTU header) */
+.dropdown-menu.red {
+  background-color: #990000 !important;
+}
+
+.dropdown-menu.red li a {
+  color: #ffffff !important;
+}
+
+.dropdown-menu.red li a:hover {
+  background-color: #770000 !important;
+}
+
+/* Buttons */
+.btn,
+.btn.dropdown-toggle {
+  background-color: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+.btn:hover {
+  background-color: #4d4d4d !important;
+}
+
+button.dropdown-toggle.red {
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
+/* Navigation tabs */
+.nav-tabs {
+  border-color: #404040 !important;
+  background-color: #2d2d2d !important;
+}
+
+.nav-tabs > li,
+.nav-tabs > li[role="presentation"] {
+  background-color: #2d2d2d !important;
+}
+
+.nav-tabs > li > a,
+.nav-tabs > li[role="presentation"] > a {
+  color: #ffffff !important;
+  background-color: #2d2d2d !important;
+  border-color: #404040 !important;
+}
+
+.nav-tabs > li > a:hover,
+.nav-tabs > li[role="presentation"] > a:hover {
+  background-color: #3d3d3d !important;
+  border-color: #404040 !important;
+  color: #ffffff !important;
+}
+
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+  border-color: #404040 !important;
+  border-bottom-color: #1a1a1a !important;
+}
+
+/* Separator */
+.seperator {
+  color: #666666 !important;
+}
+
+/* Glyphicons */
+.glyphicon {
+  color: #e0e0e0 !important;
+}
+
+.glyphicon-ok {
+  color: #4caf50 !important;
+}
+
+/* Draggable items */
+.draggable {
+  background-color: #2d2d2d !important;
+}
+
+.draggable:hover {
+  background-color: #3d3d3d !important;
+}
+
+/* Dialog boxes */
+.dialog,
+.modal-dialog,
+.modal-content,
+[data-toggle="modal"] + .modal .modal-content {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+/* Strike-through text */
+.strike {
+  color: #888888 !important;
+}
+
+/* Bootstrap panels and wells */
+.panel,
+.panel-default,
+.panel-body,
+.panel-heading,
+.panel-footer,
+.well,
+.card,
+.card-body,
+.card-header {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+/* Kursuskurv (course basket) and similar sidebars */
+.sidebar,
+.side-panel,
+.course-basket,
+.kursuskurv,
+[class*="basket"],
+[class*="cart"],
+[class*="kurv"] {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Course items in basket */
+.course-item,
+.basket-item,
+.cart-item,
+[class*="course-item"],
+[class*="basket-item"] {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+/* Generic white/light background overrides for studieplan */
+.bg-white,
+.bg-light,
+.background-white,
+[style*="background: white"],
+[style*="background-color: white"],
+[style*="background:#fff"],
+[style*="background-color:#fff"],
+[style*="background: #fff"],
+[style*="background-color: #fff"] {
+  background-color: #2d2d2d !important;
+  background: #2d2d2d !important;
+}
+
+/* List groups */
+.list-group,
+.list-group-item {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+.list-group-item:hover {
+  background-color: #3d3d3d !important;
+}
+
+/* Input groups */
+.input-group,
+.input-group-addon,
+.input-group-btn {
+  background-color: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+/* Form controls */
+.form-control {
+  background-color: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+.form-control::placeholder {
+  color: #888888 !important;
+}
+
+/* Alerts */
+.alert {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+/* ===== DTU Course Base (kurser.dtu.dk) ===== */
+/* Container */
+.container {
+  background-color: transparent !important;
+  color: #e0e0e0 !important;
+}
+
+/* Form horizontal layout */
+.form-horizontal .form-group {
+  background-color: transparent !important;
+}
+
+/* Control labels */
+.control-label,
+label.control-label {
+  color: #e0e0e0 !important;
+  background-color: transparent !important;
+}
+
+/* Column styling */
+.col-sm-3,
+.col-sm-9 {
+  background-color: transparent !important;
+}
+
+/* Multiselect dropdown (Bootstrap multiselect plugin) */
+.multiselect-native-select {
+  background-color: transparent !important;
+}
+
+.btn-group {
+  background-color: transparent !important;
+}
+
+.btn-default,
+.btn.btn-default,
+button.btn.btn-default {
+  background-color: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+.btn-default:hover,
+.btn-default:focus,
+.btn-default:active {
+  background-color: #4d4d4d !important;
+  color: #ffffff !important;
+  border-color: #606060 !important;
+}
+
+.multiselect.dropdown-toggle {
+  background-color: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+.multiselect-selected-text {
+  color: #e0e0e0 !important;
+}
+
+.multiselect-container.dropdown-menu {
+  background-color: #2d2d2d !important;
+  border-color: #404040 !important;
+}
+
+.multiselect-container.dropdown-menu li {
+  background-color: #2d2d2d !important;
+}
+
+.multiselect-container.dropdown-menu li a {
+  background-color: transparent !important;
+  color: #e0e0e0 !important;
+}
+
+.multiselect-container.dropdown-menu li a:hover,
+.multiselect-container.dropdown-menu li a:focus {
+  background-color: #3d3d3d !important;
+  color: #ffffff !important;
+}
+
+.multiselect-container.dropdown-menu li.active a,
+.multiselect-container.dropdown-menu li.active a:hover {
+  background-color: #4a4a4a !important;
+  color: #ffffff !important;
+}
+
+/* Checkbox labels in multiselect */
+.multiselect-container label.checkbox {
+  color: #e0e0e0 !important;
+  background-color: transparent !important;
+}
+
+.multiselect-container label.checkbox input[type="checkbox"] {
+  background-color: #3d3d3d !important;
+}
+
+/* Multiselect all option */
+.multiselect-item.multiselect-all {
+  background-color: #2d2d2d !important;
+}
+
+.multiselect-item.multiselect-all a {
+  background-color: transparent !important;
+}
+
+/* Caret icon */
+.caret,
+b.caret {
+  border-top-color: #e0e0e0 !important;
+}
+
+/* Pull utility classes */
+.pull-left,
+.pull-right {
+  background-color: transparent !important;
+}
+
+/* Clearfix */
+.clearfix {
+  background-color: transparent !important;
+}
+
+/* Logo image - keep visible */
+.logo-img {
+  background-color: transparent !important;
+}
+
+/* Emphasis text */
+em {
+  color: #e0e0e0 !important;
+}
+
+/* Page title "DTU Course Base" */
+.col-md-6[style*="font-size"] {
+  color: #ffffff !important;
+}
+
+/* Hidden print elements */
+.hidden-print {
+  background-color: transparent !important;
+}
+
+/* Mofoclass nav container */
+.mofoclass {
+  background-color: transparent !important;
+}
+
+/* Course information bar - dark 2 with white text */
+.bar,
+div.bar {
+  background-color: #2d2d2d !important;
+  color: #ffffff !important;
+}
+
+/* ===== DTU Studieinformation / Course Evaluations (sites.dtu.dk) ===== */
+/* Page header - dark 2 */
+.pageheader,
+div.pageheader,
+.pageheader *,
+div.pageheader * {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+.pageheaderoverlay,
+#ctl10_PageHeaderOverlay,
+.pageheaderoverlay *,
+#ctl10_PageHeaderOverlay * {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+.pageheader .container_12,
+.pageheader .container_12 *,
+.pageheaderoverlay .container_12,
+.pageheaderoverlay .container_12 * {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+.pageheadertop,
+.grid_6.pageheadertop,
+.sitelogo,
+.linkset4 {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Site text logo */
+.sitetextlogo {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+
+/* Mobile menu buttons */
+.mobilemenuNavigation,
+.mobilemenuNavigation *,
+.mobileTopMenuButton {
+  background-color: #2d2d2d !important;
+}
+
+/* Main menu */
+.mainmenu,
+.mainmenusimple,
+ul.mainmenu,
+#mainmenu {
+  background-color: #2d2d2d !important;
+}
+
+.mainmenuBackground,
+.mainmenusubhoverBackground {
+  background-color: #2d2d2d !important;
+}
+
+/* Navigation */
+nav {
+  background-color: #2d2d2d !important;
+}
+
+/* Breadcrumb */
+.breadcrumb-print,
+.breadcrumb-print *,
+.breadcrumb.linkset6,
+#ctl10_ctl11_Breadcrumb,
+#ctl10_ctl11_Breadcrumb * {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+.breadcrumb a,
+.breadcrumb.linkset6 a {
+  color: #66b3ff !important;
+  background-color: transparent !important;
+}
+
+.breadcrumb a:hover {
+  color: #99ccff !important;
+}
+
+/* Grid classes - only in pageheader */
+.pageheader .grid_6,
+.pageheader .grid_10,
+.pageheaderoverlay .grid_6,
+.pageheaderoverlay .grid_10 {
+  background-color: #2d2d2d !important;
+}
+
+/* Clear helper - only in pageheader */
+.pageheader .clear,
+.pageheader .hideInPrint,
+.pageheaderoverlay .clear {
+  background-color: #2d2d2d !important;
+}
+
+/* Website logo link */
+.websiteLogoLink,
+.websitelogoright__link {
+  background-color: transparent !important;
+}
+
+/* ===== D2L Tool Areas (Discussions sidebar) - dark 2 ===== */
+.d2l-tool-areas-item,
+li.d2l-tool-areas-item {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+.d2l-tool-areas-item-selected,
+li.d2l-tool-areas-item-selected {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+.d2l-tool-areas-link,
+a.d2l-tool-areas-link {
+  background-color: transparent !important;
+  color: #66b3ff !important;
+}
+
+.d2l-tool-areas-link:hover {
+  color: #99ccff !important;
+}
+
+/* Unread posts link styling */
+a.d2l-link[title*="View unread posts"],
+a.d2l-link[title*="unread"] {
+  background-color: transparent !important;
+  color: #66b3ff !important;
+}
+
+a.d2l-link[title*="View unread posts"] strong,
+a.d2l-link[title*="unread"] strong {
+  color: #66b3ff !important;
+}
+
+/* ===== D2L Admin Tools Column - dark 1 ===== */
+.d2l-admin-tools-column,
+div.d2l-admin-tools-column {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.d2l-admin-tools-column h2,
+.d2l-admin-tools-column h2.d2l-heading,
+.d2l-admin-tools-column h2.d2l-heading-none,
+h2.d2l-heading.d2l-heading-none {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.d2l-admin-tools-column ul.d2l-list,
+.d2l-admin-tools-column ul.d2l-list li {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.d2l-admin-tools-column ul.d2l-list a.d2l-link {
+  background-color: transparent !important;
+  color: #66b3ff !important;
+}
+
+.d2l-admin-tools-column ul.d2l-list a.d2l-link:hover {
+  color: #99ccff !important;
+}
+
 /* ===== EXCLUSIONS - Override dark mode for specific elements ===== */
 /* These rules must come LAST to override all previous dark mode rules */
+
+/* Typebox - keep custom user colors (kurser.dtu.dk) */
+.typebox,
+div.typebox {
+  background-color: revert !important;
+  background: revert !important;
+}
+
+/* Evaluation results - keep original red bar styling (evaluering.dtu.dk) */
+.FinalEvaluation_Result_AnswerPercentageSpan,
+.FinalEvaluation_Result_AnswerPercentageSpan span,
+.FinalEvaluation_Result_AnswerPercentageSpan span[style*="border-left"],
+.FinalEvaluation_Result_AnswerCountColumn,
+.Answer_Result_Background {
+  background-color: transparent !important;
+  background: transparent !important;
+  border-color: revert !important;
+}
+
+/* Keep the red border intact */
+span[style*="border-left"][style*="#990000"] {
+  border-left-color: #990000 !important;
+}
 
 /* Course banner - keep original colorful styling */
 .d2l-image-banner-overlay-content,
