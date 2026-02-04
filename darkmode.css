@@ -2157,3 +2157,68 @@ d2l-labs-slider-bar *,
   background: revert !important;
   filter: none !important;
 }
+
+/* ==================== karakterer.dtu.dk & sites.dtu.dk Search Box ==================== */
+/* Search container - dark 2 */
+.search,
+div.search,
+#ctl10_ServiceMenuHeader_SearchBox_SearchboxPanel,
+[id*="SearchBox_SearchboxPanel"],
+[id*="SearchBox"],
+[id*="Searchbox"],
+.pageheader .search,
+.grid_3 .search,
+.grid_3.search {
+  background-color: #2d2d2d !important;
+  background: #2d2d2d !important;
+}
+
+/* Search input field */
+.search input,
+.search .inputtext,
+.search input[type="text"],
+.search input[type="search"],
+[id*="SearchBox"] input,
+[id*="Searchbox"] input,
+input.inputtext,
+.grid_3 input,
+.grid_3 .inputtext,
+input[id*="SearchBox"],
+input[id*="Searchbox"] {
+  background-color: #3d3d3d !important;
+  background: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #505050 !important;
+}
+
+.search input::placeholder,
+.search .inputtext::placeholder,
+input.inputtext::placeholder,
+[id*="SearchBox"] input::placeholder {
+  color: #888888 !important;
+}
+
+/* Search button */
+.inside-search-btn,
+div.inside-search-btn,
+.search button,
+.search input[type="submit"],
+.search .inputsubmit,
+input.inputsubmit,
+[id*="SearchBox"] input[type="submit"],
+[id*="Searchbox"] input[type="submit"],
+.grid_3 input[type="submit"],
+.grid_3 .inputsubmit {
+  background-color: #3d3d3d !important;
+  background: #3d3d3d !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #505050 !important;
+}
+
+.inside-search-btn:hover,
+.search button:hover,
+.search input[type="submit"]:hover,
+input.inputsubmit:hover {
+  background-color: #4d4d4d !important;
+  background: #4d4d4d !important;
+}

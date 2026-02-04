@@ -100,8 +100,12 @@
     // Styles for same-origin iframes
     const iframeStyles = `
         body,
-        html {
-            background-color: ${DARK_BG} !important;
+        html,
+        #app,
+        #app > *,
+        .d2l-typography,
+        .d2l-typography > * {
+            background-color: #1a1a1a !important;
             color: ${DARK_TEXT} !important;
         }
 
@@ -123,10 +127,34 @@
         .navigation-item div,
         .unit,
         .unit-box,
-        [role="treeitem"] {
-            background-color: ${DARK_BG} !important;
+        [role="treeitem"],
+        d2l-lessons-toc {
+            background-color: #1a1a1a !important;
             color: ${DARK_TEXT} !important;
             border-color: ${DARK_BORDER} !important;
+        }
+
+        /* List items - dark 2 (#2d2d2d) */
+        d2l-list,
+        d2l-list-item,
+        d2l-list-item-nav {
+            background-color: #2d2d2d !important;
+            color: ${DARK_TEXT} !important;
+            border-color: ${DARK_BORDER} !important;
+        }
+
+        /* Selected list item - same dark 2 background */
+        d2l-list-item-nav[current] {
+            background-color: #2d2d2d !important;
+        }
+
+        /* Ensure scrollbar area is also dark */
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a !important;
+        }
+
+        ::-webkit-scrollbar {
+            background: #1a1a1a !important;
         }
 
         .co-content,
@@ -433,6 +461,77 @@
         }
     `;
 
+    // Styles for d2l-list-item-nav and lessons content (new content browser)
+    const listItemNavStyles = `
+        :host {
+            background-color: transparent !important;
+            color: ${DARK_TEXT} !important;
+        }
+
+        /* Only set color on all elements, not background */
+        * {
+            color: ${DARK_TEXT} !important;
+        }
+
+        /* Target the white rectangle inside list items */
+        [slot="outside-control-container"] {
+            background-color: #2d2d2d !important;
+        }
+
+        /* Selected/current item state - same dark 2 background */
+        :host([current]) {
+            background-color: #2d2d2d !important;
+        }
+        :host([current]) [slot="outside-control-container"] {
+            background-color: #2d2d2d !important;
+        }
+
+        /* Links should be visible blue */
+        a {
+            color: #66b3ff !important;
+        }
+
+        /* Ensure text is visible */
+        [slot="supporting-info"],
+        [slot="content"],
+        div, span, p, h1, h2, h3, h4, h5, h6 {
+            color: ${DARK_TEXT} !important;
+        }
+    `;
+
+    // Styles for d2l-w2d-list (Work to Do list widget)
+    const w2dListStyles = `
+        :host {
+            background-color: ${DARK_BG} !important;
+            color: ${DARK_TEXT} !important;
+        }
+
+        * {
+            color: ${DARK_TEXT} !important;
+        }
+
+        /* Ensure all text elements are white/light */
+        p, span, div, h1, h2, h3, h4, h5, h6,
+        strong, em, b, i, ul, ol, li,
+        .d2l-body-compact, .d2l-body-standard, .d2l-label-text {
+            color: ${DARK_TEXT} !important;
+        }
+
+        /* Links should be visible blue */
+        a {
+            color: #66b3ff !important;
+        }
+
+        /* List items and containers */
+        .d2l-list-item,
+        .d2l-list-item-content,
+        d2l-list-item,
+        d2l-list-item-content {
+            background-color: ${DARK_BG} !important;
+            color: ${DARK_TEXT} !important;
+        }
+    `;
+
     // Styles for HTML block content (module descriptions, lecturer info, etc.)
     const htmlBlockStyles = `
         /* Light text for readability on dark backgrounds */
@@ -440,15 +539,15 @@
             color: #e0e0e0 !important;
         }
 
-        /* Force ALL elements to have light text */
-        *, *::before, *::after {
+        /* Force ALL elements to have light text (except links) */
+        *:not(a), *::before, *::after {
             color: #e0e0e0 !important;
         }
 
         div.d2l-html-block-rendered,
-        div.d2l-html-block-rendered *,
+        div.d2l-html-block-rendered *:not(a),
         .d2l-html-block-rendered,
-        .d2l-html-block-rendered * {
+        .d2l-html-block-rendered *:not(a) {
             color: #e0e0e0 !important;
         }
 
@@ -572,6 +671,26 @@
             } else if (tagName === 'd2l-html-block') {
                 styleId = 'dark-mode-shadow-styles-html-block';
                 styleText = htmlBlockStyles;
+            } else if (tagName === 'd2l-w2d-list' || tagName.startsWith('d2l-w2d-')) {
+                styleId = 'dark-mode-shadow-styles-w2d-list';
+                styleText = w2dListStyles;
+            } else if (tagName === 'd2l-list-item-nav' || tagName === 'd2l-list-item-content' ||
+                       tagName === 'd2l-list' || tagName === 'd2l-list-item' ||
+                       tagName.startsWith('d2l-lessons-') || tagName.startsWith('d2l-toc-')) {
+                styleId = 'dark-mode-shadow-styles-list-item-nav';
+                styleText = listItemNavStyles;
+            } else if (tagName === 'd2l-input-search') {
+                // Minimal styling for search - just text color, no background overrides
+                styleId = 'dark-mode-shadow-styles-input-search';
+                styleText = `
+                    :host {
+                        color: ${DARK_TEXT} !important;
+                    }
+                    input {
+                        color: ${DARK_TEXT} !important;
+                        background-color: transparent !important;
+                    }
+                `;
             }
         }
 
@@ -786,7 +905,25 @@
         .excludeForm,
         #AnswerZone,
         #QuestionZone,
-        .arc-confirm
+        .arc-confirm,
+        .d2l-course-banner-container,
+        #CourseImageBannerPlaceholderId,
+        .d2l-column-flip-side,
+        .d2l-column-side-padding,
+        .page-articlehtml,
+        .container_12,
+        .leftcolumn,
+        .rightcolumn,
+        .contentModulesContainer,
+        .contentFooter,
+        .contentFooter-print,
+        #outercontent,
+        #outercontent_0_LeftColumn,
+        #outercontent_0_RightColumn,
+        #outercontent_0_ContentColumn,
+        #karsumForm,
+        .subservicemenuHeader,
+        .subservicemenu
     `;
 
     // Selectors for elements that should be #2d2d2d (lighter dark)
@@ -800,7 +937,47 @@
         .dco a.d2l-link,
         .dco_c a.d2l-link,
         td.d_gn a.d2l-link,
-        td.d_gc a.d2l-link
+        td.d_gc a.d2l-link,
+        .d2l-inline,
+        .d2l-inline a,
+        .d2l-inline a.d2l-link,
+        .d2l-datalist,
+        .vui-list,
+        .vui-no-separator,
+        ul.d2l-datalist,
+        .d2l-widget-header,
+        .d2l-widget-header a,
+        .d2l-widget-header a.d2l-link,
+        .d2l-widget-content-padding .d2l-placeholder,
+        .d2l-widget .d2l-placeholder,
+        .d2l-datalist-container,
+        .d2l-personal-tools-list,
+        .d2l-personal-tools-list li,
+        .d2l-personal-tools-category-item,
+        .d2l-personal-tools-separated-item,
+        .d2l-personal-tools-list a.d2l-link,
+        .d2l-datalist-item-actioncontrol,
+        a.d2l-datalist-item-actioncontrol,
+        .d2l-iterator-button,
+        a.d2l-iterator-button,
+        #TitlePlaceholderId,
+        .d2l-link-main,
+        a.d2l-link-main,
+        .vui-button,
+        a.vui-button,
+        #ListPageViewSelector,
+        .breadcrumb,
+        .linkset6,
+        .linkset8,
+        .table-slide-container,
+        .content.grid_6,
+        .pageheader,
+        .grid_10,
+        .grid_3,
+        .search,
+        .search .inputtext,
+        .inside-search-btn,
+        .inside-search-btn .inputsubmit
     `;
 
     // Function to apply darkest style to an element (#1a1a1a)
@@ -888,6 +1065,11 @@
             try {
                 const doc = iframe.contentDocument;
                 if (doc && doc.body) {
+                    // Skip iframes with content navigation (new lessons content browser)
+                    // These are handled by iframeStyles and should not have dynamic overrides
+                    if (doc.querySelector('.navigation-container') || doc.querySelector('d2l-lessons-toc')) {
+                        return;
+                    }
                     overrideDynamicStyles(doc);
                     // Setup observer on iframe if not already done
                     if (!iframe._darkModeObserver) {
@@ -1113,6 +1295,72 @@
             });
         }, 100);
     }, true);  // Use capture phase to catch all clicks
+
+    // ===== LOGO REPLACEMENT =====
+    // Replace the "My Home" logo with custom white DTU logo for dark mode
+    function replaceLogoImage() {
+        const newSrc = chrome.runtime.getURL('Corp_White_Transparent.png');
+
+        // Helper function to replace logo in a given root
+        function replaceInRoot(root) {
+            if (!root) return;
+            const logoImages = root.querySelectorAll('img[src*="/d2l/lp/navbars/"][src*="/theme/viewimage/"], img[alt="My Home"]');
+            logoImages.forEach(img => {
+                if (!img.dataset.darkModeReplaced) {
+                    img.src = newSrc;
+                    img.dataset.darkModeReplaced = 'true';
+                }
+            });
+        }
+
+        // Check main document
+        replaceInRoot(document);
+
+        // Check all shadow roots recursively
+        function checkShadowRoots(root) {
+            if (!root) return;
+            const elements = root.querySelectorAll('*');
+            elements.forEach(el => {
+                if (el.shadowRoot) {
+                    replaceInRoot(el.shadowRoot);
+                    checkShadowRoots(el.shadowRoot);
+                }
+            });
+        }
+
+        checkShadowRoots(document);
+    }
+
+    // Run logo replacement on page load and periodically
+    replaceLogoImage();
+    setInterval(replaceLogoImage, 500);
+
+    // Also run after DOM changes
+    const logoObserver = new MutationObserver(() => {
+        replaceLogoImage();
+    });
+
+    if (document.body) {
+        logoObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    } else {
+        document.addEventListener('DOMContentLoaded', () => {
+            replaceLogoImage();
+            logoObserver.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        });
+    }
+
+    window.addEventListener('load', () => {
+        replaceLogoImage();
+        setTimeout(replaceLogoImage, 100);
+        setTimeout(replaceLogoImage, 500);
+        setTimeout(replaceLogoImage, 1000);
+    });
 
     // ===== TYPEBOX PRESERVATION (kurser.dtu.dk, studieplan.dtu.dk, etc.) =====
     // Preserve custom colors on .typebox elements by reapplying inline styles with !important
