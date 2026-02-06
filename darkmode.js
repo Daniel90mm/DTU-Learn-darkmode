@@ -840,8 +840,6 @@
         .grid_3.minHeight,
         .grid_3.minHeight *,
         .linkset8,
-        .d2l-hpg-opener,
-        button.d2l-hpg-opener,
         .empty-state-container,
         .d2l-page-collapsepane-content,
         .d2l-page-collapsepane-content-inner,
@@ -1068,7 +1066,9 @@
         .d2l-box-layout,
         .d2l-box.d2l-box-v,
         .d2l-accordion-content,
-        .d2l-accordion-content-expanded
+        .d2l-accordion-content-expanded,
+        .d2l-hpg-opener,
+        button.d2l-hpg-opener
     `;
 
     // Function to apply darkest style to an element (#1a1a1a)
