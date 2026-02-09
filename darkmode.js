@@ -2,6 +2,71 @@
 (function() {
     'use strict';
 
+    // ===== DARK MODE TOGGLE =====
+    const DARK_MODE_KEY = 'dtuDarkModeEnabled';
+
+    // Check dark mode preference: cookie (.dtu.dk cross-origin) → localStorage → default true
+    function isDarkModeEnabled() {
+        try {
+            const match = document.cookie.match(/dtuDarkMode=(\w+)/);
+            if (match) return match[1] !== 'false';
+        } catch (e) { /* cookie access blocked in some iframes */ }
+        const stored = localStorage.getItem(DARK_MODE_KEY);
+        if (stored !== null) return stored === 'true';
+        return true;
+    }
+
+    // Save preference to all available stores (localStorage + cookie + browser.storage)
+    function saveDarkModePreference(enabled) {
+        localStorage.setItem(DARK_MODE_KEY, String(enabled));
+        try {
+            if (location.hostname.endsWith('.dtu.dk')) {
+                document.cookie = 'dtuDarkMode=' + enabled + '; domain=.dtu.dk; path=/; max-age=31536000; SameSite=Lax';
+            }
+        } catch (e) { /* cookie access blocked */ }
+        if (typeof browser !== 'undefined' && browser.storage && browser.storage.local) {
+            browser.storage.local.set({ [DARK_MODE_KEY]: enabled });
+        }
+    }
+
+    // Inject the dark mode CSS stylesheet via <link> element
+    function injectDarkCSS() {
+        if (document.getElementById('dtu-dark-mode-css')) return;
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = browser.runtime.getURL('darkmode.css');
+        link.id = 'dtu-dark-mode-css';
+        (document.head || document.documentElement).appendChild(link);
+    }
+
+    // Synchronous check — inject CSS immediately if enabled (runs at document_start)
+    const darkModeEnabled = isDarkModeEnabled();
+    if (darkModeEnabled) {
+        injectDarkCSS();
+    }
+
+    // Async cross-origin check via browser.storage.local (covers s.brightspace.com etc.)
+    if (typeof browser !== 'undefined' && browser.storage && browser.storage.local) {
+        browser.storage.local.get(DARK_MODE_KEY).then(function(result) {
+            var storedEnabled = result[DARK_MODE_KEY];
+            if (storedEnabled === undefined) return; // no stored value yet
+            // Sync local stores for faster sync check next time
+            localStorage.setItem(DARK_MODE_KEY, String(storedEnabled));
+            try {
+                if (location.hostname.endsWith('.dtu.dk')) {
+                    document.cookie = 'dtuDarkMode=' + storedEnabled + '; domain=.dtu.dk; path=/; max-age=31536000; SameSite=Lax';
+                }
+            } catch (e) {}
+            // If mismatch between sync and async check, reload to correct
+            if (storedEnabled !== darkModeEnabled && window === window.top) {
+                location.reload();
+            }
+        }).catch(function() {});
+    }
+
+    // Dark mode toggle for light mode (re-enable): inserted via runFeatureChecks below
+
     // Dark mode colors
     const DARK_BG = '#2d2d2d';
     const DARK_TEXT = '#e0e0e0';
@@ -406,6 +471,44 @@
         /* Keep links visible */
         a {
             background-color: transparent !important;
+        }
+
+        /* Content shortcut button — use a.class to beat .d2l-card-container a specificity */
+        a.dtu-dark-content-btn,
+        a.dtu-dark-content-btn:link,
+        a.dtu-dark-content-btn:visited {
+            position: absolute !important;
+            bottom: 6px !important;
+            right: 6px !important;
+            transform: translate(195px, 60px) !important;
+            min-width: 42px !important;
+            min-height: 42px !important;
+            width: 42px !important;
+            height: 42px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 6px !important;
+            background-color: #2d2d2d !important;
+            color: #ffffff !important;
+            font-size: 18px !important;
+            font-family: sans-serif !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            z-index: 5 !important;
+            border: none !important;
+            box-sizing: border-box !important;
+            line-height: 1 !important;
+            transition: opacity 0.2s, background-color 0.2s !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            opacity: 0 !important;
+        }
+        :host(:hover) a.dtu-dark-content-btn {
+            opacity: 1 !important;
+        }
+        a.dtu-dark-content-btn:hover {
+            background-color: rgba(0, 0, 0, 0.85) !important;
         }
     `;
 
@@ -1194,8 +1297,8 @@
         });
     }
 
-    // Run immediately (unified scheduling handles periodic checks)
-    pollOverrideDynamicStyles();
+    // Run immediately (dark mode only)
+    if (darkModeEnabled) pollOverrideDynamicStyles();
 
     // Function to check if element is inside a PDF viewer or media player
     function isInsideExcludedContainer(element) {
@@ -1316,17 +1419,18 @@
         ]);
     }
 
-    // Initial processing (unified observer handles ongoing changes)
-    async function initialize() {
-        await waitForCustomElements();
-        processElement(document.body);
-    }
+    // Initial processing (dark mode only — unified observer handles ongoing changes)
+    if (darkModeEnabled) {
+        async function initialize() {
+            await waitForCustomElements();
+            processElement(document.body);
+        }
 
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initialize);
-    } else {
-        initialize();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
     }
 
     // Load and visibility handlers are managed by unified scheduling section below
@@ -1371,8 +1475,8 @@
         checkShadowRoots(document);
     }
 
-    // Run logo replacement (unified observer handles updates)
-    replaceLogoImage();
+    // Run logo replacement (dark mode only)
+    if (darkModeEnabled) replaceLogoImage();
 
     // ===== MOJANGLES TEXT INSERTION =====
     // Insert Mojangles text image into the navigation header with Minecraft-style animation
@@ -1409,7 +1513,7 @@
             img.style.display = '';
         });
 
-        const mojanglesImgSrc = chrome.runtime.getURL('Mojangles text.png');
+        const mojanglesImgSrc = chrome.runtime.getURL(darkModeEnabled ? 'Mojangles text.png' : 'Mojangles text darkmode off.png');
         const isHomePage = /^\/d2l\/home\/?$/.test(window.location.pathname);
 
         // Helper function to insert in a given root
@@ -1492,22 +1596,26 @@
 
         const column = document.createElement('div');
         column.className = 'd2l-admin-tools-column';
-        column.style.cssText = 'background-color: #2d2d2d !important; color: #e0e0e0 !important;';
+        if (darkModeEnabled) column.style.cssText = 'background-color: #2d2d2d !important; color: #e0e0e0 !important;';
 
         const heading = document.createElement('h2');
         heading.className = 'd2l-heading vui-heading-4 d2l-heading-none';
         heading.textContent = 'DTU After Dark';
-        heading.style.cssText = 'background-color: #2d2d2d !important; color: #e0e0e0 !important;';
+        if (darkModeEnabled) heading.style.cssText = 'background-color: #2d2d2d !important; color: #e0e0e0 !important;';
 
         const list = document.createElement('ul');
         list.className = 'd2l-list';
-        list.style.cssText = 'background-color: #2d2d2d !important;';
+        if (darkModeEnabled) list.style.cssText = 'background-color: #2d2d2d !important;';
 
         const li = document.createElement('li');
-        li.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 4px 0; background-color: #2d2d2d !important;';
+        li.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; padding: 4px 0; background-color: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; padding: 4px 0;';
 
         const label = document.createElement('label');
-        label.style.cssText = 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;';
+        label.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;';
 
         const toggle = document.createElement('input');
         toggle.type = 'checkbox';
@@ -1531,6 +1639,84 @@
 
     // Run toggle insertion (unified observer handles updates)
     insertMojanglesToggle();
+
+    // ===== DARK MODE TOGGLE (works in both dark and light modes) =====
+    function insertDarkModeToggle() {
+        if (document.querySelector('#dark-mode-toggle')) return;
+
+        const placeholder = document.querySelector('#AdminToolsPlaceholderId');
+        if (!placeholder) return;
+
+        // Find or create the "DTU After Dark" column
+        let targetList = null;
+        const columns = placeholder.querySelectorAll('.d2l-admin-tools-column');
+        columns.forEach(col => {
+            const h2 = col.querySelector('h2');
+            if (h2 && h2.textContent === 'DTU After Dark') {
+                targetList = col.querySelector('ul.d2l-list');
+            }
+        });
+
+        if (!targetList) {
+            if (!darkModeEnabled) {
+                // In light mode, create the column if it doesn't exist
+                const column = document.createElement('div');
+                column.className = 'd2l-admin-tools-column';
+
+                const heading = document.createElement('h2');
+                heading.className = 'd2l-heading vui-heading-4 d2l-heading-none';
+                heading.textContent = 'DTU After Dark';
+
+                const list = document.createElement('ul');
+                list.className = 'd2l-list';
+
+                column.appendChild(heading);
+                column.appendChild(list);
+                placeholder.appendChild(column);
+                targetList = list;
+            } else {
+                return;
+            }
+        }
+
+        const li = document.createElement('li');
+        li.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; padding: 4px 0; background-color: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; padding: 4px 0;';
+
+        const label = document.createElement('label');
+        label.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; '
+                + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;';
+
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.id = 'dark-mode-toggle';
+        toggle.checked = darkModeEnabled;
+        toggle.style.cssText = darkModeEnabled
+            ? 'width: 16px; height: 16px; cursor: pointer; accent-color: #e0e0e0;'
+            : 'width: 16px; height: 16px; cursor: pointer;';
+
+        toggle.addEventListener('change', () => {
+            saveDarkModePreference(!darkModeEnabled);
+            location.reload();
+        });
+
+        label.appendChild(toggle);
+        label.appendChild(document.createTextNode('Dark Mode'));
+        li.appendChild(label);
+
+        // Insert as the first item in the list
+        if (targetList.firstChild) {
+            targetList.insertBefore(li, targetList.firstChild);
+        } else {
+            targetList.appendChild(li);
+        }
+    }
+
+    // Run dark mode toggle insertion
+    insertDarkModeToggle();
 
     // ===== FIRST-TIME ONBOARDING HINT =====
     // Show a hint pointing to the gear icon the first time the extension is used
@@ -1672,8 +1858,8 @@
         });
     }
 
-    // Run typebox preservation (unified observer handles updates)
-    preserveTypeboxColors();
+    // Run typebox preservation (dark mode only)
+    if (darkModeEnabled) preserveTypeboxColors();
 
     // ===== CAMPUSNET GPA CALCULATION (campusnet.dtu.dk) =====
     // Calculate weighted GPA from the grades table and insert a summary row
@@ -1686,6 +1872,7 @@
         let totalECTS = 0;
 
         rows.forEach(row => {
+            if (row.classList.contains('gpa-sim-row') || row.classList.contains('gpa-sim-add-row')) return;
             const cells = row.querySelectorAll('td');
             if (cells.length < 4) return;
 
@@ -1831,6 +2018,370 @@
 
     // Run ECTS progress bar (unified observer handles updates)
     insertECTSProgressBar();
+
+    // ===== CAMPUSNET GPA SIMULATOR (campusnet.dtu.dk) =====
+    // Adds hypothetical grade rows to the grades table so users can simulate future GPA
+
+    const DANISH_GRADES = [12, 10, 7, 4, 2, 0, -3];
+
+    function saveSimEntries() {
+        const rows = document.querySelectorAll('.gpa-sim-row');
+        const entries = [];
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 5) return;
+            const codeInput = cells[0].querySelector('input');
+            const nameInput = cells[1].querySelector('input');
+            const gradeSelect = cells[2].querySelector('select');
+            const ectsInput = cells[3].querySelector('input');
+            if (!gradeSelect || !ectsInput) return;
+            entries.push({
+                code: codeInput ? codeInput.value : '',
+                name: nameInput ? nameInput.value : '',
+                grade: parseInt(gradeSelect.value, 10),
+                ects: parseFloat(ectsInput.value) || 5
+            });
+        });
+        localStorage.setItem('gpaSimEntries', JSON.stringify(entries));
+    }
+
+    function updateProjectedGPA() {
+        const table = document.querySelector('table.gradesList');
+        if (!table) return;
+
+        // Read actual grades (same logic as insertGPARow)
+        const rows = table.querySelectorAll('tr:not(.gradesListHeader)');
+        let actualWeighted = 0;
+        let actualECTS = 0;
+        rows.forEach(row => {
+            if (row.classList.contains('gpa-sim-row') || row.classList.contains('gpa-sim-add-row')
+                || row.classList.contains('gpa-row') || row.classList.contains('gpa-projected-row')) return;
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 4) return;
+            const gradeSpan = cells[2].querySelector('span');
+            if (!gradeSpan) return;
+            const gradeText = gradeSpan.textContent.trim();
+            const gradeMatch = gradeText.match(/^(-?\d+)/);
+            if (!gradeMatch) return;
+            const grade = parseInt(gradeMatch[1], 10);
+            const ects = parseFloat(cells[3].textContent.trim());
+            if (isNaN(ects) || ects <= 0) return;
+            actualWeighted += grade * ects;
+            actualECTS += ects;
+        });
+
+        // Read simulated entries
+        let simWeighted = 0;
+        let simECTS = 0;
+        const simRows = table.querySelectorAll('.gpa-sim-row');
+        simRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 4) return;
+            const gradeSelect = cells[2].querySelector('select');
+            const ectsInput = cells[3].querySelector('input');
+            if (!gradeSelect || !ectsInput) return;
+            const grade = parseInt(gradeSelect.value, 10);
+            const ects = parseFloat(ectsInput.value);
+            if (isNaN(ects) || ects <= 0) return;
+            simWeighted += grade * ects;
+            simECTS += ects;
+        });
+
+        // Remove existing projected row
+        const existingProjected = table.querySelector('.gpa-projected-row');
+        if (existingProjected) existingProjected.remove();
+
+        // Only show projected row if there are sim entries
+        if (simECTS === 0) return;
+
+        const currentGPA = actualECTS > 0 ? actualWeighted / actualECTS : 0;
+        const projectedGPA = (actualECTS + simECTS) > 0
+            ? (actualWeighted + simWeighted) / (actualECTS + simECTS) : 0;
+        const delta = projectedGPA - currentGPA;
+
+        const projRow = document.createElement('tr');
+        projRow.className = 'gpa-projected-row';
+
+        const tdLabel = document.createElement('td');
+        tdLabel.colSpan = 2;
+        tdLabel.style.cssText = 'text-align: left; font-weight: bold; padding: 8px 0; color: #66b3ff;';
+        tdLabel.textContent = 'Projected GPA';
+
+        const tdGrade = document.createElement('td');
+        tdGrade.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold; white-space: nowrap; color: #66b3ff;';
+        tdGrade.textContent = projectedGPA.toFixed(2);
+
+        const tdECTS = document.createElement('td');
+        tdECTS.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold; color: #66b3ff;';
+        tdECTS.textContent = (actualECTS + simECTS);
+
+        const tdDelta = document.createElement('td');
+        tdDelta.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold; font-size: 12px;';
+        if (delta > 0) {
+            tdDelta.style.color = '#4caf50';
+            tdDelta.textContent = '+' + delta.toFixed(2);
+        } else if (delta < 0) {
+            tdDelta.style.color = '#ef5350';
+            tdDelta.textContent = delta.toFixed(2);
+        }
+
+        projRow.appendChild(tdLabel);
+        projRow.appendChild(tdGrade);
+        projRow.appendChild(tdECTS);
+        projRow.appendChild(tdDelta);
+
+        // Insert after the GPA row
+        const gpaRow = table.querySelector('.gpa-row');
+        if (gpaRow) {
+            gpaRow.after(projRow);
+        } else {
+            const lastRow = table.querySelector('tr:last-child');
+            if (lastRow) lastRow.after(projRow);
+        }
+    }
+
+    function createSimRow(entry) {
+        const tr = document.createElement('tr');
+        tr.className = 'gpa-sim-row';
+
+        // Course code
+        const tdCode = document.createElement('td');
+        const codeInput = document.createElement('input');
+        codeInput.type = 'text';
+        codeInput.className = 'gpa-sim-input';
+        codeInput.placeholder = 'Code';
+        codeInput.value = entry.code || '';
+        codeInput.style.cssText = 'width: 60px;';
+        codeInput.addEventListener('input', () => { saveSimEntries(); });
+        tdCode.appendChild(codeInput);
+
+        // Course name
+        const tdName = document.createElement('td');
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'gpa-sim-input';
+        nameInput.placeholder = 'Course name';
+        nameInput.value = entry.name || '';
+        nameInput.style.cssText = 'width: 100%;';
+        nameInput.addEventListener('input', () => { saveSimEntries(); });
+        tdName.appendChild(nameInput);
+
+        // Grade dropdown
+        const tdGrade = document.createElement('td');
+        tdGrade.style.cssText = 'text-align: right; padding-right: 5px;';
+        const gradeSelect = document.createElement('select');
+        gradeSelect.className = 'gpa-sim-select';
+        DANISH_GRADES.forEach(g => {
+            const option = document.createElement('option');
+            option.value = g.toString();
+            option.textContent = g === 2 ? '02' : g === 0 ? '00' : g.toString();
+            if (g === entry.grade) option.selected = true;
+            gradeSelect.appendChild(option);
+        });
+        gradeSelect.addEventListener('change', () => { saveSimEntries(); updateProjectedGPA(); });
+        tdGrade.appendChild(gradeSelect);
+
+        // ECTS
+        const tdECTS = document.createElement('td');
+        tdECTS.style.cssText = 'text-align: right; padding-right: 5px;';
+        const ectsInput = document.createElement('input');
+        ectsInput.type = 'number';
+        ectsInput.className = 'gpa-sim-input';
+        ectsInput.min = '1';
+        ectsInput.max = '30';
+        ectsInput.value = entry.ects || 5;
+        ectsInput.style.cssText = 'width: 50px; text-align: right;';
+        ectsInput.addEventListener('input', () => { saveSimEntries(); updateProjectedGPA(); });
+        tdECTS.appendChild(ectsInput);
+
+        // Delete button
+        const tdAction = document.createElement('td');
+        tdAction.style.cssText = 'text-align: center;';
+        const delBtn = document.createElement('button');
+        delBtn.className = 'gpa-sim-delete-btn';
+        delBtn.textContent = '\u00D7';
+        delBtn.title = 'Remove';
+        delBtn.addEventListener('click', () => {
+            tr.remove();
+            saveSimEntries();
+            updateProjectedGPA();
+        });
+        tdAction.appendChild(delBtn);
+
+        tr.appendChild(tdCode);
+        tr.appendChild(tdName);
+        tr.appendChild(tdGrade);
+        tr.appendChild(tdECTS);
+        tr.appendChild(tdAction);
+
+        return tr;
+    }
+
+    function insertGPASimulator() {
+        const table = document.querySelector('table.gradesList');
+        if (!table || table.querySelector('.gpa-sim-add-row')) return;
+
+        const headerRow = table.querySelector('tr.gradesListHeader');
+        if (!headerRow) return;
+
+        // Load saved entries
+        let savedEntries = [];
+        try {
+            const stored = localStorage.getItem('gpaSimEntries');
+            if (stored) savedEntries = JSON.parse(stored);
+        } catch (e) { /* ignore parse errors */ }
+
+        // Create the "add" button row first (it goes right after header)
+        const addRow = document.createElement('tr');
+        addRow.className = 'gpa-sim-add-row';
+        const addTd = document.createElement('td');
+        addTd.colSpan = 5;
+        addTd.style.cssText = 'text-align: left; padding: 4px 0;';
+        const addBtn = document.createElement('button');
+        addBtn.className = 'gpa-sim-add-btn';
+        addBtn.textContent = '+ Add hypothetical grade';
+        addBtn.addEventListener('click', () => {
+            const newEntry = { code: '', name: '', grade: 7, ects: 5 };
+            const newRow = createSimRow(newEntry);
+            // Insert before the first real grade row (after all sim rows)
+            const lastSimRow = table.querySelector('.gpa-sim-row:last-of-type');
+            if (lastSimRow) {
+                lastSimRow.after(newRow);
+            } else {
+                addRow.after(newRow);
+            }
+            saveSimEntries();
+            updateProjectedGPA();
+        });
+        addTd.appendChild(addBtn);
+        addRow.appendChild(addTd);
+
+        // Insert add row after header
+        headerRow.after(addRow);
+
+        // Insert saved entries after the add row
+        let insertAfter = addRow;
+        savedEntries.forEach(entry => {
+            const simRow = createSimRow(entry);
+            insertAfter.after(simRow);
+            insertAfter = simRow;
+        });
+
+        // Calculate projected GPA if there are saved entries
+        if (savedEntries.length > 0) {
+            updateProjectedGPA();
+        }
+    }
+
+    // Run GPA simulator (unified observer handles updates)
+    insertGPASimulator();
+
+    // ===== CONTENT SHORTCUT BUTTON =====
+    // Adds a small "Content" button to each course card on the homepage
+    // that links directly to /d2l/le/lessons/{courseId}
+
+    // Standalone button CSS — injected into card shadow roots when dark mode styles aren't present
+    const contentBtnShadowCSS = `
+        a.dtu-dark-content-btn,
+        a.dtu-dark-content-btn:link,
+        a.dtu-dark-content-btn:visited {
+            position: absolute !important;
+            bottom: 6px !important;
+            right: 6px !important;
+            transform: translate(195px, 60px) !important;
+            min-width: 42px !important;
+            min-height: 42px !important;
+            width: 42px !important;
+            height: 42px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 6px !important;
+            background-color: #2d2d2d !important;
+            color: #ffffff !important;
+            font-size: 18px !important;
+            font-family: sans-serif !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            z-index: 5 !important;
+            border: none !important;
+            box-sizing: border-box !important;
+            line-height: 1 !important;
+            transition: opacity 0.2s, background-color 0.2s !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            opacity: 0 !important;
+        }
+        :host(:hover) a.dtu-dark-content-btn {
+            opacity: 1 !important;
+        }
+        a.dtu-dark-content-btn:hover {
+            background-color: rgba(0, 0, 0, 0.85) !important;
+        }
+    `;
+
+    // Recursively find all elements matching a selector, traversing shadow roots
+    function deepQueryAll(selector, root) {
+        const results = [];
+        if (!root) return results;
+        const searchRoot = root.shadowRoot || root;
+        results.push(...searchRoot.querySelectorAll(selector));
+        searchRoot.querySelectorAll('*').forEach(el => {
+            if (el.shadowRoot) {
+                results.push(...deepQueryAll(selector, el.shadowRoot));
+            }
+        });
+        return results;
+    }
+
+    function insertContentButtons() {
+        if (!isDTULearnHomepage()) return;
+
+        // Enrollment cards can be nested deep inside multiple shadow roots.
+        const enrollmentCards = deepQueryAll('d2l-enrollment-card', document.body);
+        enrollmentCards.forEach(ec => {
+            const ecShadow = ec.shadowRoot;
+            if (!ecShadow) return;
+
+            const card = ecShadow.querySelector('d2l-card[href^="/d2l/home/"]');
+            if (!card) return;
+
+            const cardShadow = card.shadowRoot;
+            if (!cardShadow) return;
+
+            // Ensure content button CSS is in the shadow root (needed when dark mode is off)
+            if (!cardShadow.querySelector('#dtu-content-btn-styles')) {
+                const btnStyle = document.createElement('style');
+                btnStyle.id = 'dtu-content-btn-styles';
+                btnStyle.textContent = contentBtnShadowCSS;
+                cardShadow.appendChild(btnStyle);
+            }
+
+            // Append to the card header (image area) for bottom-right positioning
+            const header = cardShadow.querySelector('.d2l-card-header');
+            const container = header || cardShadow.querySelector('.d2l-card-container');
+            if (!container) return;
+            if (container.querySelector('.dtu-dark-content-btn')) return;
+            container.style.setProperty('position', 'relative', 'important');
+
+            const courseIdMatch = card.getAttribute('href').match(/\/d2l\/home\/(\d+)/);
+            if (!courseIdMatch) return;
+            const courseId = courseIdMatch[1];
+
+            // Styling is handled by cardShadowStyles CSS (.dtu-dark-content-btn)
+            const btn = document.createElement('a');
+            btn.className = 'dtu-dark-content-btn';
+            btn.href = '/d2l/le/lessons/' + courseId;
+            btn.title = 'Go to Content';
+            btn.textContent = '\u{1F4D6}';
+            btn.addEventListener('click', (e) => e.stopPropagation());
+
+            container.appendChild(btn);
+        });
+    }
+
+    // Run content buttons (unified observer handles updates)
+    insertContentButtons();
 
     // ===== BUS DEPARTURE TIMES (Rejseplanen 2.0 API) =====
     // Live bus departure information for DTU-area stops, shown on the DTU Learn homepage
@@ -2461,17 +3012,21 @@
         if (!targetList) return;
 
         const li = document.createElement('li');
-        li.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 4px 0; background-color: #2d2d2d !important;';
+        li.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; padding: 4px 0; background-color: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; padding: 4px 0;';
 
         const label = document.createElement('label');
-        label.style.cssText = 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; '
-            + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;';
+        label.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; '
+                + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;';
 
         const toggle = document.createElement('input');
         toggle.type = 'checkbox';
         toggle.id = 'bus-departures-toggle';
         toggle.checked = isBusEnabled();
-        toggle.style.cssText = 'width: 16px; height: 16px; cursor: pointer; accent-color: #1565c0;';
+        toggle.style.cssText = 'width: 16px; height: 16px; cursor: pointer;';
 
         toggle.addEventListener('change', () => {
             localStorage.setItem(BUS_ENABLED_KEY, toggle.checked.toString());
@@ -2495,8 +3050,9 @@
         const config = getBusConfig();
         if (config && config.lines && config.lines.length > 0) {
             const editBtn = document.createElement('button');
-            editBtn.style.cssText = 'background: transparent; color: #66b3ff; border: none; cursor: pointer; '
-                + 'font-size: 12px; padding: 0; margin-left: 4px; text-decoration: underline;';
+            editBtn.style.cssText = darkModeEnabled
+                ? 'background: transparent; color: #66b3ff; border: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 4px; text-decoration: underline;'
+                : 'background: transparent; border: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 4px; text-decoration: underline;';
             editBtn.textContent = 'Edit';
             editBtn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -2527,22 +3083,29 @@
         }
     }
 
-    // Run immediately
-    enforcePageBackground();
+    // Run immediately (dark mode only)
+    if (darkModeEnabled) enforcePageBackground();
 
     // Master function that runs all periodic checks
     function runAllPeriodicChecks() {
-        enforcePageBackground();
-        pollForHtmlBlocks();
-        pollForMultiselects();
-        pollOverrideDynamicStyles();
-        if (document.body) processElement(document.body);
-        replaceLogoImage();
+        // Dark-mode-specific styling (skip when dark mode is off)
+        if (darkModeEnabled) {
+            enforcePageBackground();
+            pollForHtmlBlocks();
+            pollForMultiselects();
+            pollOverrideDynamicStyles();
+            if (document.body) processElement(document.body);
+            replaceLogoImage();
+            preserveTypeboxColors();
+        }
+        // Feature code (always runs regardless of dark mode)
         insertMojanglesText();
         insertMojanglesToggle();
-        preserveTypeboxColors();
+        insertDarkModeToggle();
         insertGPARow();
         insertECTSProgressBar();
+        insertGPASimulator();
+        insertContentButtons();
         insertBusToggle();
         updateBusDepartures();
     }
@@ -2558,41 +3121,42 @@
         let needsHeavyWork = false;
 
         for (const mutation of mutations) {
-            // Style / class attribute changes — apply dark overrides immediately
-            if (mutation.type === 'attributes') {
-                const el = mutation.target;
-                if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
-                    if (el.matches) {
-                        // Lighter dark selectors take priority
-                        if (el.matches(LIGHTER_DARK_SELECTORS)) {
-                            applyLighterDarkStyle(el);
-                        } else if (el.matches(DARK_SELECTORS)) {
-                            applyDarkStyle(el);
+            if (darkModeEnabled) {
+                // Style / class attribute changes — apply dark overrides immediately
+                if (mutation.type === 'attributes') {
+                    const el = mutation.target;
+                    if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
+                        if (el.matches) {
+                            if (el.matches(LIGHTER_DARK_SELECTORS)) {
+                                applyLighterDarkStyle(el);
+                            } else if (el.matches(DARK_SELECTORS)) {
+                                applyDarkStyle(el);
+                            }
                         }
-                    }
-                    // Preserve typebox custom colors
-                    if (el.classList && el.classList.contains('typebox')) {
-                        const inlineStyle = el.getAttribute('style');
-                        if (inlineStyle) {
-                            const match = inlineStyle.match(/background-color:\s*([^;]+)/i);
-                            if (match && match[1]) {
-                                el.style.setProperty('background-color', match[1].trim(), 'important');
+                        if (el.classList && el.classList.contains('typebox')) {
+                            const inlineStyle = el.getAttribute('style');
+                            if (inlineStyle) {
+                                const match = inlineStyle.match(/background-color:\s*([^;]+)/i);
+                                if (match && match[1]) {
+                                    el.style.setProperty('background-color', match[1].trim(), 'important');
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // New nodes added — apply dark styles immediately, schedule heavy work
+            // New nodes added — schedule feature checks (and dark styles if enabled)
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(node => {
                     if (node.nodeType === 1) {
-                        // Immediate: apply dark/lighter styles to new nodes
-                        if (node.matches && node.matches(DARK_SELECTORS)) applyDarkStyle(node);
-                        if (node.matches && node.matches(LIGHTER_DARK_SELECTORS)) applyLighterDarkStyle(node);
-                        if (node.querySelectorAll) {
-                            node.querySelectorAll(DARK_SELECTORS).forEach(applyDarkStyle);
-                            node.querySelectorAll(LIGHTER_DARK_SELECTORS).forEach(applyLighterDarkStyle);
+                        if (darkModeEnabled) {
+                            if (node.matches && node.matches(DARK_SELECTORS)) applyDarkStyle(node);
+                            if (node.matches && node.matches(LIGHTER_DARK_SELECTORS)) applyLighterDarkStyle(node);
+                            if (node.querySelectorAll) {
+                                node.querySelectorAll(DARK_SELECTORS).forEach(applyDarkStyle);
+                                node.querySelectorAll(LIGHTER_DARK_SELECTORS).forEach(applyLighterDarkStyle);
+                            }
                         }
                         needsHeavyWork = true;
                     }
@@ -2600,15 +3164,19 @@
             }
         }
 
-        // Debounce heavy operations (shadow root processing, logo, mojangles, etc.)
+        // Debounce heavy operations (features always, dark-mode styling conditionally)
         if (needsHeavyWork && !_heavyWorkTimer) {
             _heavyWorkTimer = setTimeout(() => {
                 _heavyWorkTimer = null;
-                if (document.body) processElement(document.body);
-                replaceLogoImage();
+                if (darkModeEnabled) {
+                    if (document.body) processElement(document.body);
+                    replaceLogoImage();
+                    preserveTypeboxColors();
+                }
                 insertMojanglesText();
                 insertMojanglesToggle();
-                preserveTypeboxColors();
+                insertDarkModeToggle();
+                insertContentButtons();
                 insertBusToggle();
             }, 200);
         }
@@ -2625,7 +3193,7 @@
     }
 
     // Start observer immediately on documentElement (exists at document_start)
-    // so elements get dark-styled as the parser adds them to the DOM
+    // Handles both dark-mode styling (when enabled) and feature insertion (always)
     if (document.documentElement) {
         startUnifiedObserver();
     } else {

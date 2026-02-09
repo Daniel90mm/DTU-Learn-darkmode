@@ -10,10 +10,12 @@ Dark mode for DTU Learn and other DTU sites — DTU After Dark.
 
 ## Features
 
-- Two-tier dark theme (#1a1a1a / #2d2d2d) across all DTU sites
+- Two-tier dark theme (#1a1a1a / #2d2d2d) across all DTU sites, toggleable from the homepage
 - Shadow DOM support for Brightspace custom elements (d2l-*)
 - Full CampusNet darkening (frontpage, grades, sidebar, widgets, participants)
 - Weighted GPA calculation on CampusNet grade pages (ECTS-weighted, skips pass/fail)
+- GPA Simulator — add hypothetical grades to see projected GPA (saved across sessions)
+- Content shortcut buttons on course cards (hover to reveal, links directly to course content)
 - Custom DTU logo replacement
 - Preserves syntax highlighting, code editor colors, and service icons
 - Lightweight — pure CSS + JS, no dependencies

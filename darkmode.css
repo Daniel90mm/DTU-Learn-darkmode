@@ -2692,6 +2692,70 @@ table.gradesList td[style*="color : green"] {
   color: #ffffff !important;
 }
 
+/* GPA Simulator rows */
+.gpa-sim-row {
+  background-color: #1a1a2a !important;
+  border-left: 3px dashed #66b3ff !important;
+}
+.gpa-sim-row td {
+  background-color: #1a1a2a !important;
+  color: #e0e0e0 !important;
+  padding: 4px 6px !important;
+}
+.gpa-sim-input,
+.gpa-sim-select {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #404040 !important;
+  border-radius: 4px !important;
+  padding: 4px 6px !important;
+  font-size: 13px !important;
+}
+.gpa-sim-input:focus,
+.gpa-sim-select:focus {
+  border-color: #66b3ff !important;
+  outline: none !important;
+}
+.gpa-sim-delete-btn {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #ef5350 !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-size: 18px !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+}
+.gpa-sim-delete-btn:hover {
+  background-color: rgba(239, 83, 80, 0.15) !important;
+}
+.gpa-sim-add-row {
+  background-color: #1a1a1a !important;
+}
+.gpa-sim-add-row td {
+  background-color: #1a1a1a !important;
+}
+.gpa-sim-add-btn {
+  background-color: #2d2d2d !important;
+  color: #66b3ff !important;
+  border: 1px dashed #66b3ff !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  padding: 5px 14px !important;
+  font-size: 13px !important;
+}
+.gpa-sim-add-btn:hover {
+  background-color: #3d3d3d !important;
+}
+.gpa-projected-row {
+  background-color: #2d2d2d !important;
+  border-top: 1px dashed #66b3ff !important;
+}
+.gpa-projected-row td {
+  background-color: #2d2d2d !important;
+  color: #66b3ff !important;
+}
+
 /* CampusNet header - dark 2 */
 article.header__top,
 .header__top {

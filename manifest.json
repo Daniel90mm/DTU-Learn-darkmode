@@ -16,12 +16,11 @@
     "48": "icon_48.png",
     "128": "icon_128.png"
   },
-  "permissions": ["https://www.rejseplanen.dk/*"],
-  "web_accessible_resources": ["dtuaften.jpg", "logo_dark.png", "Corp_White_Transparent.png", "Mojangles text.png"],
+  "permissions": ["storage", "https://www.rejseplanen.dk/*"],
+  "web_accessible_resources": ["dtuaften.jpg", "logo_dark.png", "Corp_White_Transparent.png", "Mojangles text.png", "Mojangles text darkmode off.png", "darkmode.css"],
   "content_scripts": [
     {
       "matches": ["*://learn.inside.dtu.dk/*"],
-      "css": ["darkmode.css"],
       "js": ["darkmode.js"],
       "run_at": "document_start",
       "all_frames": true,
@@ -29,7 +28,6 @@
     },
     {
       "matches": ["*://s.brightspace.com/*"],
-      "css": ["darkmode.css"],
       "js": ["darkmode.js"],
       "run_at": "document_start",
       "all_frames": true,
@@ -37,49 +35,42 @@
     },
     {
       "matches": ["*://sts.ait.dtu.dk/*"],
-      "css": ["darkmode.css"],
       "js": ["darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
     },
     {
       "matches": ["*://evaluering.dtu.dk/*"],
-      "css": ["darkmode.css"],
       "js": ["darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
     },
     {
       "matches": ["*://studieplan.dtu.dk/*"],
-      "css": ["darkmode.css"],
       "js": ["darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
     },
     {
       "matches": ["*://kurser.dtu.dk/*"],
-      "css": ["darkmode.css"],
       "js": ["darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
     },
     {
       "matches": ["*://karakterer.dtu.dk/*"],
-      "css": ["darkmode.css"],
       "js": ["darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
     },
     {
       "matches": ["*://sites.dtu.dk/*"],
-      "css": ["darkmode.css"],
       "js": ["darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
     },
     {
       "matches": ["*://campusnet.dtu.dk/*"],
-      "css": ["darkmode.css"],
       "js": ["darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
