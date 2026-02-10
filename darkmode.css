@@ -1111,10 +1111,90 @@ button.d2l-hpg-opener {
   color: #e0e0e0 !important;
 }
 
-/* Floating buttons container */
+/* Tooltips */
+.tooltip[role="tooltip"],
+.tooltip.in[role="tooltip"],
+[role="tooltip"].tooltip,
+[role="tooltip"] {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #404040 !important;
+}
+
+.tooltip[role="tooltip"] .tooltip-inner,
+.tooltip.in[role="tooltip"] .tooltip-inner,
+[role="tooltip"] .tooltip-inner {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.tooltip.top .tooltip-arrow,
+.tooltip.in.top .tooltip-arrow {
+  border-top-color: #1a1a1a !important;
+}
+
+.tooltip.right .tooltip-arrow,
+.tooltip.in.right .tooltip-arrow {
+  border-right-color: #1a1a1a !important;
+}
+
+.tooltip.bottom .tooltip-arrow,
+.tooltip.in.bottom .tooltip-arrow {
+  border-bottom-color: #1a1a1a !important;
+}
+
+.tooltip.left .tooltip-arrow,
+.tooltip.in.left .tooltip-arrow {
+  border-left-color: #1a1a1a !important;
+}
+
+/* Bootstrap 4/5 arrow pseudo-elements */
+.tooltip .tooltip-arrow::before,
+.tooltip .tooltip-arrow::after,
+[role="tooltip"] .tooltip-arrow::before,
+[role="tooltip"] .tooltip-arrow::after {
+  border-color: #1a1a1a !important;
+}
+
+/* Floating buttons container - dark 1 */
+d2l-floating-buttons,
 .d2l-floating-buttons-container,
 .d2l-floating-buttons,
 .d2l-floating-buttons-inner-container {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+/* Action menu trigger and list container - dark 1 */
+button[aria-haspopup="true"][aria-label^="Actions for"],
+div[role="list"]:not(.d2l-navigation-s-main-wrapper) {
+  background: #1a1a1a !important;
+  background-color: #1a1a1a !important;
+  background-image: none !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+/* Breadcrumb role=list container can carry a gradient background */
+nav[aria-label="Breadcrumb"],
+nav[aria-label="Breadcrumb"] div[role="list"],
+nav[aria-label="Breadcrumb"] [role="list"] {
+  background: #1a1a1a !important;
+  background-color: #1a1a1a !important;
+  background-image: none !important;
+  color: #e0e0e0 !important;
+}
+
+/* Keep specific action buttons on dark 2 */
+button[aria-haspopup="true"][aria-label="Actions for Work To Do"],
+button[aria-label^="Actions for Work To Do"],
+button[aria-haspopup="true"][aria-label="Actions for Study Announcements"],
+button[aria-label^="Actions for Study Announcements"],
+button[aria-haspopup="true"][aria-label="Actions for Calendar"],
+button[aria-label^="Actions for Calendar"],
+button[aria-haspopup="true"][aria-label="Actions for Lecture 01, Quiz 1"],
+button[aria-label^="Actions for Lecture 01, Quiz 1"] {
   background-color: #2d2d2d !important;
   color: #e0e0e0 !important;
   border-color: #404040 !important;
@@ -1542,6 +1622,21 @@ d2l-icon[icon="tier1:chevron-right"],
 d2l-icon[icon="tier1:chevron-left"],
 d2l-icon[icon="tier1:chevron-down"],
 d2l-icon[icon="tier1:chevron-up"] {
+  background-color: #2d2d2d !important;
+  background: #2d2d2d !important;
+  background-image: none !important;
+}
+
+button[aria-haspopup="true"][aria-label^="Actions for"] d2l-icon[icon="tier1:chevron-down"] {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  background-image: none !important;
+}
+
+button[aria-label^="Actions for Work To Do"] d2l-icon[icon="tier1:chevron-down"],
+button[aria-label^="Actions for Study Announcements"] d2l-icon[icon="tier1:chevron-down"],
+button[aria-label^="Actions for Calendar"] d2l-icon[icon="tier1:chevron-down"],
+button[aria-label^="Actions for Lecture 01, Quiz 1"] d2l-icon[icon="tier1:chevron-down"] {
   background-color: #2d2d2d !important;
   background: #2d2d2d !important;
   background-image: none !important;
@@ -2695,40 +2790,54 @@ table.gradesList td[style*="color : green"] {
 
 /* GPA Simulator rows */
 .gpa-sim-row {
-  background-color: #1a1a2a !important;
-  border-left: 3px dashed #66b3ff !important;
+  background-color: #202124 !important;
+  border-left: 2px solid rgba(102, 179, 255, 0.55) !important;
 }
 .gpa-sim-row td {
-  background-color: #1a1a2a !important;
+  background-color: #202124 !important;
   color: #e0e0e0 !important;
-  padding: 4px 6px !important;
+  padding: 6px 8px !important;
 }
 .gpa-sim-input,
 .gpa-sim-select {
-  background-color: #2d2d2d !important;
+  background-color: #1f1f1f !important;
   color: #e0e0e0 !important;
-  border: 1px solid #404040 !important;
-  border-radius: 4px !important;
-  padding: 4px 6px !important;
+  border: 1px solid #4a4a4a !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  min-height: 34px !important;
+  box-sizing: border-box !important;
   font-size: 13px !important;
+  line-height: 1.2 !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+}
+.gpa-sim-input::placeholder {
+  color: #8f9aae !important;
+  opacity: 1 !important;
 }
 .gpa-sim-input:focus,
 .gpa-sim-select:focus {
   border-color: #66b3ff !important;
   outline: none !important;
+  box-shadow: 0 0 0 2px rgba(102, 179, 255, 0.2) !important;
+  background-color: #232323 !important;
 }
 .gpa-sim-delete-btn {
   background: transparent !important;
   background-color: transparent !important;
   color: #ef5350 !important;
-  border: none !important;
+  border: 1px solid transparent !important;
   cursor: pointer !important;
-  font-size: 18px !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
+  font-size: 24px !important;
+  line-height: 1 !important;
+  width: 30px !important;
+  height: 30px !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
 }
 .gpa-sim-delete-btn:hover {
-  background-color: rgba(239, 83, 80, 0.15) !important;
+  background-color: rgba(239, 83, 80, 0.18) !important;
+  border-color: rgba(239, 83, 80, 0.3) !important;
 }
 .gpa-sim-add-row {
   background-color: #1a1a1a !important;
@@ -2737,24 +2846,28 @@ table.gradesList td[style*="color : green"] {
   background-color: #1a1a1a !important;
 }
 .gpa-sim-add-btn {
-  background-color: #2d2d2d !important;
-  color: #66b3ff !important;
-  border: 1px dashed #66b3ff !important;
-  border-radius: 4px !important;
+  background-color: rgba(102, 179, 255, 0.1) !important;
+  color: #7cc0ff !important;
+  border: 1px solid rgba(102, 179, 255, 0.55) !important;
+  border-radius: 8px !important;
   cursor: pointer !important;
-  padding: 5px 14px !important;
+  padding: 6px 14px !important;
   font-size: 13px !important;
+  font-weight: 600 !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
 }
 .gpa-sim-add-btn:hover {
-  background-color: #3d3d3d !important;
+  background-color: rgba(102, 179, 255, 0.2) !important;
+  border-color: rgba(124, 192, 255, 0.8) !important;
+  color: #a8d7ff !important;
 }
 .gpa-projected-row {
-  background-color: #2d2d2d !important;
-  border-top: 1px dashed #66b3ff !important;
+  background-color: #202533 !important;
+  border-top: 1px dashed rgba(102, 179, 255, 0.7) !important;
 }
 .gpa-projected-row td {
-  background-color: #2d2d2d !important;
-  color: #66b3ff !important;
+  background-color: #202533 !important;
+  color: #7cc0ff !important;
 }
 
 /* CampusNet header - dark 2 */
@@ -3252,3 +3365,6 @@ form.form-horizontal .form-control {
 .deadline__type {
   color: #b0b0b0 !important;
 }
+
+/* Quiz submissions histogram (Class Statistics / Grade Distribution) */
+/* Histogram styles intentionally left to default (light) */

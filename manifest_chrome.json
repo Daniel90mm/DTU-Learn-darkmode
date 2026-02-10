@@ -7,7 +7,10 @@
     "48": "icon_48.png",
     "128": "icon_128.png"
   },
-  "host_permissions": ["https://www.rejseplanen.dk/*"],
+  "host_permissions": ["https://www.rejseplanen.dk/*", "https://karakterer.dtu.dk/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "web_accessible_resources": [
     {
       "resources": ["dtuaften.jpg", "logo_dark.png", "Corp_White_Transparent.png", "Mojangles text.png"],
