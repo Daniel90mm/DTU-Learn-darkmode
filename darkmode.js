@@ -1205,6 +1205,9 @@
         if (!el || !el.style) return;
         // Skip extension-created elements (ECTS bar, GPA rows, sim rows, etc.)
         if (el.hasAttribute && el.hasAttribute('data-dtu-ext')) return;
+        // Skip bus departure container — it manages its own colors
+        if (el.closest && el.closest('.dtu-bus-departures')) return;
+        if (el.matches && el.matches('.dtu-bus-departures')) return;
         // Skip breadcrumb.linkset6 (should be dark 1)
         if (el.matches && el.matches('.breadcrumb.linkset6')) return;
         if (el.closest && el.closest('.breadcrumb.linkset6')) return;
@@ -2820,9 +2823,11 @@
             container.className = 'dtu-bus-departures';
             container.setAttribute('role', 'listitem');
             container.style.cssText = 'display: flex; gap: 12px; padding: 8px 14px; '
-                + 'margin-left: auto; background: linear-gradient(180deg, #2d2d2d 0%, #252525 100%) !important; '
-                + 'color: #e0e0e0 !important; font-size: 12px; '
-                + 'border-left: 2px solid #c62828; align-self: center; border-radius: 0 6px 6px 0;';
+                + 'margin-left: auto; font-size: 12px; '
+                + 'border-left: 2px solid #c62828; align-self: center; border-radius: 0 6px 6px 0; '
+                + (darkModeEnabled
+                    ? 'background: #2d2d2d !important; color: #e0e0e0 !important;'
+                    : 'background: #ffffff !important; color: #333 !important;');
             wrapper.appendChild(container);
         }
 
@@ -2831,7 +2836,7 @@
 
         if (_cachedDepartures.length === 0) {
             var empty = document.createElement('span');
-            empty.style.cssText = 'color: #888; font-style: italic; font-size: 11px;';
+            empty.style.cssText = 'color: ' + (darkModeEnabled ? '#888' : '#999') + ' !important; font-style: italic; font-size: 11px;';
             empty.textContent = _busFetchInProgress ? 'Loading bus times...' : 'No upcoming buses';
             container.appendChild(empty);
             return;
@@ -2854,7 +2859,7 @@
         lineOrder.forEach(function(line, li) {
             var col = document.createElement('div');
             col.style.cssText = 'display: flex; flex-direction: column; gap: 2px; min-width: 0;'
-                + (li < lineOrder.length - 1 ? ' padding-right: 12px; border-right: 1px solid rgba(255,255,255,0.06);' : '');
+                + (li < lineOrder.length - 1 ? ' padding-right: 12px; border-right: 1px solid ' + (darkModeEnabled ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.1)') + ';' : '');
 
             // Line header badge
             var color = LINE_COLORS[line] || '#1565c0';
@@ -2871,11 +2876,14 @@
                 row.style.cssText = 'display: flex; align-items: center; gap: 6px; white-space: nowrap;';
 
                 var dir = document.createElement('span');
-                dir.style.cssText = 'color: #b0b0b0; overflow: hidden; text-overflow: ellipsis; flex: 1; font-size: 11px;';
+                dir.style.cssText = 'color: ' + (darkModeEnabled ? '#b0b0b0' : '#666') + ' !important; overflow: hidden; text-overflow: ellipsis; flex: 1; font-size: 11px;';
                 dir.textContent = dep.direction;
 
                 var time = document.createElement('span');
-                time.style.cssText = 'font-weight: bold; font-size: 11px; color: ' + (dep.delayed ? '#ffa726' : '#66bb6a') + ';';
+                var timeColor = dep.delayed
+                    ? (darkModeEnabled ? '#ffa726' : '#e65100')
+                    : (darkModeEnabled ? '#66bb6a' : '#2e7d32');
+                time.style.cssText = 'font-weight: bold; font-size: 11px; color: ' + timeColor + ' !important;';
                 time.textContent = dep.time;
 
                 row.appendChild(dir);
@@ -2883,7 +2891,7 @@
 
                 if (dep.delayTag) {
                     var delay = document.createElement('span');
-                    delay.style.cssText = 'font-size: 10px; color: #ffa726; font-weight: 600;';
+                    delay.style.cssText = 'font-size: 10px; color: ' + (darkModeEnabled ? '#ffa726' : '#e65100') + ' !important; font-weight: 600;';
                     delay.textContent = dep.delayTag;
                     row.appendChild(delay);
                 }
