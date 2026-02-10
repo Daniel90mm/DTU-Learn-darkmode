@@ -123,11 +123,60 @@
             opacity: 1 !important;
         }
 
-        /* List role containers */
-        div[role="list"],
-        [role="list"] {
+        /* List role containers (except left nav wrapper) */
+        div[role="list"]:not(.d2l-navigation-s-main-wrapper),
+        [role="list"]:not(.d2l-navigation-s-main-wrapper) {
+            background: #1a1a1a !important;
+            background-color: #1a1a1a !important;
+            background-image: none !important;
+            color: ${DARK_TEXT} !important;
+        }
+
+        /* Breadcrumb list container can have gradient backgrounds in DTU Learn */
+        nav[aria-label="Breadcrumb"],
+        nav[aria-label="Breadcrumb"] div[role="list"],
+        nav[aria-label="Breadcrumb"] [role="list"] {
+            background: #1a1a1a !important;
+            background-color: #1a1a1a !important;
+            background-image: none !important;
+            color: ${DARK_TEXT} !important;
+        }
+
+        /* Action trigger buttons */
+        button[aria-haspopup="true"][aria-label^="Actions for"],
+        button[aria-label^="Actions for"] {
+            background-color: #1a1a1a !important;
+            color: ${DARK_TEXT} !important;
+            border-color: ${DARK_BORDER} !important;
+        }
+
+        button[aria-label^="Actions for"] d2l-icon[icon="tier1:chevron-down"] {
+            background-color: #1a1a1a !important;
+            background: #1a1a1a !important;
+            background-image: none !important;
+        }
+
+        /* Specific action buttons that stay dark 2 */
+        button[aria-haspopup="true"][aria-label="Actions for Work To Do"],
+        button[aria-label^="Actions for Work To Do"],
+        button[aria-haspopup="true"][aria-label="Actions for Study Announcements"],
+        button[aria-label^="Actions for Study Announcements"],
+        button[aria-haspopup="true"][aria-label="Actions for Calendar"],
+        button[aria-label^="Actions for Calendar"],
+        button[aria-haspopup="true"][aria-label="Actions for Lecture 01, Quiz 1"],
+        button[aria-label^="Actions for Lecture 01, Quiz 1"] {
             background-color: #2d2d2d !important;
             color: ${DARK_TEXT} !important;
+            border-color: ${DARK_BORDER} !important;
+        }
+
+        button[aria-label^="Actions for Work To Do"] d2l-icon[icon="tier1:chevron-down"],
+        button[aria-label^="Actions for Study Announcements"] d2l-icon[icon="tier1:chevron-down"],
+        button[aria-label^="Actions for Calendar"] d2l-icon[icon="tier1:chevron-down"],
+        button[aria-label^="Actions for Lecture 01, Quiz 1"] d2l-icon[icon="tier1:chevron-down"] {
+            background-color: #2d2d2d !important;
+            background: #2d2d2d !important;
+            background-image: none !important;
         }
 
         /* Breadcrumb elements */
@@ -136,14 +185,20 @@
         d2l-breadcrumb-current-page,
         .d2l-breadcrumb,
         .d2l-breadcrumbs {
-            background-color: #2d2d2d !important;
+            background: #1a1a1a !important;
+            background-color: #1a1a1a !important;
+            background-image: none !important;
             color: ${DARK_TEXT} !important;
         }
 
-        /* Breadcrumb links and icons */
+        /* Breadcrumb links */
         a.d2l-link-small:not(.d2l-link-inline),
-        d2l-icon[icon="tier1:chevron-right"],
         span[aria-current="page"] {
+            background-color: #1a1a1a !important;
+        }
+
+        /* Keep chevron separators on dark 2 */
+        d2l-icon[icon="tier1:chevron-right"] {
             background-color: #2d2d2d !important;
         }
 
@@ -153,10 +208,11 @@
         }
 
         /* Floating buttons */
+        d2l-floating-buttons,
         .d2l-floating-buttons-container,
         .d2l-floating-buttons,
         .d2l-floating-buttons-inner-container {
-            background-color: #2d2d2d !important;
+            background-color: #1a1a1a !important;
             color: ${DARK_TEXT} !important;
         }
 
@@ -510,9 +566,13 @@
             padding: 0 !important;
             margin: 0 !important;
             opacity: 0 !important;
+            pointer-events: none !important;
         }
-        :host(:hover) a.dtu-dark-content-btn {
+        :host(:hover) a.dtu-dark-content-btn,
+        .d2l-card-container:hover a.dtu-dark-content-btn,
+        .d2l-card-header:hover a.dtu-dark-content-btn {
             opacity: 1 !important;
+            pointer-events: auto !important;
         }
         a.dtu-dark-content-btn:hover {
             background-color: rgba(0, 0, 0, 0.85) !important;
@@ -552,33 +612,75 @@
     const menuStyles = `
         /* Dark background for menus */
         :host {
-            background-color: ${DARK_BG} !important;
+            background-color: #1a1a1a !important;
             color: ${DARK_TEXT} !important;
         }
 
         .d2l-menu,
         .d2l-menu-mvc,
         .d2l-contextmenu {
-            background-color: ${DARK_BG} !important;
+            background-color: #1a1a1a !important;
             color: ${DARK_TEXT} !important;
             border-color: ${DARK_BORDER} !important;
         }
 
         .d2l-menu-item,
         .d2l-menu-item-text {
-            background-color: ${DARK_BG} !important;
+            background-color: #1a1a1a !important;
             color: ${DARK_TEXT} !important;
         }
 
         .d2l-menu-item:hover,
         .d2l-menu-item:focus {
-            background-color: #3d3d3d !important;
+            background-color: #2d2d2d !important;
             color: ${DARK_TEXT} !important;
         }
 
-        a, button {
+        a {
             color: ${DARK_TEXT} !important;
             background-color: transparent !important;
+        }
+
+        button,
+        button[aria-haspopup="true"][aria-label^="Actions for"] {
+            color: ${DARK_TEXT} !important;
+            background-color: #1a1a1a !important;
+            border-color: ${DARK_BORDER} !important;
+        }
+
+        button[aria-haspopup="true"][aria-label="Actions for Work To Do"],
+        button[aria-label^="Actions for Work To Do"],
+        button[aria-haspopup="true"][aria-label="Actions for Study Announcements"],
+        button[aria-label^="Actions for Study Announcements"],
+        button[aria-haspopup="true"][aria-label="Actions for Calendar"],
+        button[aria-label^="Actions for Calendar"],
+        button[aria-haspopup="true"][aria-label="Actions for Lecture 01, Quiz 1"],
+        button[aria-label^="Actions for Lecture 01, Quiz 1"] {
+            background-color: #2d2d2d !important;
+            border-color: ${DARK_BORDER} !important;
+        }
+
+        button[aria-label^="Actions for Work To Do"] d2l-icon[icon="tier1:chevron-down"],
+        button[aria-label^="Actions for Study Announcements"] d2l-icon[icon="tier1:chevron-down"],
+        button[aria-label^="Actions for Calendar"] d2l-icon[icon="tier1:chevron-down"],
+        button[aria-label^="Actions for Lecture 01, Quiz 1"] d2l-icon[icon="tier1:chevron-down"] {
+            background-color: #2d2d2d !important;
+            background: #2d2d2d !important;
+            background-image: none !important;
+        }
+
+        div[role="list"] {
+            background: #1a1a1a !important;
+            background-color: #1a1a1a !important;
+            background-image: none !important;
+        }
+
+        nav[aria-label="Breadcrumb"],
+        nav[aria-label="Breadcrumb"] div[role="list"],
+        nav[aria-label="Breadcrumb"] [role="list"] {
+            background: #1a1a1a !important;
+            background-color: #1a1a1a !important;
+            background-image: none !important;
         }
     `;
 
@@ -836,12 +938,14 @@
             style.textContent = styleText;
         }
 
+        observeInjectedShadowRoot(shadowRoot);
         processNestedShadowRoots(shadowRoot);
     }
 
     // Function to process shadow roots nested inside a shadow root
     const _pendingShadowHostRetry = new WeakMap();
     const _shadowHostRetryCount = new WeakMap();
+    const _observedShadowRoots = new WeakSet();
     const SHADOW_HOST_RETRY_DELAY_MS = 350;
     const SHADOW_HOST_MAX_RETRIES = 20;
 
@@ -876,6 +980,57 @@
             scheduleShadowHostRetry(element);
         }, SHADOW_HOST_RETRY_DELAY_MS);
         _pendingShadowHostRetry.set(element, retryTimer);
+    }
+
+    function processShadowMutationNode(node) {
+        if (!node || node.nodeType !== 1) return;
+        if (shouldExcludeElement(node) || isInsideExcludedContainer(node)) return;
+
+        if (node.shadowRoot) {
+            injectStylesIntoShadowRoot(node.shadowRoot, node);
+        } else {
+            scheduleShadowHostRetry(node);
+        }
+
+        const walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null);
+        let child = walker.nextNode();
+        while (child) {
+            if (!shouldExcludeElement(child) && !isInsideExcludedContainer(child)) {
+                if (child.shadowRoot) {
+                    injectStylesIntoShadowRoot(child.shadowRoot, child);
+                } else {
+                    scheduleShadowHostRetry(child);
+                }
+            }
+            child = walker.nextNode();
+        }
+
+        processHtmlBlocks(node);
+        insertContentButtons(node);
+    }
+
+    function observeInjectedShadowRoot(shadowRoot) {
+        if (!shadowRoot || _observedShadowRoots.has(shadowRoot)) return;
+
+        const observer = new MutationObserver(function(mutations) {
+            for (var i = 0; i < mutations.length; i++) {
+                var mutation = mutations[i];
+                if (mutation.type !== 'childList') continue;
+                for (var j = 0; j < mutation.addedNodes.length; j++) {
+                    var added = mutation.addedNodes[j];
+                    if (added.nodeType === 1) {
+                        processShadowMutationNode(added);
+                    }
+                }
+            }
+        });
+
+        observer.observe(shadowRoot, {
+            childList: true,
+            subtree: true
+        });
+
+        _observedShadowRoots.add(shadowRoot);
     }
 
     function processNestedShadowRoots(shadowRoot) {
@@ -1116,7 +1271,36 @@
         .servicemenu nav *,
         .servicemenu__link-text,
         .breadcrumb.linkset6,
-        .breadcrumb.linkset6 *
+        .breadcrumb.linkset6 *,
+        #d_content_r_c1,
+        #d_content_r_c2,
+        #d_content_r,
+        #d_content_r_p,
+        form#d2l_form,
+        d2l-dropdown-context-menu,
+        d2l-dropdown-menu,
+        d2l-dropdown-menu-contextmenu,
+        d2l-menu,
+        d2l-menu-item,
+        button[aria-haspopup="true"][aria-label^="Actions for"],
+        d2l-dropdown-context-menu button[aria-label^="Actions for"],
+        d2l-floating-buttons,
+        .d2l-floating-buttons-container,
+        .d2l-floating-buttons,
+        .d2l-floating-buttons-inner-container,
+        div[role="list"]:not(.d2l-navigation-s-main-wrapper),
+        d2l-breadcrumb,
+        d2l-breadcrumbs,
+        d2l-breadcrumb-current-page,
+        d2l-breadcrumbs a,
+        d2l-breadcrumbs span,
+        d2l-breadcrumbs d2l-icon,
+        table.d_FG,
+        table.d_FG *,
+        .d_fgh,
+        .fct_w,
+        .fl_n,
+        .fl_top
     `;
 
     // Selectors for elements that should be #2d2d2d (lighter dark)
@@ -1126,6 +1310,8 @@
         .d2l-navigation-s-item,
         .d2l-navigation-s-group,
         .d2l-navigation-s-link,
+        .dco,
+        .dco_c,
         .dco a.d2l-link,
         .dco_c a.d2l-link,
         td.d_gn a.d2l-link,
@@ -1133,6 +1319,8 @@
         .d2l-inline,
         .d2l-inline a,
         .d2l-inline a.d2l-link,
+        td.d2l-table-cell-first,
+        td.d2l-table-cell-first *,
         .d2l-datalist,
         .vui-list,
         .vui-no-separator,
@@ -1218,22 +1406,14 @@
         ul.d2l-action-buttons-list,
         .d2l-action-buttons-list,
         .d2l-action-buttons-item,
-        .d2l-floating-buttons-container,
-        .d2l-floating-buttons,
-        .d2l-floating-buttons-inner-container,
-        table.d_FG,
-        table.d_FG td,
-        .d_fgh,
-        .fct_w,
-        .fl_n,
-        .fl_top,
-        div[role="list"]:not(.d2l-navigation-s-main-wrapper),
-        d2l-breadcrumb,
-        d2l-breadcrumbs,
-        d2l-breadcrumb-current-page,
-        span[aria-current="page"],
-        a.d2l-link-small:not(.d2l-link-inline),
-        d2l-icon[icon="tier1:chevron-right"],
+        button[aria-haspopup="true"][aria-label="Actions for Work To Do"],
+        button[aria-label^="Actions for Work To Do"],
+        button[aria-haspopup="true"][aria-label="Actions for Study Announcements"],
+        button[aria-label^="Actions for Study Announcements"],
+        button[aria-haspopup="true"][aria-label="Actions for Calendar"],
+        button[aria-label^="Actions for Calendar"],
+        button[aria-haspopup="true"][aria-label="Actions for Lecture 01, Quiz 1"],
+        button[aria-label^="Actions for Lecture 01, Quiz 1"],
         .d2l-tool-areas-item,
         li.d2l-tool-areas-item,
         h2.d2l-heading-none,
@@ -1254,6 +1434,12 @@
         if (!el || !el.style) return;
         // Skip extension-created elements (ECTS bar, GPA rows, sim rows, etc.)
         if (el.hasAttribute && el.hasAttribute('data-dtu-ext')) return;
+        // Preserve quiz histogram visuals (bars + axis image overlays)
+        if (isDTULearnQuizSubmissionsPage() && el.matches) {
+            if (el.matches('img.d2l-histogram-barblue, td.d2l-histogram-disback1, td.d2l-histogram-disyimg2, td.d2l-histogram-xside2')) {
+                return;
+            }
+        }
         // Skip navigation wrapper elements
         if (el.closest && el.closest('.d2l-navigation-s-main-wrapper')) return;
         // Skip elements inside pagefooter (those should be dark 2)
@@ -1279,6 +1465,17 @@
         // Skip bus departure container — it manages its own colors
         if (el.closest && el.closest('.dtu-bus-departures')) return;
         if (el.matches && el.matches('.dtu-bus-departures')) return;
+        if (isDTULearnQuizSubmissionsPage() && el.matches) {
+            if (el.matches('img.d2l-histogram-barblue, td.d2l-histogram-disback1, td.d2l-histogram-disyimg2, td.d2l-histogram-xside2')) {
+                return;
+            }
+        }
+        if (isDTULearnQuizSubmissionsPage()) {
+            var graphRow = el.closest && el.closest('tr');
+            if (graphRow && graphRow.querySelector && graphRow.querySelector('img[src*="Framework.GraphBar"]')) return;
+        }
+        // Keep quiz details tables dark 1
+        if (el.closest && el.closest('table.d_FG')) return;
         // Skip breadcrumb.linkset6 (should be dark 1)
         if (el.matches && el.matches('.breadcrumb.linkset6')) return;
         if (el.closest && el.closest('.breadcrumb.linkset6')) return;
@@ -1571,8 +1768,24 @@
 
     // ===== LOGO REPLACEMENT =====
     // Replace the "My Home" logo with custom white DTU logo for dark mode
-    function replaceLogoImage() {
+    function replaceLogoImage(rootNode) {
         const newSrc = chrome.runtime.getURL('Corp_White_Transparent.png');
+
+        function replaceHostLogosInRoot(root) {
+            if (!root || !root.querySelectorAll) return;
+            const hostLogos = root.querySelectorAll(
+                'd2l-labs-navigation-link-image.d2l-navigation-s-logo, '
+                + 'd2l-labs-navigation-link-image[text="My Home"], '
+                + 'd2l-labs-navigation-link-image[href*="/d2l/lp/ouHome/"]'
+            );
+            hostLogos.forEach(host => {
+                if (!host.dataset.darkModeReplaced || host.getAttribute('src') !== newSrc) {
+                    host.setAttribute('src', newSrc);
+                    host.src = newSrc;
+                    host.dataset.darkModeReplaced = 'true';
+                }
+            });
+        }
 
         // Helper function to replace logo in a given root
         function replaceInRoot(root) {
@@ -1591,8 +1804,9 @@
             });
         }
 
-        // Check main document
-        replaceInRoot(document);
+        const baseRoot = (rootNode && rootNode.nodeType === 1) ? rootNode : document;
+        replaceHostLogosInRoot(baseRoot);
+        replaceInRoot(baseRoot);
 
         // Check all shadow roots recursively
         function checkShadowRoots(root) {
@@ -1600,13 +1814,14 @@
             const elements = root.querySelectorAll('*');
             elements.forEach(el => {
                 if (el.shadowRoot) {
+                    replaceHostLogosInRoot(el.shadowRoot);
                     replaceInRoot(el.shadowRoot);
                     checkShadowRoots(el.shadowRoot);
                 }
             });
         }
 
-        checkShadowRoots(document);
+        checkShadowRoots(baseRoot);
     }
 
     // Run logo replacement (dark mode only)
@@ -1853,6 +2068,307 @@
 
     // Run dark mode toggle insertion
     insertDarkModeToggle();
+
+    // ===== CONTEXT CAPTURE HELPER =====
+    var _contextCaptureActive = false;
+    var _contextCaptureCleanup = null;
+    var _contextCaptureHotkeyBound = false;
+    var _contextCaptureToastTimer = null;
+    var CONTEXT_CAPTURE_HTML_MAX = 60000;
+
+    function getContextCaptureTheme() {
+        if (darkModeEnabled) {
+            return {
+                bg: '#1f2937',
+                fg: '#e0e0e0',
+                border: '#3f4b5e',
+                errorBg: '#5b1c1c',
+                errorBorder: '#8c2d2d'
+            };
+        }
+        return {
+            bg: '#ffffff',
+            fg: '#1f2937',
+            border: '#cbd5e1',
+            errorBg: '#fee2e2',
+            errorBorder: '#fca5a5'
+        };
+    }
+
+    function showContextCaptureToast(message, isError) {
+        if (!document.body) return;
+
+        var theme = getContextCaptureTheme();
+        var toast = document.querySelector('#dtu-context-capture-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'dtu-context-capture-toast';
+            toast.setAttribute('data-dtu-ext', '1');
+            document.body.appendChild(toast);
+        }
+
+        toast.textContent = message;
+        toast.style.cssText =
+            'position: fixed; right: 14px; bottom: 14px; z-index: 2147483647; '
+            + 'max-width: 420px; padding: 10px 12px; border-radius: 8px; '
+            + 'font-size: 12px; line-height: 1.4; white-space: normal; '
+            + 'box-shadow: 0 6px 18px rgba(0,0,0,0.35); '
+            + 'background: ' + (isError ? theme.errorBg : theme.bg) + '; '
+            + 'color: ' + theme.fg + '; '
+            + 'border: 1px solid ' + (isError ? theme.errorBorder : theme.border) + ';';
+
+        if (_contextCaptureToastTimer) clearTimeout(_contextCaptureToastTimer);
+        _contextCaptureToastTimer = setTimeout(function() {
+            if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 3600);
+    }
+
+    async function copyTextToClipboard(text) {
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+                return true;
+            }
+        } catch (e) {
+            // Fallback below
+        }
+
+        try {
+            var area = document.createElement('textarea');
+            area.value = text;
+            area.setAttribute('readonly', 'readonly');
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            area.style.left = '-9999px';
+            document.body.appendChild(area);
+            area.focus();
+            area.select();
+            var copied = document.execCommand('copy');
+            document.body.removeChild(area);
+            return !!copied;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function getCaptureElementFromEvent(event) {
+        var path = event.composedPath ? event.composedPath() : [];
+        var candidate = (path && path.length > 0) ? path[0] : event.target;
+        if (!candidate) return null;
+
+        if (candidate.nodeType !== 1) {
+            candidate = candidate.parentElement;
+        }
+        if (!candidate || candidate.nodeType !== 1) return null;
+        return candidate;
+    }
+
+    function getCaptureParentElement(element) {
+        if (!element) return null;
+        if (element.parentElement) return element.parentElement;
+        try {
+            var root = element.getRootNode ? element.getRootNode() : null;
+            if (root && root.host && root.host.nodeType === 1) return root.host;
+        } catch (e) {}
+        return null;
+    }
+
+    function trimCapturedHtml(html, maxLen) {
+        if (!html) return '(not available)';
+        if (html.length <= maxLen) return html;
+        return html.slice(0, maxLen)
+            + '\n<!-- truncated by DTU After Dark context helper (' + html.length + ' chars total) -->';
+    }
+
+    function buildContextCapturePayload(element) {
+        var parent = getCaptureParentElement(element);
+        var elementHtml = trimCapturedHtml(element.outerHTML || '', CONTEXT_CAPTURE_HTML_MAX);
+        var parentHtml = trimCapturedHtml(parent ? parent.outerHTML : '', CONTEXT_CAPTURE_HTML_MAX);
+
+        return [
+            'DTU After Dark Context Capture',
+            'URL: ' + window.location.href,
+            'TITLE: ' + document.title,
+            'TIMESTAMP: ' + new Date().toISOString(),
+            '',
+            'ELEMENT_OUTER_HTML:',
+            elementHtml,
+            '',
+            'PARENT_OUTER_HTML:',
+            parentHtml
+        ].join('\n');
+    }
+
+    function stopContextCaptureMode() {
+        _contextCaptureActive = false;
+        if (_contextCaptureCleanup) {
+            _contextCaptureCleanup();
+            _contextCaptureCleanup = null;
+        }
+    }
+
+    function startContextCaptureMode() {
+        if (!IS_TOP_WINDOW) return;
+        if (_contextCaptureActive) {
+            showContextCaptureToast('Context capture is already active. Click an element or press Esc.', false);
+            return;
+        }
+
+        _contextCaptureActive = true;
+        showContextCaptureToast('Context capture active: click one element. Press Esc to cancel.', false);
+
+        var clickHandler = async function(event) {
+            if (!_contextCaptureActive) return;
+            if (event.button !== 0) return; // Left click only
+
+            var targetEl = getCaptureElementFromEvent(event);
+            if (!targetEl) return;
+
+            if (targetEl.closest && targetEl.closest('[data-dtu-ext], #dtu-context-capture-toast')) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+
+            stopContextCaptureMode();
+            var payload = buildContextCapturePayload(targetEl);
+            var copied = await copyTextToClipboard(payload);
+            if (copied) {
+                showContextCaptureToast('Context copied to clipboard. Paste it here.', false);
+            } else {
+                showContextCaptureToast('Could not copy context automatically. Clipboard permission blocked.', true);
+            }
+        };
+
+        var keydownHandler = function(event) {
+            if (!_contextCaptureActive) return;
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                stopContextCaptureMode();
+                showContextCaptureToast('Context capture cancelled.', false);
+            }
+        };
+
+        document.addEventListener('click', clickHandler, true);
+        document.addEventListener('keydown', keydownHandler, true);
+
+        _contextCaptureCleanup = function() {
+            document.removeEventListener('click', clickHandler, true);
+            document.removeEventListener('keydown', keydownHandler, true);
+        };
+    }
+
+    function setupContextCaptureHotkey() {
+        if (!IS_TOP_WINDOW || _contextCaptureHotkeyBound) return;
+
+        document.addEventListener('keydown', function(event) {
+            if (event.defaultPrevented) return;
+            if (!event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey) return;
+
+            var key = event.key ? event.key.toLowerCase() : '';
+            if (key !== 'c') return;
+
+            event.preventDefault();
+            startContextCaptureMode();
+        }, true);
+
+        _contextCaptureHotkeyBound = true;
+    }
+
+    function insertContextCaptureFloatingHelper() {
+        if (!IS_TOP_WINDOW) return;
+        if (!document.body) return;
+        if (document.querySelector('#dtu-context-capture-floating-btn')) return;
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'dtu-context-capture-floating-btn';
+        btn.setAttribute('data-dtu-ext', '1');
+        btn.title = 'Capture Context (Alt+Shift+C)';
+        btn.textContent = 'Capture';
+        btn.style.cssText = darkModeEnabled
+            ? 'position: fixed; right: 14px; bottom: 54px; z-index: 2147483646; '
+                + 'background: #2d2d2d; color: #66b3ff; border: 1px solid #4f5f74; border-radius: 6px; '
+                + 'cursor: pointer; font-size: 12px; padding: 6px 10px;'
+            : 'position: fixed; right: 14px; bottom: 54px; z-index: 2147483646; '
+                + 'background: #ffffff; color: #0b67c2; border: 1px solid #c8d0db; border-radius: 6px; '
+                + 'cursor: pointer; font-size: 12px; padding: 6px 10px;';
+
+        btn.addEventListener('click', function(event) {
+            event.preventDefault();
+            setTimeout(startContextCaptureMode, 0);
+        });
+
+        document.body.appendChild(btn);
+    }
+
+    function insertContextCaptureHelper() {
+        if (!IS_TOP_WINDOW) return;
+        if (document.querySelector('#dtu-context-capture-btn')
+            || document.querySelector('#dtu-context-capture-floating-btn')) return;
+
+        // Preferred placement on DTU Learn homepage admin tools.
+        if (!isDTULearnHomepage()) {
+            insertContextCaptureFloatingHelper();
+            return;
+        }
+
+        const placeholder = document.querySelector('#AdminToolsPlaceholderId');
+        if (!placeholder) {
+            insertContextCaptureFloatingHelper();
+            return;
+        }
+
+        const columns = placeholder.querySelectorAll('.d2l-admin-tools-column');
+        let targetList = null;
+        columns.forEach(col => {
+            const h2 = col.querySelector('h2');
+            if (h2 && h2.textContent === 'DTU After Dark') {
+                targetList = col.querySelector('ul.d2l-list');
+            }
+        });
+
+        if (!targetList) {
+            insertContextCaptureFloatingHelper();
+            return;
+        }
+
+        const li = document.createElement('li');
+        li.setAttribute('data-dtu-ext', '1');
+        li.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; padding: 4px 0; background-color: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; padding: 4px 0;';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'dtu-context-capture-btn';
+        btn.setAttribute('data-dtu-ext', '1');
+        btn.style.cssText = darkModeEnabled
+            ? 'background: #2d2d2d; color: #66b3ff; border: 1px solid #4f5f74; border-radius: 4px; '
+                + 'cursor: pointer; font-size: 12px; padding: 3px 8px;'
+            : 'background: #ffffff; color: #0b67c2; border: 1px solid #c8d0db; border-radius: 4px; '
+                + 'cursor: pointer; font-size: 12px; padding: 3px 8px;';
+        btn.textContent = 'Capture Context';
+        btn.addEventListener('click', function(event) {
+            event.preventDefault();
+            setTimeout(startContextCaptureMode, 0);
+        });
+
+        const hotkeyHint = document.createElement('span');
+        hotkeyHint.setAttribute('data-dtu-ext', '1');
+        hotkeyHint.style.cssText = darkModeEnabled
+            ? 'font-size: 11px; color: #9aa7b8;'
+            : 'font-size: 11px; color: #6b7280;';
+        hotkeyHint.textContent = 'Alt+Shift+C';
+
+        li.appendChild(btn);
+        li.appendChild(hotkeyHint);
+        targetList.appendChild(li);
+    }
 
     // ===== FIRST-TIME ONBOARDING HINT =====
     // Show a hint pointing to the gear icon for the first 3 homepage visits
@@ -2337,7 +2853,7 @@
         codeInput.setAttribute('data-dtu-ext', '1');
         codeInput.placeholder = 'Code';
         codeInput.value = entry.code || '';
-        codeInput.style.cssText = 'width: 60px;';
+        codeInput.style.cssText = 'width: 96px;';
         codeInput.addEventListener('input', () => { saveSimEntries(); });
         tdCode.appendChild(codeInput);
 
@@ -2383,7 +2899,7 @@
         ectsInput.min = '1';
         ectsInput.max = '60';
         ectsInput.value = entry.ects || 5;
-        ectsInput.style.cssText = 'width: 65px; text-align: left; padding-left: 6px;';
+        ectsInput.style.cssText = 'width: 82px; text-align: right;';
         ectsInput.addEventListener('input', () => { saveSimEntries(); updateProjectedGPA(); });
         tdECTS.appendChild(ectsInput);
 
@@ -2391,7 +2907,7 @@
         const tdAction = document.createElement('td');
         tdAction.setAttribute('data-dtu-ext', '1');
         tdAction.style.cssText = 'text-align: center;';
-        tdAction.style.setProperty('padding-left', '30px', 'important');
+        tdAction.style.setProperty('padding-left', '8px', 'important');
         const delBtn = document.createElement('button');
         delBtn.type = 'button';
         delBtn.className = 'gpa-sim-delete-btn';
@@ -2436,7 +2952,7 @@
         const addTd = document.createElement('td');
         addTd.setAttribute('data-dtu-ext', '1');
         addTd.colSpan = 5;
-        addTd.style.cssText = 'text-align: left; padding: 4px 0;';
+        addTd.style.cssText = 'text-align: left; padding: 6px 0;';
         const addBtn = document.createElement('button');
         addBtn.type = 'button';
         addBtn.className = 'gpa-sim-add-btn';
@@ -2516,9 +3032,13 @@
             padding: 0 !important;
             margin: 0 !important;
             opacity: 0 !important;
+            pointer-events: none !important;
         }
-        :host(:hover) a.dtu-dark-content-btn {
+        :host(:hover) a.dtu-dark-content-btn,
+        .d2l-card-container:hover a.dtu-dark-content-btn,
+        .d2l-card-header:hover a.dtu-dark-content-btn {
             opacity: 1 !important;
+            pointer-events: auto !important;
         }
         a.dtu-dark-content-btn:hover {
             background-color: rgba(0, 0, 0, 0.85) !important;
@@ -2553,6 +3073,87 @@
         return results;
     }
 
+    function parseCourseIdFromString(str) {
+        if (!str) return null;
+        const patterns = [
+            /\/d2l\/home\/(\d+)/i,
+            /[?&]ou=(\d+)/i,
+            /\/org(?:units?|Units?)\/(\d+)/i,
+            /(?:orgUnitId|courseOfferingId|offeringId)[=:"\s]+(\d+)/i
+        ];
+        for (var i = 0; i < patterns.length; i++) {
+            var match = str.match(patterns[i]);
+            if (match && match[1]) return match[1];
+        }
+        return null;
+    }
+
+    function normalizeD2LPath(urlStr) {
+        if (!urlStr) return null;
+        try {
+            const parsed = new URL(urlStr, location.origin);
+            if (parsed.pathname && parsed.pathname.startsWith('/d2l/')) {
+                return parsed.pathname + parsed.search + parsed.hash;
+            }
+        } catch (e) {}
+        if (/^\/d2l\//.test(urlStr)) return urlStr;
+        return null;
+    }
+
+    function extractCourseId(ec, card, roots) {
+        const candidates = [];
+        if (ec) {
+            candidates.push(ec.getAttribute('href') || '');
+            if (ec.attributes) {
+                for (var i = 0; i < ec.attributes.length; i++) {
+                    const attr = ec.attributes[i];
+                    if (/(ou|org|course|offering)/i.test(attr.name)) {
+                        candidates.push(attr.value || '');
+                    }
+                }
+            }
+        }
+        if (card) {
+            candidates.push(card.getAttribute('href') || '');
+            if (card.attributes) {
+                for (var j = 0; j < card.attributes.length; j++) {
+                    const cardAttr = card.attributes[j];
+                    if (/(ou|org|course|offering)/i.test(cardAttr.name)) {
+                        candidates.push(cardAttr.value || '');
+                    }
+                }
+            }
+        }
+        roots.forEach(root => {
+            if (!root || !root.querySelectorAll) return;
+            root.querySelectorAll('[href]').forEach(linkEl => {
+                candidates.push(linkEl.getAttribute('href') || '');
+            });
+        });
+        for (var k = 0; k < candidates.length; k++) {
+            var id = parseCourseIdFromString(candidates[k]);
+            if (id) return id;
+        }
+        return null;
+    }
+
+    function extractFallbackHref(ec, card, roots) {
+        const candidates = [];
+        if (card) candidates.push(card.getAttribute('href') || '');
+        if (ec) candidates.push(ec.getAttribute('href') || '');
+        roots.forEach(root => {
+            if (!root || !root.querySelectorAll) return;
+            root.querySelectorAll('[href]').forEach(linkEl => {
+                candidates.push(linkEl.getAttribute('href') || '');
+            });
+        });
+        for (var i = 0; i < candidates.length; i++) {
+            var normalized = normalizeD2LPath(candidates[i]);
+            if (normalized) return normalized;
+        }
+        return null;
+    }
+
     function insertContentButtons(rootNode) {
         if (!IS_TOP_WINDOW) return;
         if (!isDTULearnHomepage()) return;
@@ -2566,35 +3167,35 @@
             const ecShadow = ec.shadowRoot;
             if (!ecShadow) return;
 
-            const card = ecShadow.querySelector('d2l-card[href^="/d2l/home/"]');
-            if (!card) return;
-
-            const cardShadow = card.shadowRoot;
-            if (!cardShadow) return;
+            const card = ecShadow.querySelector('d2l-card[href*="/d2l/home/"], d2l-card[href], d2l-card');
+            const cardShadow = card && card.shadowRoot ? card.shadowRoot : null;
+            const styleRoot = cardShadow || ecShadow;
 
             // Ensure content button CSS is in the shadow root (needed when dark mode is off)
-            if (!cardShadow.querySelector('#dtu-content-btn-styles')) {
+            if (!styleRoot.querySelector('#dtu-content-btn-styles')) {
                 const btnStyle = document.createElement('style');
                 btnStyle.id = 'dtu-content-btn-styles';
                 btnStyle.textContent = contentBtnShadowCSS;
-                cardShadow.appendChild(btnStyle);
+                styleRoot.appendChild(btnStyle);
             }
 
             // Append to the card header (image area) for bottom-right positioning
-            const header = cardShadow.querySelector('.d2l-card-header');
-            const container = header || cardShadow.querySelector('.d2l-card-container');
+            const header = styleRoot.querySelector('.d2l-card-header, .d2l-enrollment-card-image-container');
+            const container = header || styleRoot.querySelector('.d2l-card-container, .d2l-enrollment-card-content, .d2l-enrollment-card-container');
             if (!container) return;
             if (container.querySelector('.dtu-dark-content-btn')) return;
             container.style.setProperty('position', 'relative', 'important');
 
-            const courseIdMatch = card.getAttribute('href').match(/\/d2l\/home\/(\d+)/);
-            if (!courseIdMatch) return;
-            const courseId = courseIdMatch[1];
+            const roots = [styleRoot, ecShadow];
+            const courseId = extractCourseId(ec, card, roots);
+            const fallbackHref = extractFallbackHref(ec, card, roots);
+            if (!courseId && !fallbackHref) return;
+            const targetHref = courseId ? ('/d2l/le/lessons/' + courseId) : fallbackHref;
 
             // Styling is handled by cardShadowStyles CSS (.dtu-dark-content-btn)
             const btn = document.createElement('a');
             btn.className = 'dtu-dark-content-btn';
-            btn.href = '/d2l/le/lessons/' + courseId;
+            btn.href = targetHref;
             btn.title = 'Go to Content';
             btn.textContent = '\u{1F4D6}';
             btn.addEventListener('click', (e) => e.stopPropagation());
@@ -2603,8 +3204,31 @@
         });
     }
 
+    let _contentButtonBootstrapTimer = null;
+
+    function startContentButtonBootstrap() {
+        if (!IS_TOP_WINDOW || !isDTULearnHomepage()) return;
+        if (_contentButtonBootstrapTimer) return;
+
+        let attempts = 0;
+        _contentButtonBootstrapTimer = setInterval(function() {
+            if (!isDTULearnHomepage()) {
+                clearInterval(_contentButtonBootstrapTimer);
+                _contentButtonBootstrapTimer = null;
+                return;
+            }
+            insertContentButtons();
+            attempts++;
+            if (document.querySelector('.dtu-dark-content-btn') || attempts >= 24) {
+                clearInterval(_contentButtonBootstrapTimer);
+                _contentButtonBootstrapTimer = null;
+            }
+        }, 500);
+    }
+
     // Run content buttons (unified observer handles updates)
     insertContentButtons();
+    startContentButtonBootstrap();
 
     // ===== BUS DEPARTURE TIMES (Rejseplanen 2.0 API) =====
     // Live bus departure information for DTU-area stops, shown on the DTU Learn homepage
@@ -2658,6 +3282,45 @@
     function isDTULearnHomepage() {
         return window.location.hostname === 'learn.inside.dtu.dk'
             && /^\/d2l\/home\/?$/.test(window.location.pathname);
+    }
+
+    function isDTULearnQuizSubmissionsPage() {
+        return window.location.hostname === 'learn.inside.dtu.dk'
+            && /\/d2l\/lms\/quizzing\/user\/quiz_submissions\.d2l$/i.test(window.location.pathname);
+    }
+
+    function styleQuizSubmissionHistogram(rootNode) {
+        if (!isDTULearnQuizSubmissionsPage()) return;
+
+        var root = (rootNode && rootNode.querySelectorAll) ? rootNode : document;
+        function forceDark1(el) {
+            if (!el || !el.style) return;
+            el.style.setProperty('background', '#1a1a1a', 'important');
+            el.style.setProperty('background-color', '#1a1a1a', 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+            el.style.setProperty('color', '#e0e0e0', 'important');
+            el.style.setProperty('border-color', '#404040', 'important');
+        }
+
+        // Grade rows with blue/white graph bars should keep a dark-1 row background.
+        root.querySelectorAll('tr').forEach(function(row) {
+            if (!row.querySelector('img[src*="Framework.GraphBar"]')) return;
+
+            row.querySelectorAll('td.d_tl.d_tm.d_tn, td.d_tr.d_tm.d_tn').forEach(function(td) { forceDark1(td); });
+            row.querySelectorAll('.d2l-grades-score, .dco, .dco_c').forEach(function(el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background-color', '#1a1a1a', 'important');
+                el.style.setProperty('background', '#1a1a1a', 'important');
+                el.style.setProperty('color', '#e0e0e0', 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+            });
+            row.querySelectorAll('label').forEach(function(label) {
+                if (!label || !label.style) return;
+                label.style.setProperty('color', '#e0e0e0', 'important');
+                label.style.setProperty('background-color', '#1a1a1a', 'important');
+                label.style.setProperty('background-image', 'none', 'important');
+            });
+        });
     }
 
     // ===== API RATE LIMITING =====
@@ -3897,6 +4560,206 @@
     // Run Book Finder initially
     insertBookFinderLinks();
 
+    // ===== COURSE GRADE STATISTICS (kurser.dtu.dk) =====
+    var _gradeStatsRequested = false;
+    var _gradeStatsCourseCode = null;
+
+    function isKurserCoursePage() {
+        return window.location.hostname === 'kurser.dtu.dk'
+            && /\/course\/(?:\d{4}-\d{4}\/)?[A-Za-z0-9]+/i.test(window.location.pathname);
+    }
+
+    function getKurserCourseCode() {
+        var match = window.location.pathname.match(/\/course\/(?:\d{4}-\d{4}\/)?([A-Za-z0-9]+)/i);
+        if (!match || !match[1]) return null;
+        return match[1].toUpperCase();
+    }
+
+    function findKurserCourseTitleElement(courseCode) {
+        var headings = Array.prototype.slice.call(document.querySelectorAll('h1, h2'));
+        if (!headings.length) return null;
+        var normalizedCode = (courseCode || '').toUpperCase();
+
+        for (var i = 0; i < headings.length; i++) {
+            var txt = (headings[i].textContent || '').trim().toUpperCase();
+            if (normalizedCode && txt.indexOf(normalizedCode) === 0) return headings[i];
+        }
+
+        // DTU course pages commonly use an h2 title.
+        var styledH2 = document.querySelector('h2[style*="font-family:verdana"]');
+        if (styledH2) return styledH2;
+
+        return document.querySelector('h1') || document.querySelector('h2');
+    }
+
+    function buildGradeStatsSemesters() {
+        var now = new Date();
+        var year = now.getFullYear();
+        var month = now.getMonth(); // 0-11
+        var startYear = (month <= 5) ? (year - 1) : year;
+        var semesters = [];
+        for (var y = startYear; y >= startYear - 6; y--) {
+            semesters.push('Winter-' + y);
+            semesters.push('Summer-' + y);
+        }
+        return semesters;
+    }
+
+    function sendRuntimeMessage(msg, cb) {
+        try {
+            if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.sendMessage) {
+                var p = browser.runtime.sendMessage(msg);
+                if (p && typeof p.then === 'function') {
+                    p.then(cb).catch(function() { cb(null); });
+                    return;
+                }
+                cb(p);
+                return;
+            }
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                chrome.runtime.sendMessage(msg, cb);
+                return;
+            }
+        } catch (e) {
+            // ignore
+        }
+        if (cb) cb(null);
+    }
+
+    function markExt(el) {
+        if (el && el.setAttribute) el.setAttribute('data-dtu-ext', '1');
+    }
+
+    function insertKurserGradeStats() {
+        if (!IS_TOP_WINDOW) return;
+        if (!isKurserCoursePage()) return;
+        if (document.querySelector('[data-dtu-grade-stats]')) return;
+
+        var courseCode = getKurserCourseCode();
+        if (!courseCode) return;
+        var titleEl = findKurserCourseTitleElement(courseCode);
+        if (!titleEl) return;
+
+        var container = document.createElement('div');
+        container.setAttribute('data-dtu-grade-stats', '1');
+        markExt(container);
+        container.style.cssText = darkModeEnabled
+            ? 'margin: 10px 0 12px 0; padding: 10px 12px; border-radius: 6px; max-width: 760px; '
+              + 'background-color: #2d2d2d; border: 1px solid #404040; color: #e0e0e0; font-family: inherit;'
+            : 'margin: 10px 0 12px 0; padding: 10px 12px; border-radius: 6px; max-width: 760px; '
+              + 'background-color: #ffffff; border: 1px solid #e0e0e0; color: #222; font-family: inherit;';
+
+        var title = document.createElement('div');
+        markExt(title);
+        title.textContent = 'Grade Statistics';
+        title.style.cssText = 'font-weight: 700; font-size: 14px; margin-bottom: 6px;';
+        container.appendChild(title);
+
+        var status = document.createElement('div');
+        markExt(status);
+        status.textContent = 'Loading grade stats...';
+        status.style.cssText = 'font-size: 13px; opacity: 0.9;';
+        container.appendChild(status);
+
+        titleEl.insertAdjacentElement('afterend', container);
+
+        if (_gradeStatsRequested && _gradeStatsCourseCode === courseCode) return;
+        _gradeStatsRequested = true;
+        _gradeStatsCourseCode = courseCode;
+
+        sendRuntimeMessage({
+            type: 'dtu-grade-stats',
+            courseCode: courseCode,
+            semesters: buildGradeStatsSemesters()
+        }, function(response) {
+            if (!response || !response.ok || !response.data) {
+                status.textContent = 'No Data Available';
+                return;
+            }
+
+            var data = response.data;
+            var semester = response.semester || '';
+            var grades = ['12', '10', '7', '4', '02', '00', '-3'];
+            var total = data.total || 0;
+
+            status.textContent = '';
+
+            var summary = document.createElement('div');
+            markExt(summary);
+            summary.style.cssText = 'display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px;';
+
+            var passRate = document.createElement('div');
+            markExt(passRate);
+            var passPct = (data.passRate || 0);
+            var passColor = passPct > 85 ? '#4caf50' : (passPct > 70 ? '#ffb300' : '#ef5350');
+            passRate.textContent = 'Pass Rate: ' + passPct.toFixed(1) + '%';
+            passRate.style.cssText = 'font-size: 18px; font-weight: 700;';
+            passRate.style.setProperty('color', passColor, 'important');
+            summary.appendChild(passRate);
+
+            var avg = document.createElement('div');
+            markExt(avg);
+            avg.textContent = 'Average Grade: ' + (data.average || 0).toFixed(2);
+            avg.style.cssText = 'font-size: 13px; opacity: 0.9;';
+            summary.appendChild(avg);
+
+            if (semester) {
+                var sem = document.createElement('div');
+                markExt(sem);
+                sem.textContent = semester;
+                sem.style.cssText = 'font-size: 12px; opacity: 0.7;';
+                summary.appendChild(sem);
+            }
+
+            container.appendChild(summary);
+
+            var chart = document.createElement('div');
+            markExt(chart);
+            chart.style.cssText = 'display: flex; align-items: flex-end; gap: 8px; height: 64px; margin-top: 8px;';
+
+            var maxCount = 0;
+            grades.forEach(function(g) {
+                var c = data.counts && data.counts[g] ? data.counts[g] : 0;
+                if (c > maxCount) maxCount = c;
+            });
+
+            grades.forEach(function(g) {
+                var count = data.counts && data.counts[g] ? data.counts[g] : 0;
+                var height = maxCount ? Math.round((count / maxCount) * 42) : 0;
+                if (count > 0 && height < 2) height = 2;
+
+                var wrap = document.createElement('div');
+                markExt(wrap);
+                wrap.style.cssText = 'display: flex; flex-direction: column; align-items: center; gap: 3px; width: 24px;';
+
+                var bar = document.createElement('div');
+                markExt(bar);
+                var isPass = (g === '02' || g === '4' || g === '7' || g === '10' || g === '12');
+                var barColor = isPass ? '#66b3ff' : '#ef5350';
+                bar.style.cssText = 'width: 14px; height: ' + height + 'px; border-radius: 3px;';
+                bar.style.setProperty('background', barColor, 'important');
+                bar.style.setProperty('background-color', barColor, 'important');
+                if (height === 0) {
+                    bar.style.setProperty('background', 'transparent', 'important');
+                    bar.style.setProperty('background-color', 'transparent', 'important');
+                    bar.style.border = darkModeEnabled ? '1px solid #555' : '1px solid #ccc';
+                }
+                bar.title = g + ': ' + count + ' students';
+
+                var label = document.createElement('div');
+                markExt(label);
+                label.textContent = g;
+                label.style.cssText = 'font-size: 11px; opacity: 0.85;';
+
+                wrap.appendChild(bar);
+                wrap.appendChild(label);
+                chart.appendChild(wrap);
+            });
+
+            container.appendChild(chart);
+        });
+    }
+
     // ===== UNIFIED SCHEDULING =====
     // Replaces 8 separate setIntervals and 6 MutationObservers with
     // ONE master interval + ONE unified MutationObserver for much lower CPU usage.
@@ -3920,6 +4783,8 @@
         if (rootNode && rootNode.nodeType === 1) {
             processElement(rootNode);
             sweepForLateShadowRoots(rootNode);
+            replaceLogoImage(rootNode);
+            styleQuizSubmissionHistogram(rootNode);
             return;
         }
 
@@ -3930,6 +4795,7 @@
         if (document.body) processElement(document.body);
         sweepForLateShadowRoots();
         replaceLogoImage();
+        styleQuizSubmissionHistogram();
         preserveTypeboxColors();
     }
 
@@ -3948,6 +4814,9 @@
         if (!IS_TOP_WINDOW) return;
 
         var host = window.location.hostname;
+        setupContextCaptureHotkey();
+        insertContextCaptureHelper();
+
         if (host === 'learn.inside.dtu.dk') {
             insertMojanglesText();
             insertMojanglesToggle();
@@ -3963,6 +4832,9 @@
             insertGPARow();
             insertECTSProgressBar();
             insertGPASimulator();
+        }
+        if (host === 'kurser.dtu.dk') {
+            insertKurserGradeStats();
         }
     }
 
@@ -3998,6 +4870,10 @@
                                 }
                             }
                         }
+                    }
+                    if (mutation.attributeName === 'src' && el.matches
+                        && el.matches('d2l-labs-navigation-link-image.d2l-navigation-s-logo, d2l-labs-navigation-link-image[text="My Home"]')) {
+                        replaceLogoImage(el);
                     }
                 }
             }
@@ -4063,6 +4939,7 @@
         await waitForCustomElements();
         runDarkModeChecks();
         runTopWindowFeatureChecks(null, true);
+        startContentButtonBootstrap();
         setTimeout(function() { runDarkModeChecks(); runTopWindowFeatureChecks(null, true); }, 500);
         setTimeout(function() { runDarkModeChecks(); runTopWindowFeatureChecks(null, true); }, 1500);
         setTimeout(showOnboardingHint, 2000);
@@ -4075,6 +4952,7 @@
             setTimeout(function() {
                 runDarkModeChecks();
                 runTopWindowFeatureChecks(null, true);
+                startContentButtonBootstrap();
             }, 100);
         }
     });
