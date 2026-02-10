@@ -4,6 +4,13 @@
 
     // ===== DARK MODE TOGGLE =====
     const DARK_MODE_KEY = 'dtuDarkModeEnabled';
+    const IS_TOP_WINDOW = (() => {
+        try {
+            return window === window.top;
+        } catch (e) {
+            return false;
+        }
+    })();
 
     // Check dark mode preference: cookie (.dtu.dk cross-origin) → localStorage → default true
     function isDarkModeEnabled() {
@@ -833,45 +840,109 @@
     }
 
     // Function to process shadow roots nested inside a shadow root
+    const _pendingShadowHostRetry = new WeakMap();
+    const _shadowHostRetryCount = new WeakMap();
+    const SHADOW_HOST_RETRY_DELAY_MS = 350;
+    const SHADOW_HOST_MAX_RETRIES = 20;
+
+    function isShadowHostCandidate(element) {
+        if (!element || !element.tagName) return false;
+        var tagName = element.tagName.toLowerCase();
+        return tagName.startsWith('d2l-');
+    }
+
+    function scheduleShadowHostRetry(element) {
+        if (!isShadowHostCandidate(element)) return;
+
+        if (element.shadowRoot) {
+            var existingTimer = _pendingShadowHostRetry.get(element);
+            if (existingTimer) {
+                clearTimeout(existingTimer);
+                _pendingShadowHostRetry.delete(element);
+            }
+            injectStylesIntoShadowRoot(element.shadowRoot, element);
+            return;
+        }
+
+        if (_pendingShadowHostRetry.has(element)) return;
+
+        var retryCount = _shadowHostRetryCount.get(element) || 0;
+        if (retryCount >= SHADOW_HOST_MAX_RETRIES) return;
+        _shadowHostRetryCount.set(element, retryCount + 1);
+
+        var retryTimer = setTimeout(function() {
+            _pendingShadowHostRetry.delete(element);
+            if (!element.isConnected) return;
+            scheduleShadowHostRetry(element);
+        }, SHADOW_HOST_RETRY_DELAY_MS);
+        _pendingShadowHostRetry.set(element, retryTimer);
+    }
+
     function processNestedShadowRoots(shadowRoot) {
         if (!shadowRoot) return;
 
-        // Find all elements inside this shadow root
-        const elements = shadowRoot.querySelectorAll('*');
-        elements.forEach(element => {
+        const walker = document.createTreeWalker(shadowRoot, NodeFilter.SHOW_ELEMENT, null);
+        let element = walker.nextNode();
+        while (element) {
             if (element.shadowRoot) {
                 injectStylesIntoShadowRoot(element.shadowRoot, element);
+            } else {
+                scheduleShadowHostRetry(element);
             }
-        });
+            element = walker.nextNode();
+        }
+    }
+
+    const _styledHtmlBlocks = new WeakSet();
+    const _pendingHtmlBlockRetry = new WeakMap();
+    const _htmlBlockRetryCount = new WeakMap();
+    const HTML_BLOCK_MAX_RETRIES = 8;
+
+    function ensureHtmlBlockStyled(block) {
+        if (!block || _styledHtmlBlocks.has(block)) return;
+
+        if (block.shadowRoot) {
+            var pendingTimer = _pendingHtmlBlockRetry.get(block);
+            if (pendingTimer) {
+                clearTimeout(pendingTimer);
+                _pendingHtmlBlockRetry.delete(block);
+            }
+            injectStylesIntoShadowRoot(block.shadowRoot, block);
+            _styledHtmlBlocks.add(block);
+            return;
+        }
+
+        if (_pendingHtmlBlockRetry.has(block)) return;
+
+        var retryCount = _htmlBlockRetryCount.get(block) || 0;
+        if (retryCount >= HTML_BLOCK_MAX_RETRIES) return;
+        _htmlBlockRetryCount.set(block, retryCount + 1);
+
+        // Keep one short retry timer per block to avoid timer fan-out.
+        const retryTimer = setTimeout(function() {
+            _pendingHtmlBlockRetry.delete(block);
+            ensureHtmlBlockStyled(block);
+        }, 400);
+        _pendingHtmlBlockRetry.set(block, retryTimer);
     }
 
     // Function to specifically process d2l-html-block elements
     function processHtmlBlocks(root) {
+        if (!root || !root.querySelectorAll) return;
+        if (root.matches && root.matches('d2l-html-block')) {
+            ensureHtmlBlockStyled(root);
+        }
         const htmlBlocks = root.querySelectorAll('d2l-html-block');
         htmlBlocks.forEach(block => {
-            // Try immediately
-            if (block.shadowRoot) {
-                injectStylesIntoShadowRoot(block.shadowRoot, block);
-            }
-            // Also poll multiple times to catch late shadow root creation
-            const delays = [50, 100, 200, 500, 1000, 2000];
-            delays.forEach(delay => {
-                setTimeout(() => {
-                    if (block.shadowRoot) {
-                        injectStylesIntoShadowRoot(block.shadowRoot, block);
-                    }
-                }, delay);
-            });
+            ensureHtmlBlockStyled(block);
         });
     }
 
-    // Aggressively poll for d2l-html-block elements
+    // Light scan for d2l-html-block elements to catch late DOM inserts.
     function pollForHtmlBlocks() {
         const htmlBlocks = document.querySelectorAll('d2l-html-block');
         htmlBlocks.forEach(block => {
-            if (block.shadowRoot) {
-                injectStylesIntoShadowRoot(block.shadowRoot, block);
-            }
+            ensureHtmlBlockStyled(block);
         });
     }
 
@@ -1353,26 +1424,31 @@
 
     // Function to find and inject into all shadow roots
     function processElement(element) {
+        if (!element || element.nodeType !== 1) return;
+
         // Skip if inside PDF viewer
         if (isInsideExcludedContainer(element)) {
             return;
         }
 
-        if (element.shadowRoot) {
-            injectStylesIntoShadowRoot(element.shadowRoot, element);
+        function processNode(node) {
+            if (!node || node.nodeType !== 1) return;
+            if (shouldExcludeElement(node) || isInsideExcludedContainer(node)) return;
+            if (node.shadowRoot) {
+                injectStylesIntoShadowRoot(node.shadowRoot, node);
+            } else {
+                scheduleShadowHostRetry(node);
+            }
         }
 
-        // Check all children (excluding PDF viewer contents)
-        const children = element.querySelectorAll('*');
-        children.forEach(child => {
-            // Skip PDF viewer elements
-            if (shouldExcludeElement(child) || isInsideExcludedContainer(child)) {
-                return;
-            }
-            if (child.shadowRoot) {
-                injectStylesIntoShadowRoot(child.shadowRoot, child);
-            }
-        });
+        processNode(element);
+
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null);
+        let child = walker.nextNode();
+        while (child) {
+            processNode(child);
+            child = walker.nextNode();
+        }
 
         // Specifically process d2l-html-block elements
         processHtmlBlocks(element);
@@ -1380,8 +1456,39 @@
         processIframes(element);
     }
 
+    function sweepForLateShadowRoots(root) {
+        if (!darkModeEnabled) return;
+        var baseRoot = root && root.nodeType === 1 ? root : (document.body || document.documentElement);
+        if (!baseRoot) return;
+
+        function processCandidate(node) {
+            if (!node || node.nodeType !== 1 || !node.tagName) return;
+            if (!node.tagName.toLowerCase().startsWith('d2l-')) return;
+            if (shouldExcludeElement(node) || isInsideExcludedContainer(node)) return;
+            if (node.shadowRoot) {
+                injectStylesIntoShadowRoot(node.shadowRoot, node);
+            } else {
+                scheduleShadowHostRetry(node);
+            }
+        }
+
+        processCandidate(baseRoot);
+
+        var walker = document.createTreeWalker(baseRoot, NodeFilter.SHOW_ELEMENT, null);
+        var node = walker.nextNode();
+        while (node) {
+            processCandidate(node);
+            node = walker.nextNode();
+        }
+    }
+
     function processIframes(root) {
-        const iframes = root.querySelectorAll('iframe');
+        const iframes = [];
+        if (root.matches && root.matches('iframe')) {
+            iframes.push(root);
+        }
+        root.querySelectorAll('iframe').forEach(iframe => iframes.push(iframe));
+
         iframes.forEach(iframe => {
             try {
                 // Skip PDF viewer iframes
@@ -1527,6 +1634,8 @@
     }
 
     function insertMojanglesText() {
+        if (!IS_TOP_WINDOW) return;
+
         // If disabled, hide all existing Mojangles images (including in shadow DOM) and return
         if (!isMojanglesEnabled()) {
             findAllMojanglesImages(document).forEach(img => {
@@ -1616,6 +1725,7 @@
 
     // ===== MOJANGLES TOGGLE IN ADMIN TOOLS =====
     function insertMojanglesToggle() {
+        if (!IS_TOP_WINDOW) return;
         if (document.querySelector('#mojangles-toggle')) return;
 
         const placeholder = document.querySelector('#AdminToolsPlaceholderId');
@@ -1669,6 +1779,7 @@
 
     // ===== DARK MODE TOGGLE (works in both dark and light modes) =====
     function insertDarkModeToggle() {
+        if (!IS_TOP_WINDOW) return;
         if (document.querySelector('#dark-mode-toggle')) return;
 
         const placeholder = document.querySelector('#AdminToolsPlaceholderId');
@@ -1746,6 +1857,7 @@
     // ===== FIRST-TIME ONBOARDING HINT =====
     // Show a hint pointing to the gear icon for the first 3 homepage visits
     function showOnboardingHint() {
+        if (!IS_TOP_WINDOW) return;
         // Only show on DTU Learn homepage where the gear icon lives
         if (!isDTULearnHomepage()) return;
 
@@ -1903,6 +2015,7 @@
     // ===== CAMPUSNET GPA CALCULATION (campusnet.dtu.dk) =====
     // Calculate weighted GPA from the grades table and insert a summary row
     function insertGPARow() {
+        if (!IS_TOP_WINDOW) return;
         const table = document.querySelector('table.gradesList');
         if (!table || table.querySelector('.gpa-row')) return;
 
@@ -1980,6 +2093,7 @@
     // ===== CAMPUSNET ECTS PROGRESS BAR (campusnet.dtu.dk) =====
     // Show a visual progress bar of earned ECTS above the grades table
     function insertECTSProgressBar() {
+        if (!IS_TOP_WINDOW) return;
         const table = document.querySelector('table.gradesList');
         if (!table || document.querySelector('.ects-progress-container')) return;
 
@@ -2301,6 +2415,7 @@
     }
 
     function insertGPASimulator() {
+        if (!IS_TOP_WINDOW) return;
         const table = document.querySelector('table.gradesList');
         if (!table || table.querySelector('.gpa-sim-add-row')) return;
 
@@ -2414,21 +2529,39 @@
     function deepQueryAll(selector, root) {
         const results = [];
         if (!root) return results;
-        const searchRoot = root.shadowRoot || root;
-        results.push(...searchRoot.querySelectorAll(selector));
-        searchRoot.querySelectorAll('*').forEach(el => {
-            if (el.shadowRoot) {
-                results.push(...deepQueryAll(selector, el.shadowRoot));
+        if (root.matches && root.matches(selector)) {
+            results.push(root);
+        }
+
+        const pendingRoots = [root.shadowRoot || root];
+        while (pendingRoots.length > 0) {
+            const searchRoot = pendingRoots.pop();
+            if (!searchRoot || !searchRoot.querySelectorAll) continue;
+
+            searchRoot.querySelectorAll(selector).forEach(match => results.push(match));
+
+            const walker = document.createTreeWalker(searchRoot, NodeFilter.SHOW_ELEMENT, null);
+            let el = walker.nextNode();
+            while (el) {
+                if (el.shadowRoot) {
+                    pendingRoots.push(el.shadowRoot);
+                }
+                el = walker.nextNode();
             }
-        });
+        }
+
         return results;
     }
 
-    function insertContentButtons() {
+    function insertContentButtons(rootNode) {
+        if (!IS_TOP_WINDOW) return;
         if (!isDTULearnHomepage()) return;
 
+        const scanRoot = rootNode && rootNode.nodeType === 1 ? rootNode : document.body;
+        if (!scanRoot) return;
+
         // Enrollment cards can be nested deep inside multiple shadow roots.
-        const enrollmentCards = deepQueryAll('d2l-enrollment-card', document.body);
+        const enrollmentCards = deepQueryAll('d2l-enrollment-card', scanRoot);
         enrollmentCards.forEach(ec => {
             const ecShadow = ec.shadowRoot;
             if (!ecShadow) return;
@@ -2532,6 +2665,7 @@
     var DAILY_API_LIMIT = 200; // max API calls per user per day
     var API_CALLS_KEY = 'dtuDarkModeBusApiCalls';
     var API_QUOTA_KEY = 'dtuDarkModeBusQuotaExhausted';
+    var BUS_FETCH_TIMEOUT_MS = 8000;
     var _apiQuotaExhausted = false;
 
     function getLocalDateString() {
@@ -2592,11 +2726,20 @@
             showQuotaExhaustedMessage('daily');
             return [];
         }
-        incrementApiCount();
         const url = REJSEPLANEN_API + '/departureBoard?accessId=' + encodeURIComponent(REJSEPLANEN_KEY)
             + '&format=json&id=' + encodeURIComponent(stopId);
+
+        var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        var timeoutId = null;
+        if (controller) {
+            timeoutId = setTimeout(function() {
+                controller.abort();
+            }, BUS_FETCH_TIMEOUT_MS);
+        }
+
         try {
-            const resp = await fetch(url);
+            const fetchOptions = controller ? { signal: controller.signal } : undefined;
+            const resp = await fetch(url, fetchOptions);
             if (resp.status === 429 || resp.status === 403) {
                 setApiQuotaExhausted();
                 showQuotaExhaustedMessage('monthly');
@@ -2612,9 +2755,12 @@
                     else if (d.Product && d.Product[0] && d.Product[0].line) d.line = d.Product[0].line;
                 }
             });
+            incrementApiCount();
             return arr;
         } catch (e) {
             return [];
+        } finally {
+            if (timeoutId) clearTimeout(timeoutId);
         }
     }
 
@@ -2943,6 +3089,7 @@
 
     // Visibility API: pause when tab is hidden, resume when visible
     document.addEventListener('visibilitychange', function() {
+        if (!IS_TOP_WINDOW) return;
         if (document.hidden) {
             stopBusPolling();
         } else {
@@ -2953,6 +3100,7 @@
 
     // Orchestrate: fetch + update display + start smart polling
     async function updateBusDepartures() {
+        if (!IS_TOP_WINDOW) return;
         if (!isDTULearnHomepage() || !isBusEnabled()) {
             stopBusPolling();
             insertBusDisplay();
@@ -2973,6 +3121,7 @@
 
     // ===== BUS SETUP PROMPT (first-time) =====
     function showBusSetupPrompt() {
+        if (!IS_TOP_WINDOW) return;
         if (!isDTULearnHomepage()) return;
         if (localStorage.getItem(BUS_SETUP_DONE_KEY)) return;
         if (document.querySelector('.dtu-bus-setup-prompt')) return;
@@ -3049,6 +3198,7 @@
 
     // ===== BUS CONFIGURATION MODAL =====
     function showBusConfigModal() {
+        if (!IS_TOP_WINDOW) return;
         const existing = document.querySelector('.dtu-bus-config-modal');
         if (existing) existing.remove();
 
@@ -3413,6 +3563,7 @@
 
     // ===== BUS TOGGLE IN ADMIN TOOLS =====
     function insertBusToggle() {
+        if (!IS_TOP_WINDOW) return;
         if (!isDTULearnHomepage()) return;
         if (document.querySelector('#bus-departures-toggle')) return;
 
@@ -3617,6 +3768,7 @@
     }
 
     function insertBookFinderLinks() {
+        if (!IS_TOP_WINDOW) return;
         if (!isDTULearnCoursePage()) return;
 
         var contentArea = document.querySelector('.d2l-page-main')
@@ -3762,37 +3914,62 @@
     // Run immediately (dark mode only)
     if (darkModeEnabled) enforcePageBackground();
 
-    // Master function that runs all periodic checks
-    function runAllPeriodicChecks() {
-        // Dark-mode-specific styling (skip when dark mode is off)
-        if (darkModeEnabled) {
-            enforcePageBackground();
-            pollForHtmlBlocks();
-            pollForMultiselects();
-            pollOverrideDynamicStyles();
-            if (document.body) processElement(document.body);
-            replaceLogoImage();
-            preserveTypeboxColors();
+    function runDarkModeChecks(rootNode) {
+        if (!darkModeEnabled) return;
+
+        if (rootNode && rootNode.nodeType === 1) {
+            processElement(rootNode);
+            sweepForLateShadowRoots(rootNode);
+            return;
         }
-        // Feature code (always runs regardless of dark mode)
-        insertMojanglesText();
-        insertMojanglesToggle();
-        insertDarkModeToggle();
-        insertGPARow();
-        insertECTSProgressBar();
-        insertGPASimulator();
-        insertContentButtons();
-        insertBusToggle();
-        updateBusDepartures();
-        insertBookFinderLinks();
+
+        enforcePageBackground();
+        pollForHtmlBlocks();
+        pollForMultiselects();
+        pollOverrideDynamicStyles();
+        if (document.body) processElement(document.body);
+        sweepForLateShadowRoots();
+        replaceLogoImage();
+        preserveTypeboxColors();
     }
 
-    // Single safety-net interval at 2000ms (MutationObserver handles real-time)
-    setInterval(runAllPeriodicChecks, 2000);
+    let _bookFinderTimer = null;
+
+    function scheduleBookFinderScan(delayMs) {
+        if (!IS_TOP_WINDOW || !isDTULearnCoursePage()) return;
+        if (_bookFinderTimer) return;
+        _bookFinderTimer = setTimeout(function() {
+            _bookFinderTimer = null;
+            insertBookFinderLinks();
+        }, delayMs || 800);
+    }
+
+    function runTopWindowFeatureChecks(rootNode, refreshBus) {
+        if (!IS_TOP_WINDOW) return;
+
+        var host = window.location.hostname;
+        if (host === 'learn.inside.dtu.dk') {
+            insertMojanglesText();
+            insertMojanglesToggle();
+            insertDarkModeToggle();
+            insertContentButtons(rootNode);
+            insertBusToggle();
+            if (refreshBus && isDTULearnHomepage()) {
+                updateBusDepartures();
+            }
+            scheduleBookFinderScan(refreshBus ? 300 : 900);
+        }
+        if (host === 'campusnet.dtu.dk') {
+            insertGPARow();
+            insertECTSProgressBar();
+            insertGPASimulator();
+        }
+    }
 
     // Unified MutationObserver — handles style re-overrides immediately,
     // and debounces heavier processing (shadow roots, logos, etc.)
     let _heavyWorkTimer = null;
+    let _pendingMutationRoots = [];
     var _suppressHeavyWork = false; // Set true during our own DOM changes to avoid UI freezes
 
     function handleMutations(mutations) {
@@ -3829,6 +4006,7 @@
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(node => {
                     if (node.nodeType === 1) {
+                        _pendingMutationRoots.push(node);
                         if (darkModeEnabled) {
                             if (node.matches && node.matches(DARK_SELECTORS)) applyDarkStyle(node);
                             if (node.matches && node.matches(LIGHTER_DARK_SELECTORS)) applyLighterDarkStyle(node);
@@ -3847,16 +4025,17 @@
         if (needsHeavyWork && !_heavyWorkTimer) {
             _heavyWorkTimer = setTimeout(() => {
                 _heavyWorkTimer = null;
-                if (darkModeEnabled) {
-                    if (document.body) processElement(document.body);
-                    replaceLogoImage();
-                    preserveTypeboxColors();
-                }
-                insertMojanglesText();
-                insertMojanglesToggle();
-                insertDarkModeToggle();
-                insertContentButtons();
-                insertBusToggle();
+
+                var roots = _pendingMutationRoots.filter(function(root) {
+                    return root && root.nodeType === 1 && root.isConnected;
+                });
+                _pendingMutationRoots = [];
+                if (roots.length === 0) return;
+
+                roots.forEach(root => {
+                    runDarkModeChecks(root);
+                });
+                runTopWindowFeatureChecks(roots[roots.length - 1], false);
             }, 200);
         }
     }
@@ -3882,9 +4061,10 @@
     // Page load: run all checks a few times to catch late-loading elements
     window.addEventListener('load', async () => {
         await waitForCustomElements();
-        runAllPeriodicChecks();
-        setTimeout(runAllPeriodicChecks, 500);
-        setTimeout(runAllPeriodicChecks, 1500);
+        runDarkModeChecks();
+        runTopWindowFeatureChecks(null, true);
+        setTimeout(function() { runDarkModeChecks(); runTopWindowFeatureChecks(null, true); }, 500);
+        setTimeout(function() { runDarkModeChecks(); runTopWindowFeatureChecks(null, true); }, 1500);
         setTimeout(showOnboardingHint, 2000);
         setTimeout(showBusSetupPrompt, 2500);
     });
@@ -3892,7 +4072,17 @@
     // Re-process when tab becomes visible again
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
-            setTimeout(runAllPeriodicChecks, 100);
+            setTimeout(function() {
+                runDarkModeChecks();
+                runTopWindowFeatureChecks(null, true);
+            }, 100);
         }
     });
+
+    // Lightweight safety-net for late-created Brightspace shadow roots.
+    if (darkModeEnabled) {
+        setInterval(function() {
+            sweepForLateShadowRoots();
+        }, 10000);
+    }
 })();
