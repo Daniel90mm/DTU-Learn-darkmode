@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DTU After Dark",
   "version": "2.1",
-  "description": "Dark mode for DTU Sites - Makes your courses easier on the eyes!",
+  "description": "Dark mode, live bus departures, and GPA tools for DTU Learn, CampusNet, and other DTU sites.",
   "icons": {
     "48": "icon_48.png",
     "128": "icon_128.png"
