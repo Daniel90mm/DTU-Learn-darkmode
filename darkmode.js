@@ -2528,14 +2528,19 @@
     var API_QUOTA_KEY = 'dtuDarkModeBusQuotaExhausted';
     var _apiQuotaExhausted = false;
 
+    function getLocalDateString() {
+        var d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
     function getDailyApiCount() {
         try {
             var data = JSON.parse(localStorage.getItem(API_CALLS_KEY) || '{}');
-            var today = new Date().toISOString().slice(0, 10);
+            var today = getLocalDateString();
             if (data.date !== today) return { date: today, count: 0 };
             return data;
         } catch (e) {
-            return { date: new Date().toISOString().slice(0, 10), count: 0 };
+            return { date: getLocalDateString(), count: 0 };
         }
     }
 
@@ -2627,13 +2632,40 @@
 
         var msg = document.createElement('div');
         msg.style.opacity = '0.95';
+        var countdownEl = null;
+        var countdownInterval = null;
+
         if (isDaily) {
-            msg.textContent = 'You\u2019ve reached the daily limit for bus departure lookups. '
-                + 'Bus times will be available again tomorrow.';
+            msg.textContent = 'You\u2019ve used ' + getDailyApiCount().count + '/' + DAILY_API_LIMIT
+                + ' bus lookups today.';
+
+            // Countdown to local midnight
+            countdownEl = document.createElement('div');
+            countdownEl.style.cssText = 'margin-top: 8px; font-size: 13px; font-weight: 600; '
+                + 'font-variant-numeric: tabular-nums; letter-spacing: 0.5px;';
+
+            function updateCountdown() {
+                var now = new Date();
+                var midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+                var diff = midnight.getTime() - now.getTime();
+                if (diff <= 0) {
+                    countdownEl.textContent = 'Bus times are available now! Reload the page.';
+                    if (countdownInterval) clearInterval(countdownInterval);
+                    return;
+                }
+                var h = Math.floor(diff / 3600000);
+                var m = Math.floor((diff % 3600000) / 60000);
+                var s = Math.floor((diff % 60000) / 1000);
+                countdownEl.textContent = 'Bus times available in '
+                    + String(h).padStart(2, '0') + ':'
+                    + String(m).padStart(2, '0') + ':'
+                    + String(s).padStart(2, '0');
+            }
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
         } else {
             msg.textContent = 'The monthly API request limit for Rejseplanen has been reached. '
                 + 'Bus departures have been turned off and will automatically resume next month.';
-            // Monthly exhaustion disables the toggle
             localStorage.setItem(BUS_ENABLED_KEY, 'false');
             var toggle = document.querySelector('#bus-departures-toggle');
             if (toggle) toggle.checked = false;
@@ -2645,6 +2677,7 @@
             + 'cursor: pointer; font-size: 12px; font-weight: 600;';
         dismiss.textContent = 'Got it';
         dismiss.addEventListener('click', function() {
+            if (countdownInterval) clearInterval(countdownInterval);
             notice.style.transition = 'opacity 0.3s';
             notice.style.opacity = '0';
             setTimeout(function() { notice.remove(); }, 300);
@@ -2652,6 +2685,7 @@
 
         notice.appendChild(title);
         notice.appendChild(msg);
+        if (countdownEl) notice.appendChild(countdownEl);
         notice.appendChild(dismiss);
         document.body.appendChild(notice);
     }
@@ -2673,13 +2707,26 @@
         return Math.round((depDate.getTime() - Date.now()) / 60000);
     }
 
-    // Check if a departure is delayed
+    // Check if a departure is delayed and by how many minutes
     function isDelayed(dep) {
         if (!dep.rtTime || !dep.time) return false;
         return dep.rtTime !== dep.time;
     }
 
-    // Format the time display
+    function getDelayMinutes(dep) {
+        if (!dep.rtTime || !dep.time || dep.rtTime === dep.time) return 0;
+        var scheduled = dep.time.split(':');
+        var realtime = dep.rtTime.split(':');
+        if (scheduled.length < 2 || realtime.length < 2) return 0;
+        var sMins = parseInt(scheduled[0], 10) * 60 + parseInt(scheduled[1], 10);
+        var rMins = parseInt(realtime[0], 10) * 60 + parseInt(realtime[1], 10);
+        var diff = rMins - sMins;
+        // Handle midnight wrap (e.g. scheduled 23:58, realtime 00:01)
+        if (diff < -720) diff += 1440;
+        return diff > 0 ? diff : 0;
+    }
+
+    // Format the time display, showing delay as (+N)
     function formatDepartureTime(dep) {
         const mins = minutesUntilDeparture(dep);
         if (mins === null) return dep.rtTime || dep.time;
@@ -2688,7 +2735,15 @@
         return (dep.rtTime || dep.time).substring(0, 5);
     }
 
-    // Fetch departures for all configured stops, filter by selected lines/directions
+    function formatDelayTag(dep) {
+        var delay = getDelayMinutes(dep);
+        if (delay <= 0) return '';
+        return ' (+' + delay + ')';
+    }
+
+    // Fetch departures sequentially, stopping early once we have 2 per configured line
+    var DEPS_PER_LINE = 2;
+
     async function fetchBusDepartures() {
         if (isApiQuotaExhausted()) return [];
         const config = getBusConfig();
@@ -2696,43 +2751,53 @@
 
         _busFetchInProgress = true;
         const allDeps = [];
-        const seen = new Set(); // deduplicate across stops
+        const seen = new Set();
+        // Track how many departures we have per line
+        const lineCounts = {};
+        config.lines.forEach(function(l) { lineCounts[l.line] = 0; });
+
+        function hasEnough() {
+            return config.lines.every(function(l) { return lineCounts[l.line] >= DEPS_PER_LINE; });
+        }
 
         try {
-            const promises = config.stopIds.map(async (stopId) => {
-                const deps = await getDepartures(stopId);
-                deps.forEach(dep => {
-                    const configLine = config.lines.find(l => l.line === dep.line);
+            // Fetch stops one by one, stop early when we have enough
+            for (var i = 0; i < config.stopIds.length; i++) {
+                if (hasEnough()) break;
+                var deps = await getDepartures(config.stopIds[i]);
+                deps.forEach(function(dep) {
+                    var configLine = config.lines.find(function(l) { return l.line === dep.line; });
                     if (!configLine) return;
-                    const matchesDir = configLine.directions.some(d =>
-                        dep.direction && dep.direction.includes(d)
-                    );
+                    if (lineCounts[dep.line] >= DEPS_PER_LINE) return;
+                    var matchesDir = configLine.directions.some(function(d) {
+                        return dep.direction && dep.direction.includes(d);
+                    });
                     if (!matchesDir) return;
 
-                    // Deduplicate by line + direction + scheduled time
-                    const key = dep.line + '|' + dep.direction + '|' + dep.time + '|' + dep.date;
+                    var key = dep.line + '|' + dep.direction + '|' + dep.time + '|' + dep.date;
                     if (seen.has(key)) return;
                     seen.add(key);
 
+                    lineCounts[dep.line]++;
                     allDeps.push({
                         line: dep.line,
                         direction: dep.direction,
                         time: formatDepartureTime(dep),
+                        delayTag: formatDelayTag(dep),
                         minutes: minutesUntilDeparture(dep),
                         stop: dep.stop || '',
                         delayed: isDelayed(dep),
                         type: dep.type
                     });
                 });
-            });
-            await Promise.all(promises);
+            }
         } catch (e) {
             // Silently fail
         }
 
         _busFetchInProgress = false;
-        allDeps.sort((a, b) => (a.minutes || 999) - (b.minutes || 999));
-        return allDeps.slice(0, 3);
+        allDeps.sort(function(a, b) { return (a.minutes || 999) - (b.minutes || 999); });
+        return allDeps;
     }
 
     // Insert or update the bus departure display in the navigation bar
@@ -2754,7 +2819,7 @@
             container.style.cssText = 'display: flex; gap: 12px; padding: 8px 14px; '
                 + 'margin-left: auto; background: linear-gradient(180deg, #2d2d2d 0%, #252525 100%) !important; '
                 + 'color: #e0e0e0 !important; font-size: 12px; '
-                + 'border-left: 2px solid #1565c0; align-self: center; border-radius: 0 6px 6px 0;';
+                + 'border-left: 2px solid #c62828; align-self: center; border-radius: 0 6px 6px 0;';
             wrapper.appendChild(container);
         }
 
@@ -2769,15 +2834,17 @@
             return;
         }
 
-        // Group departures by line
+        // Group departures by line, sort each group earliest-first
         var lineGroups = {};
-        var lineOrder = [];
         _cachedDepartures.forEach(function(dep) {
-            if (!lineGroups[dep.line]) {
-                lineGroups[dep.line] = [];
-                lineOrder.push(dep.line);
-            }
+            if (!lineGroups[dep.line]) lineGroups[dep.line] = [];
             lineGroups[dep.line].push(dep);
+        });
+        // Fixed alphabetical order so columns never swap
+        var lineOrder = Object.keys(lineGroups).sort();
+        // Sort departures within each line: earliest first
+        lineOrder.forEach(function(line) {
+            lineGroups[line].sort(function(a, b) { return (a.minutes != null ? a.minutes : 999) - (b.minutes != null ? b.minutes : 999); });
         });
 
         // One column per line, side by side
@@ -2810,6 +2877,13 @@
 
                 row.appendChild(dir);
                 row.appendChild(time);
+
+                if (dep.delayTag) {
+                    var delay = document.createElement('span');
+                    delay.style.cssText = 'font-size: 10px; color: #ffa726; font-weight: 600;';
+                    delay.textContent = dep.delayTag;
+                    row.appendChild(delay);
+                }
                 col.appendChild(row);
             });
 
@@ -2817,9 +2891,59 @@
         });
     }
 
-    // Orchestrate: fetch (if enough time elapsed) + update display
+    // ===== SMART POLLING: Visibility API + Intelligent Backoff =====
+    // Determine poll interval based on soonest departure
+    function getSmartPollInterval() {
+        if (_cachedDepartures.length === 0) return 60000; // 60s default
+        var soonest = Infinity;
+        _cachedDepartures.forEach(function(dep) {
+            if (dep.minutes != null && dep.minutes < soonest) soonest = dep.minutes;
+        });
+        if (soonest <= 15) return 60000;  // ≤15 min away: poll every 60s (minimum)
+        return 120000;                     // >15 min: every 2 min
+    }
+
+    var _busPollingTimer = null;
+
+    function startBusPolling() {
+        stopBusPolling();
+        if (!isDTULearnHomepage() || !isBusEnabled()) return;
+        // Schedule next poll based on how soon the next bus is
+        var interval = getSmartPollInterval();
+        _busPollingTimer = setTimeout(async function pollCycle() {
+            if (document.hidden || !isDTULearnHomepage() || !isBusEnabled()) return;
+            if (!_busFetchInProgress) {
+                _lastBusFetch = Date.now();
+                _cachedDepartures = await fetchBusDepartures();
+                insertBusDisplay();
+            }
+            // Re-schedule with updated interval
+            var nextInterval = getSmartPollInterval();
+            _busPollingTimer = setTimeout(pollCycle, nextInterval);
+        }, interval);
+    }
+
+    function stopBusPolling() {
+        if (_busPollingTimer) {
+            clearTimeout(_busPollingTimer);
+            _busPollingTimer = null;
+        }
+    }
+
+    // Visibility API: pause when tab is hidden, resume when visible
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            stopBusPolling();
+        } else {
+            // Tab became visible — do an immediate refresh then resume polling
+            updateBusDepartures();
+        }
+    });
+
+    // Orchestrate: fetch + update display + start smart polling
     async function updateBusDepartures() {
         if (!isDTULearnHomepage() || !isBusEnabled()) {
+            stopBusPolling();
             insertBusDisplay();
             return;
         }
@@ -2827,11 +2951,13 @@
         if (!config) return;
 
         const now = Date.now();
-        if (now - _lastBusFetch >= 60000 && !_busFetchInProgress) {
+        var interval = getSmartPollInterval();
+        if (now - _lastBusFetch >= interval && !_busFetchInProgress) {
             _lastBusFetch = now;
             _cachedDepartures = await fetchBusDepartures();
         }
         insertBusDisplay();
+        startBusPolling();
     }
 
     // ===== BUS SETUP PROMPT (first-time) =====
