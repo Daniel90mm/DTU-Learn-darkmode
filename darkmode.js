@@ -1181,6 +1181,8 @@
     // Function to apply darkest style to an element (#1a1a1a)
     function applyDarkStyle(el) {
         if (!el || !el.style) return;
+        // Skip extension-created elements (ECTS bar, GPA rows, sim rows, etc.)
+        if (el.hasAttribute && el.hasAttribute('data-dtu-ext')) return;
         // Skip navigation wrapper elements
         if (el.closest && el.closest('.d2l-navigation-s-main-wrapper')) return;
         // Skip elements inside pagefooter (those should be dark 2)
@@ -1201,6 +1203,8 @@
     // Function to apply lighter dark style to an element (#2d2d2d)
     function applyLighterDarkStyle(el) {
         if (!el || !el.style) return;
+        // Skip extension-created elements (ECTS bar, GPA rows, sim rows, etc.)
+        if (el.hasAttribute && el.hasAttribute('data-dtu-ext')) return;
         // Skip breadcrumb.linkset6 (should be dark 1)
         if (el.matches && el.matches('.breadcrumb.linkset6')) return;
         if (el.closest && el.closest('.breadcrumb.linkset6')) return;
@@ -1222,6 +1226,26 @@
         // Apply lighter dark color to navigation wrapper
         const lighterElements = root.querySelectorAll(LIGHTER_DARK_SELECTORS);
         lighterElements.forEach(applyLighterDarkStyle);
+
+        // Force white text on nav dropdown (Courses/Groups/Shortcuts menu)
+        root.querySelectorAll('.nav__dropdown, article.nav__dropdown').forEach(dropdown => {
+            dropdown.querySelectorAll('a, span, h2, li, div, header').forEach(el => {
+                el.style.setProperty('color', '#ffffff', 'important');
+            });
+        });
+
+        // Force dark 2 on DTU red background bar (studieplan.dtu.dk, campusnet.dtu.dk)
+        root.querySelectorAll('.dturedbackground').forEach(el => {
+            el.style.setProperty('background', '#2d2d2d', 'important');
+            el.style.setProperty('background-color', '#2d2d2d', 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+            el.style.setProperty('border-color', '#2d2d2d', 'important');
+            // Also force all children (spans, links, containers)
+            el.querySelectorAll('.container, .row, .col-md-12, .pull-right, .pull-right > span, .pull-right > span > a').forEach(child => {
+                child.style.setProperty('background', '#2d2d2d', 'important');
+                child.style.setProperty('background-color', '#2d2d2d', 'important');
+            });
+        });
     }
 
     // MutationObserver to watch for style changes
@@ -1900,21 +1924,26 @@
 
         const gpaRow = document.createElement('tr');
         gpaRow.className = 'gpa-row';
+        gpaRow.setAttribute('data-dtu-ext', '1');
 
         const tdLabel = document.createElement('td');
+        tdLabel.setAttribute('data-dtu-ext', '1');
         tdLabel.colSpan = 2;
         tdLabel.style.cssText = 'text-align: left; font-weight: bold; padding: 8px 0;';
         tdLabel.textContent = 'Weighted GPA';
 
         const tdGrade = document.createElement('td');
+        tdGrade.setAttribute('data-dtu-ext', '1');
         tdGrade.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold; white-space: nowrap;';
         tdGrade.textContent = gpa.toFixed(2);
 
         const tdECTS = document.createElement('td');
+        tdECTS.setAttribute('data-dtu-ext', '1');
         tdECTS.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold;';
         tdECTS.textContent = totalECTS;
 
         const tdDate = document.createElement('td');
+        tdDate.setAttribute('data-dtu-ext', '1');
 
         gpaRow.appendChild(tdLabel);
         gpaRow.appendChild(tdGrade);
@@ -1975,18 +2004,26 @@
 
         const container = document.createElement('div');
         container.className = 'ects-progress-container';
-        container.style.cssText = 'margin: 12px 0 16px 0; padding: 10px 12px; background: #2d2d2d; border-radius: 6px;';
+        container.setAttribute('data-dtu-ext', '1');
+        container.style.cssText = darkModeEnabled
+            ? 'margin: 12px 0 16px 0; padding: 10px 12px; background: #2d2d2d; border-radius: 6px;'
+            : 'margin: 12px 0 16px 0; padding: 10px 12px; background: #ffffff; border-radius: 6px; border: 1px solid #ddd;';
 
         const label = document.createElement('div');
-        label.style.cssText = 'display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; color: #e0e0e0;';
+        label.setAttribute('data-dtu-ext', '1');
+        label.style.cssText = darkModeEnabled
+            ? 'display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; color: #e0e0e0;'
+            : 'display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; color: #333;';
         label.textContent = '';
 
         const labelLeft = document.createElement('span');
+        labelLeft.setAttribute('data-dtu-ext', '1');
         labelLeft.style.fontWeight = 'bold';
         labelLeft.textContent = passedECTS + ' ECTS earned';
 
         const labelRight = document.createElement('span');
-        labelRight.style.color = '#b0b0b0';
+        labelRight.setAttribute('data-dtu-ext', '1');
+        labelRight.style.color = darkModeEnabled ? '#b0b0b0' : '#666';
         labelRight.textContent = targetLabel;
 
         label.appendChild(labelLeft);
@@ -1994,17 +2031,26 @@
 
         const barBg = document.createElement('div');
         barBg.className = 'ects-bar-bg';
+        barBg.setAttribute('data-dtu-ext', '1');
         barBg.style.cssText = 'width: 100%; height: 18px; border-radius: 9px; overflow: hidden; position: relative;';
+        barBg.style.setProperty('background', darkModeEnabled ? '#1a1a1a' : '#e0e0e0', 'important');
+        barBg.style.setProperty('background-color', darkModeEnabled ? '#1a1a1a' : '#e0e0e0', 'important');
 
         const barFill = document.createElement('div');
         barFill.className = 'ects-bar-fill';
+        barFill.setAttribute('data-dtu-ext', '1');
         const barColor = pct >= 100 ? '#4caf50' : pct >= 66 ? '#66b3ff' : pct >= 33 ? '#ffa726' : '#ef5350';
         barFill.style.cssText = 'height: 100%; border-radius: 9px; transition: width 0.3s; width: ' + pct + '%;';
+        barFill.style.setProperty('background', barColor, 'important');
+        barFill.style.setProperty('background-color', barColor, 'important');
         barFill.setAttribute('data-bar-color', barColor);
 
         const pctLabel = document.createElement('div');
         pctLabel.className = 'ects-bar-pct';
+        pctLabel.setAttribute('data-dtu-ext', '1');
         pctLabel.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.5);';
+        pctLabel.style.setProperty('color', '#ffffff', 'important');
+        pctLabel.style.setProperty('background', 'transparent', 'important');
         pctLabel.textContent = Math.round(pct) + '%';
 
         barBg.appendChild(barFill);
@@ -2101,27 +2147,35 @@
 
         const projRow = document.createElement('tr');
         projRow.className = 'gpa-projected-row';
+        projRow.setAttribute('data-dtu-ext', '1');
 
         const tdLabel = document.createElement('td');
+        tdLabel.setAttribute('data-dtu-ext', '1');
         tdLabel.colSpan = 2;
-        tdLabel.style.cssText = 'text-align: left; font-weight: bold; padding: 8px 0; color: #66b3ff;';
+        tdLabel.style.cssText = 'text-align: left; font-weight: bold; padding: 8px 0;';
+        tdLabel.style.setProperty('color', '#66b3ff', 'important');
         tdLabel.textContent = 'Projected GPA';
 
         const tdGrade = document.createElement('td');
-        tdGrade.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold; white-space: nowrap; color: #66b3ff;';
+        tdGrade.setAttribute('data-dtu-ext', '1');
+        tdGrade.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold; white-space: nowrap;';
+        tdGrade.style.setProperty('color', '#66b3ff', 'important');
         tdGrade.textContent = projectedGPA.toFixed(2);
 
         const tdECTS = document.createElement('td');
-        tdECTS.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold; color: #66b3ff;';
+        tdECTS.setAttribute('data-dtu-ext', '1');
+        tdECTS.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold;';
+        tdECTS.style.setProperty('color', '#66b3ff', 'important');
         tdECTS.textContent = (actualECTS + simECTS);
 
         const tdDelta = document.createElement('td');
+        tdDelta.setAttribute('data-dtu-ext', '1');
         tdDelta.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold; font-size: 12px;';
         if (delta > 0) {
-            tdDelta.style.color = '#4caf50';
+            tdDelta.style.setProperty('color', '#4caf50', 'important');
             tdDelta.textContent = '+' + delta.toFixed(2);
         } else if (delta < 0) {
-            tdDelta.style.color = '#ef5350';
+            tdDelta.style.setProperty('color', '#ef5350', 'important');
             tdDelta.textContent = delta.toFixed(2);
         }
 
@@ -2143,12 +2197,15 @@
     function createSimRow(entry) {
         const tr = document.createElement('tr');
         tr.className = 'gpa-sim-row';
+        tr.setAttribute('data-dtu-ext', '1');
 
         // Course code
         const tdCode = document.createElement('td');
+        tdCode.setAttribute('data-dtu-ext', '1');
         const codeInput = document.createElement('input');
         codeInput.type = 'text';
         codeInput.className = 'gpa-sim-input';
+        codeInput.setAttribute('data-dtu-ext', '1');
         codeInput.placeholder = 'Code';
         codeInput.value = entry.code || '';
         codeInput.style.cssText = 'width: 60px;';
@@ -2157,9 +2214,11 @@
 
         // Course name
         const tdName = document.createElement('td');
+        tdName.setAttribute('data-dtu-ext', '1');
         const nameInput = document.createElement('input');
         nameInput.type = 'text';
         nameInput.className = 'gpa-sim-input';
+        nameInput.setAttribute('data-dtu-ext', '1');
         nameInput.placeholder = 'Course name';
         nameInput.value = entry.name || '';
         nameInput.style.cssText = 'width: 100%;';
@@ -2168,11 +2227,14 @@
 
         // Grade dropdown
         const tdGrade = document.createElement('td');
+        tdGrade.setAttribute('data-dtu-ext', '1');
         tdGrade.style.cssText = 'text-align: right; padding-right: 5px;';
         const gradeSelect = document.createElement('select');
         gradeSelect.className = 'gpa-sim-select';
+        gradeSelect.setAttribute('data-dtu-ext', '1');
         DANISH_GRADES.forEach(g => {
             const option = document.createElement('option');
+            option.setAttribute('data-dtu-ext', '1');
             option.value = g.toString();
             option.textContent = g === 2 ? '02' : g === 0 ? '00' : g.toString();
             if (g === entry.grade) option.selected = true;
@@ -2183,22 +2245,28 @@
 
         // ECTS
         const tdECTS = document.createElement('td');
+        tdECTS.setAttribute('data-dtu-ext', '1');
         tdECTS.style.cssText = 'text-align: right; padding-right: 5px;';
         const ectsInput = document.createElement('input');
         ectsInput.type = 'number';
         ectsInput.className = 'gpa-sim-input';
+        ectsInput.setAttribute('data-dtu-ext', '1');
         ectsInput.min = '1';
-        ectsInput.max = '30';
+        ectsInput.max = '60';
         ectsInput.value = entry.ects || 5;
-        ectsInput.style.cssText = 'width: 50px; text-align: right;';
+        ectsInput.style.cssText = 'width: 65px; text-align: left; padding-left: 6px;';
         ectsInput.addEventListener('input', () => { saveSimEntries(); updateProjectedGPA(); });
         tdECTS.appendChild(ectsInput);
 
         // Delete button
         const tdAction = document.createElement('td');
+        tdAction.setAttribute('data-dtu-ext', '1');
         tdAction.style.cssText = 'text-align: center;';
+        tdAction.style.setProperty('padding-left', '30px', 'important');
         const delBtn = document.createElement('button');
+        delBtn.type = 'button';
         delBtn.className = 'gpa-sim-delete-btn';
+        delBtn.setAttribute('data-dtu-ext', '1');
         delBtn.textContent = '\u00D7';
         delBtn.title = 'Remove';
         delBtn.addEventListener('click', () => {
@@ -2234,13 +2302,19 @@
         // Create the "add" button row first (it goes right after header)
         const addRow = document.createElement('tr');
         addRow.className = 'gpa-sim-add-row';
+        addRow.setAttribute('data-dtu-ext', '1');
         const addTd = document.createElement('td');
+        addTd.setAttribute('data-dtu-ext', '1');
         addTd.colSpan = 5;
         addTd.style.cssText = 'text-align: left; padding: 4px 0;';
         const addBtn = document.createElement('button');
+        addBtn.type = 'button';
         addBtn.className = 'gpa-sim-add-btn';
+        addBtn.setAttribute('data-dtu-ext', '1');
         addBtn.textContent = '+ Add hypothetical grade';
-        addBtn.addEventListener('click', () => {
+        addBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            _suppressHeavyWork = true;
             const newEntry = { code: '', name: '', grade: 7, ects: 5 };
             const newRow = createSimRow(newEntry);
             // Insert before the first real grade row (after all sim rows)
@@ -2252,6 +2326,7 @@
             }
             saveSimEntries();
             updateProjectedGPA();
+            _suppressHeavyWork = false;
         });
         addTd.appendChild(addBtn);
         addRow.appendChild(addTd);
@@ -3069,6 +3144,258 @@
         updateBusDepartures();
     }
 
+    // ===== BOOK FINDER LINKS (DTU Learn course pages) =====
+    // Detect ISBN numbers and book titles on course pages and inject
+    // links to find/buy them at DTU Findit, Polyteknisk, DBA.dk, Facebook Marketplace.
+
+    function isDTULearnCoursePage() {
+        return window.location.hostname === 'learn.inside.dtu.dk'
+            && /^\/d2l\/(home|le)\/\d+/.test(window.location.pathname);
+    }
+
+    // ISBN regex: matches "ISBN: 978-...", "ISBN-13: ...", "ISBN:978...", etc.
+    const ISBN_REGEX = /\bISBN[-\s]?(?:1[03])?[\s:]*\s*([\dXx][\d\s-]{8,}[\dXx])\b/gi;
+    // Bare ISBN-13 starting with 978/979 without "ISBN" prefix
+    const BARE_ISBN13_REGEX = /\b(97[89][\d-]{10,})\b/g;
+    // Keywords that signal a book reference nearby (English + Danish)
+    const BOOK_KEYWORDS = /\b(textbook|text\s*book|course\s*book|required\s*reading|recommended\s*reading|suggested\s*reading|book|reading\s*list|literature|edition|ed\.|bog|l\u00e6rebog|kursus\s*bog|anbefalet\s*l\u00e6sning|litteratur|pensum)\b/i;
+    // Quoted Title Case strings (supports straight and curly quotes)
+    const QUOTED_TITLE_REGEX = /["\u201C\u201D]([A-Z][A-Za-z]*(?:\s+(?:[A-Z][A-Za-z]*|and|the|of|in|for|to|a|an|with|&)){2,})["\u201C\u201D]/g;
+
+    function normalizeISBN(raw) {
+        return raw.replace(/[\s-]/g, '').replace(/x$/i, 'X');
+    }
+
+    function isValidISBN13(digits) {
+        if (digits.length !== 13 || !/^\d{13}$/.test(digits)) return false;
+        var sum = 0;
+        for (var i = 0; i < 12; i++) {
+            sum += parseInt(digits[i]) * (i % 2 === 0 ? 1 : 3);
+        }
+        return (10 - (sum % 10)) % 10 === parseInt(digits[12]);
+    }
+
+    function isValidISBN10(digits) {
+        if (digits.length !== 10) return false;
+        var sum = 0;
+        for (var i = 0; i < 9; i++) {
+            if (!/\d/.test(digits[i])) return false;
+            sum += parseInt(digits[i]) * (10 - i);
+        }
+        var last = digits[9] === 'X' ? 10 : parseInt(digits[9]);
+        if (isNaN(last)) return false;
+        return (sum + last) % 11 === 0;
+    }
+
+    function isTitleCase(str) {
+        var words = str.trim().split(/\s+/);
+        if (words.length < 3) return false;
+        if (!/^[A-Z]/.test(words[0])) return false;
+        var minor = /^(a|an|the|and|but|or|for|nor|of|in|to|with|on|at|by|&)$/i;
+        var capitalizedCount = 0;
+        for (var w = 0; w < words.length; w++) {
+            if (/^[A-Z]/.test(words[w])) capitalizedCount++;
+            else if (!minor.test(words[w])) return false; // non-minor word not capitalized = not Title Case
+        }
+        return capitalizedCount >= Math.ceil(words.length / 2);
+    }
+
+    function createBookFinderBar(isbn, title) {
+        var bar = document.createElement('div');
+        bar.setAttribute('data-book-finder-bar', 'true');
+        bar.style.cssText = darkModeEnabled
+            ? 'display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; margin: 4px 0; '
+              + 'background-color: #2d2d2d !important; border: 1px solid #404040; border-radius: 4px; '
+              + 'font-size: 12px; line-height: 1.4; color: #e0e0e0;'
+            : 'display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; margin: 4px 0; '
+              + 'background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; '
+              + 'font-size: 12px; line-height: 1.4; color: #333;';
+
+        var label = document.createElement('span');
+        label.textContent = '\uD83D\uDCD6 ';
+        label.style.cssText = 'font-weight: bold; white-space: nowrap;';
+        bar.appendChild(label);
+
+        var linkColor = darkModeEnabled ? '#66b3ff' : '#1a73e8';
+        var sepColor = darkModeEnabled ? '#555' : '#ccc';
+        var searchQuery = title ? encodeURIComponent(title) : '';
+        var links = [];
+
+        // DTU Findit (library)
+        if (isbn) {
+            links.push({ text: 'DTU Library', url: 'https://findit.dtu.dk/en/catalog?q=isbn:' + isbn });
+        } else if (title) {
+            links.push({ text: 'DTU Library', url: 'https://findit.dtu.dk/en/catalog?q=' + searchQuery });
+        }
+
+        // Polyteknisk bookshop (ISBN only - direct product page)
+        if (isbn) {
+            links.push({ text: 'Polyteknisk', url: 'https://www.polyteknisk.dk/home/Detaljer/' + isbn });
+        }
+
+        // DBA.dk (used marketplace)
+        if (title) {
+            links.push({ text: 'DBA', url: 'https://www.dba.dk/soeg/?soeg=' + searchQuery });
+        } else if (isbn) {
+            links.push({ text: 'DBA', url: 'https://www.dba.dk/soeg/?soeg=' + isbn });
+        }
+
+        // Facebook Marketplace
+        if (title) {
+            links.push({ text: 'Marketplace', url: 'https://www.facebook.com/marketplace/search/?query=' + searchQuery });
+        } else if (isbn) {
+            links.push({ text: 'Marketplace', url: 'https://www.facebook.com/marketplace/search/?query=' + isbn });
+        }
+
+        for (var i = 0; i < links.length; i++) {
+            if (i > 0) {
+                var sep = document.createElement('span');
+                sep.textContent = '|';
+                sep.style.cssText = 'color: ' + sepColor + ';';
+                bar.appendChild(sep);
+            }
+            var a = document.createElement('a');
+            a.href = links[i].url;
+            a.textContent = links[i].text;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.style.cssText = 'color: ' + linkColor + ' !important; text-decoration: none; white-space: nowrap; '
+                + 'padding: 2px 6px; border-radius: 3px;';
+            bar.appendChild(a);
+        }
+
+        return bar;
+    }
+
+    function insertBookFinderLinks() {
+        if (!isDTULearnCoursePage()) return;
+
+        var contentArea = document.querySelector('.d2l-page-main')
+            || document.querySelector('#ContentView')
+            || document.querySelector('.d2l-le-content')
+            || document.body;
+        if (!contentArea) return;
+
+        // --- Pass 1: ISBN detection via TreeWalker ---
+        var walker = document.createTreeWalker(contentArea, NodeFilter.SHOW_TEXT, null);
+        var isbnHits = [];
+        var textNode;
+        while ((textNode = walker.nextNode())) {
+            if (textNode.parentElement && textNode.parentElement.closest('[data-book-finder-injected]')) continue;
+            if (textNode.parentElement && /^(SCRIPT|STYLE|NOSCRIPT|INPUT|TEXTAREA)$/i.test(textNode.parentElement.tagName)) continue;
+
+            var text = textNode.textContent;
+            var match;
+
+            ISBN_REGEX.lastIndex = 0;
+            while ((match = ISBN_REGEX.exec(text)) !== null) {
+                var raw = normalizeISBN(match[1]);
+                if (isValidISBN13(raw) || isValidISBN10(raw)) {
+                    isbnHits.push({ node: textNode, isbn: raw, title: null });
+                }
+            }
+
+            BARE_ISBN13_REGEX.lastIndex = 0;
+            while ((match = BARE_ISBN13_REGEX.exec(text)) !== null) {
+                var rawBare = normalizeISBN(match[1]);
+                if (isValidISBN13(rawBare) && !isbnHits.some(function(h) { return h.isbn === rawBare; })) {
+                    isbnHits.push({ node: textNode, isbn: rawBare, title: null });
+                }
+            }
+        }
+
+        // --- Pass 2: Book title detection ---
+        var titleHits = [];
+        var containers = contentArea.querySelectorAll('p, li, div, td, span, dd, section');
+        for (var c = 0; c < containers.length; c++) {
+            var container = containers[c];
+            if (container.closest('[data-book-finder-injected]')) continue;
+            if (container.querySelector('[data-book-finder-bar]')) continue;
+            // Skip containers that are too large (likely wrapper divs)
+            if (container.children.length > 20) continue;
+
+            var cText = container.textContent;
+            if (!BOOK_KEYWORDS.test(cText)) continue;
+
+            // Check "Textbook:" / "Bog:" pattern — keyword with colon followed by book info
+            var keyColonMatch = cText.match(/\b(textbook|text\s*book|course\s*book|required\s*reading|recommended\s*reading|suggested\s*reading|bog|l\u00e6rebog|kursus\s*bog|anbefalet\s*l\u00e6sning|pensum|litteratur)s?\s*:\s*(.+)/i);
+            if (keyColonMatch) {
+                // Extract the text after the keyword, strip trailing noise
+                var bookInfo = keyColonMatch[2]
+                    .replace(/\.\s*See\s+(more|also)\b.*/i, '')       // English: "See more..."
+                    .replace(/\.\s*Se\s+(mere|ogs\u00e5)\b.*/i, '')   // Danish: "Se mere..."
+                    .replace(/\s*\((?:Kapitel|Chapter|kap\.).*/i, '')  // Parenthetical chapter refs
+                    .trim();
+                // Remove trailing period
+                bookInfo = bookInfo.replace(/\.\s*$/, '').trim();
+                if (bookInfo.length >= 10 && !titleHits.some(function(h) { return h.title === bookInfo; })) {
+                    titleHits.push({ element: container, title: bookInfo, isbn: null });
+                }
+            }
+
+            // Check quoted titles
+            if (!keyColonMatch) {
+                QUOTED_TITLE_REGEX.lastIndex = 0;
+                var qMatch;
+                while ((qMatch = QUOTED_TITLE_REGEX.exec(cText)) !== null) {
+                    var candidateTitle = qMatch[1].trim();
+                    if (isTitleCase(candidateTitle) && !titleHits.some(function(h) { return h.title === candidateTitle; })) {
+                        titleHits.push({ element: container, title: candidateTitle, isbn: null });
+                    }
+                }
+
+                // Check <em> and <i> tags
+                var emEls = container.querySelectorAll('em, i');
+                for (var e = 0; e < emEls.length; e++) {
+                    var emText = emEls[e].textContent.trim();
+                    if (isTitleCase(emText) && emText.split(/\s+/).length >= 3
+                        && !titleHits.some(function(h) { return h.title === emText; })) {
+                        titleHits.push({ element: container, title: emText, isbn: null });
+                    }
+                }
+            }
+        }
+
+        // --- Inject link bars for ISBN hits ---
+        for (var ib = 0; ib < isbnHits.length; ib++) {
+            var hit = isbnHits[ib];
+            var blockParent = hit.node.parentElement
+                ? hit.node.parentElement.closest('p, div, li, td, blockquote, dd, section')
+                : null;
+            if (!blockParent) blockParent = hit.node.parentElement;
+            if (!blockParent || blockParent.getAttribute('data-book-finder-injected')) continue;
+
+            // Try to extract a nearby title for DBA/Marketplace search
+            var nearbyTitle = null;
+            var parentText = blockParent.textContent;
+            QUOTED_TITLE_REGEX.lastIndex = 0;
+            var nearby = QUOTED_TITLE_REGEX.exec(parentText);
+            if (nearby && isTitleCase(nearby[1].trim())) nearbyTitle = nearby[1].trim();
+
+            blockParent.setAttribute('data-book-finder-injected', 'true');
+            var bar = createBookFinderBar(hit.isbn, nearbyTitle);
+            blockParent.parentNode.insertBefore(bar, blockParent.nextSibling);
+        }
+
+        // --- Inject link bars for title hits ---
+        for (var ti = 0; ti < titleHits.length; ti++) {
+            var tHit = titleHits[ti];
+            var tBlock = tHit.element.closest('p, div, li, td, blockquote, dd, section') || tHit.element;
+            if (tBlock.getAttribute('data-book-finder-injected')) continue;
+            // Skip if an ISBN bar was already injected in this container
+            if (tBlock.querySelector('[data-book-finder-bar]')) continue;
+
+            tBlock.setAttribute('data-book-finder-injected', 'true');
+            var tBar = createBookFinderBar(null, tHit.title);
+            tBlock.parentNode.insertBefore(tBar, tBlock.nextSibling);
+        }
+
+        // --- PDF scanning disabled for now (tabled) ---
+    }
+
+    // Run Book Finder initially
+    insertBookFinderLinks();
+
     // ===== UNIFIED SCHEDULING =====
     // Replaces 8 separate setIntervals and 6 MutationObservers with
     // ONE master interval + ONE unified MutationObserver for much lower CPU usage.
@@ -3108,6 +3435,7 @@
         insertContentButtons();
         insertBusToggle();
         updateBusDepartures();
+        insertBookFinderLinks();
     }
 
     // Single safety-net interval at 2000ms (MutationObserver handles real-time)
@@ -3116,8 +3444,10 @@
     // Unified MutationObserver — handles style re-overrides immediately,
     // and debounces heavier processing (shadow roots, logos, etc.)
     let _heavyWorkTimer = null;
+    var _suppressHeavyWork = false; // Set true during our own DOM changes to avoid UI freezes
 
     function handleMutations(mutations) {
+        if (_suppressHeavyWork) return;
         let needsHeavyWork = false;
 
         for (const mutation of mutations) {

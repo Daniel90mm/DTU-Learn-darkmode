@@ -1561,7 +1561,8 @@ d2l-icon[icon="tier1:chevron-up"] {
 /* ===== DTU Studieplanlægger (studieplaner.dtu.dk) ===== */
 /* Main body and backgrounds */
 .dturedbackground {
-  background-color: #990000 !important;
+  background-color: #2d2d2d !important;
+  background: #2d2d2d !important;
 }
 
 .dtugreybackground {
@@ -3019,7 +3020,16 @@ ul.menu__items {
 }
 
 .item__title {
-  color: #e0e0e0 !important;
+  color: #ffffff !important;
+}
+
+/* Nav dropdown non-link text (toggleChildren "+", list items, etc.) */
+.nav__dropdown,
+.nav__dropdown li,
+.nav__dropdown div,
+.nav__dropdown span,
+.nav__dropdown .toggleChildren {
+  color: #ffffff !important;
 }
 
 .item__icon {
@@ -3072,11 +3082,19 @@ h4.category__title a {
   background-color: transparent !important;
 }
 
-/* DTU red background bar - dark 2 */
+/* DTU red background bar - dark 2 (override all red margins/borders/gaps) */
 .dturedbackground {
   background-color: #2d2d2d !important;
   background: #2d2d2d !important;
   color: #e0e0e0 !important;
+  border-color: #2d2d2d !important;
+  margin: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+.dturedbackground + *,
+.dturedbackground ~ * {
+  border-top-color: #2d2d2d !important;
 }
 
 .dturedbackground a,
@@ -3117,11 +3135,34 @@ h4.category__title a {
 /* Pull-right (language selector, login) - dark 2 containers */
 .dturedbackground .pull-right,
 .dturedbackground .pull-right span,
+.dturedbackground .pull-right span a,
 .dturedbackground .container,
 .dturedbackground .row,
 .dturedbackground .col-md-12 {
   background-color: #2d2d2d !important;
   background: #2d2d2d !important;
+}
+
+/* Support footer - dark 1 */
+.text-center.span-seperation,
+.text-center.span-seperation div,
+.text-center.span-seperation a,
+.text-center.span-seperation span {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+.text-center.span-seperation a {
+  color: #66b3ff !important;
+}
+
+/* Kursussøgning tab - DTU red */
+.nav-tabs > li[role="presentation"] > a[href*="kurser.dtu.dk"] {
+  background-color: #990000 !important;
+  color: #ffffff !important;
+}
+.nav-tabs > li[role="presentation"] > a[href*="kurser.dtu.dk"]:hover {
+  background-color: #b30000 !important;
 }
 
 /* Search form container - dark 1 */
