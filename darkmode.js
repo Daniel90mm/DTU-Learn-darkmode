@@ -3052,7 +3052,36 @@
         const existing = document.querySelector('.dtu-bus-config-modal');
         if (existing) existing.remove();
 
+
         const MAX_LINES = 2;
+        const isDarkTheme = isDarkModeEnabled();
+        const modalTheme = isDarkTheme
+            ? {
+                background: 'rgba(30,30,30,0.92)',
+                text: '#e0e0e0',
+                heading: '#fff',
+                subtle: '#999',
+                muted: '#888',
+                border: '#404040',
+                softBorder: '#555',
+                overlayShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)',
+                overlayBorder: '1px solid rgba(255,255,255,0.08)',
+                hoverRow: '#383838',
+                hoverAddCard: 'rgba(255,255,255,0.03)'
+            }
+            : {
+                background: 'rgba(255,255,255,0.96)',
+                text: '#1f2937',
+                heading: '#111827',
+                subtle: '#4b5563',
+                muted: '#6b7280',
+                border: '#d1d5db',
+                softBorder: '#9ca3af',
+                overlayShadow: '0 12px 48px rgba(15,23,42,0.22), 0 0 0 1px rgba(15,23,42,0.08)',
+                overlayBorder: '1px solid rgba(15,23,42,0.12)',
+                hoverRow: '#f3f4f6',
+                hoverAddCard: 'rgba(17,24,39,0.04)'
+            };
 
         // Overlay
         const overlay = document.createElement('div');
@@ -3065,10 +3094,10 @@
         requestAnimationFrame(function() { overlay.style.opacity = '1'; });
 
         var modal = document.createElement('div');
-        modal.style.cssText = 'background: rgba(30,30,30,0.92); border-radius: 14px; padding: 28px; max-width: 480px; '
-            + 'width: 90%; max-height: 80vh; overflow-y: auto; color: #e0e0e0; '
-            + 'box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06); '
-            + 'border: 1px solid rgba(255,255,255,0.08);';
+        modal.style.cssText = 'background: ' + modalTheme.background + '; border-radius: 14px; padding: 28px; max-width: 480px; '
+            + 'width: 90%; max-height: 80vh; overflow-y: auto; color: ' + modalTheme.text + '; '
+            + 'box-shadow: ' + modalTheme.overlayShadow + '; '
+            + 'border: ' + modalTheme.overlayBorder + ';';
 
         function dismissModal() {
             var config = getBusConfig();
@@ -3091,12 +3120,12 @@
             var config = getBusConfig();
 
             var titleEl = document.createElement('h2');
-            titleEl.style.cssText = 'margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.3px;';
+            titleEl.style.cssText = 'margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: ' + modalTheme.heading + '; letter-spacing: -0.3px;';
             titleEl.textContent = 'Bus Lines';
             modal.appendChild(titleEl);
 
             var subtitle = document.createElement('p');
-            subtitle.style.cssText = 'margin: 0 0 20px 0; font-size: 14px; color: #999; line-height: 1.4;';
+            subtitle.style.cssText = 'margin: 0 0 20px 0; font-size: 14px; color: ' + modalTheme.subtle + '; line-height: 1.4;';
             subtitle.textContent = 'Manage your configured bus lines (max ' + MAX_LINES + ').';
             modal.appendChild(subtitle);
 
@@ -3108,7 +3137,7 @@
                     var color = LINE_COLORS[lineCfg.line] || '#1565c0';
                     var card = document.createElement('div');
                     card.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 12px 14px; '
-                        + 'border: 1px solid #404040; border-radius: 8px; margin-bottom: 8px;';
+                        + 'border: 1px solid ' + modalTheme.border + '; border-radius: 8px; margin-bottom: 8px;';
 
                     var badge = document.createElement('span');
                     badge.style.cssText = 'background-color: ' + color + '; color: #fff; padding: 4px 0; '
@@ -3116,16 +3145,16 @@
                     badge.textContent = lineCfg.line;
 
                     var info = document.createElement('div');
-                    info.style.cssText = 'flex: 1; font-size: 13px; color: #b0b0b0; overflow: hidden; text-overflow: ellipsis;';
+                    info.style.cssText = 'flex: 1; font-size: 13px; color: ' + modalTheme.subtle + '; overflow: hidden; text-overflow: ellipsis;';
                     info.textContent = lineCfg.directions.join(', ');
 
                     var delBtn = document.createElement('button');
-                    delBtn.style.cssText = 'background: transparent; border: 1px solid #555; color: #888; '
+                    delBtn.style.cssText = 'background: transparent; border: 1px solid ' + modalTheme.softBorder + '; color: ' + modalTheme.muted + '; '
                         + 'width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; '
                         + 'display: flex; align-items: center; justify-content: center; transition: all 0.15s;';
                     delBtn.textContent = '\u00D7';
                     delBtn.addEventListener('mouseenter', function() { delBtn.style.borderColor = '#c62828'; delBtn.style.color = '#ef5350'; });
-                    delBtn.addEventListener('mouseleave', function() { delBtn.style.borderColor = '#555'; delBtn.style.color = '#888'; });
+                    delBtn.addEventListener('mouseleave', function() { delBtn.style.borderColor = modalTheme.softBorder; delBtn.style.color = modalTheme.muted; });
                     (function(capturedIdx) {
                         delBtn.addEventListener('click', function() {
                             config.lines.splice(capturedIdx, 1);
@@ -3147,17 +3176,17 @@
             // Add Line button (only if under cap)
             if (lineCount < MAX_LINES) {
                 var addBtn = document.createElement('button');
-                addBtn.style.cssText = 'background: transparent; color: #66b3ff; border: 1px dashed #555; '
+                addBtn.style.cssText = 'background: transparent; color: #66b3ff; border: 1px dashed ' + modalTheme.softBorder + '; '
                     + 'padding: 12px; border-radius: 8px; cursor: pointer; font-size: 14px; width: 100%; '
                     + 'margin-top: 4px; transition: border-color 0.15s, color 0.15s;';
                 addBtn.textContent = '+ Add Bus Line';
                 addBtn.addEventListener('mouseenter', function() { addBtn.style.borderColor = '#66b3ff'; });
-                addBtn.addEventListener('mouseleave', function() { addBtn.style.borderColor = '#555'; });
+                addBtn.addEventListener('mouseleave', function() { addBtn.style.borderColor = modalTheme.softBorder; });
                 addBtn.addEventListener('click', function() { renderAddLineView(); });
                 modal.appendChild(addBtn);
             } else {
                 var capNote = document.createElement('div');
-                capNote.style.cssText = 'font-size: 12px; color: #888; font-style: italic; margin-top: 8px; text-align: center;';
+                capNote.style.cssText = 'font-size: 12px; color: ' + modalTheme.muted + '; font-style: italic; margin-top: 8px; text-align: center;';
                 capNote.textContent = 'Maximum of ' + MAX_LINES + ' bus lines reached. Remove one to add another.';
                 modal.appendChild(capNote);
             }
@@ -3185,12 +3214,12 @@
             var configuredLineNames = config.lines.map(function(l) { return l.line; });
 
             var titleEl = document.createElement('h2');
-            titleEl.style.cssText = 'margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.3px;';
+            titleEl.style.cssText = 'margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: ' + modalTheme.heading + '; letter-spacing: -0.3px;';
             titleEl.textContent = 'Add Bus Line';
             modal.appendChild(titleEl);
 
             var subtitle = document.createElement('p');
-            subtitle.style.cssText = 'margin: 0 0 20px 0; font-size: 14px; color: #999; line-height: 1.4;';
+            subtitle.style.cssText = 'margin: 0 0 20px 0; font-size: 14px; color: ' + modalTheme.subtle + '; line-height: 1.4;';
             subtitle.textContent = 'Select a bus line to add:';
             modal.appendChild(subtitle);
 
@@ -3203,10 +3232,10 @@
                 var color = LINE_COLORS[bus.line] || '#1565c0';
                 var card = document.createElement('button');
                 card.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 14px 16px; '
-                    + 'cursor: pointer; border-radius: 8px; border: 2px solid #404040; background: transparent; '
+                    + 'cursor: pointer; border-radius: 8px; border: 2px solid ' + modalTheme.border + '; background: transparent; '
                     + 'transition: border-color 0.15s, background 0.15s; text-align: left;';
-                card.addEventListener('mouseenter', function() { card.style.borderColor = color; card.style.backgroundColor = 'rgba(255,255,255,0.03)'; });
-                card.addEventListener('mouseleave', function() { card.style.borderColor = '#404040'; card.style.backgroundColor = 'transparent'; });
+                card.addEventListener('mouseenter', function() { card.style.borderColor = color; card.style.backgroundColor = modalTheme.hoverAddCard; });
+                card.addEventListener('mouseleave', function() { card.style.borderColor = modalTheme.border; card.style.backgroundColor = 'transparent'; });
 
                 var badge = document.createElement('span');
                 badge.style.cssText = 'background-color: ' + color + '; color: #fff; padding: 6px 0; '
@@ -3215,7 +3244,7 @@
                 badge.textContent = bus.line;
 
                 var label = document.createElement('span');
-                label.style.cssText = 'font-size: 13px; color: #888;';
+                label.style.cssText = 'font-size: 13px; color: ' + modalTheme.muted + ';';
                 label.textContent = bus.name;
 
                 card.appendChild(badge);
@@ -3231,7 +3260,7 @@
             var btnRow = document.createElement('div');
             btnRow.style.cssText = 'display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;';
             var backBtn = document.createElement('button');
-            backBtn.style.cssText = 'background: transparent; color: #888; border: 1px solid #555; '
+            backBtn.style.cssText = 'background: transparent; color: ' + modalTheme.muted + '; border: 1px solid ' + modalTheme.softBorder + '; '
                 + 'padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 13px;';
             backBtn.textContent = config.lines.length > 0 ? 'Back' : 'Cancel';
             backBtn.addEventListener('click', function() {
@@ -3250,12 +3279,12 @@
             var color = LINE_COLORS[selectedLine] || '#1565c0';
 
             var titleEl = document.createElement('h2');
-            titleEl.style.cssText = 'margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.3px;';
+            titleEl.style.cssText = 'margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: ' + modalTheme.heading + '; letter-spacing: -0.3px;';
             titleEl.textContent = 'Pick Directions';
             modal.appendChild(titleEl);
 
             var subtitle = document.createElement('p');
-            subtitle.style.cssText = 'margin: 0 0 20px 0; font-size: 14px; color: #999; line-height: 1.4;';
+            subtitle.style.cssText = 'margin: 0 0 20px 0; font-size: 14px; color: ' + modalTheme.subtle + '; line-height: 1.4;';
 
             var lineTag = document.createElement('span');
             lineTag.style.cssText = 'background-color: ' + color + '; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 13px;';
@@ -3267,7 +3296,7 @@
 
             // Loading
             var statusEl = document.createElement('div');
-            statusEl.style.cssText = 'font-size: 13px; color: #888;';
+            statusEl.style.cssText = 'font-size: 13px; color: ' + modalTheme.muted + ';';
             statusEl.textContent = 'Finding available directions...';
             modal.appendChild(statusEl);
 
@@ -3290,7 +3319,7 @@
 
             if (directions.length === 0) {
                 var noDir = document.createElement('div');
-                noDir.style.cssText = 'font-size: 13px; color: #888; font-style: italic; padding: 8px 0;';
+                noDir.style.cssText = 'font-size: 13px; color: ' + modalTheme.muted + '; font-style: italic; padding: 8px 0;';
                 noDir.textContent = 'No departures found for ' + selectedLine + ' right now. Try again later.';
                 modal.appendChild(noDir);
             }
@@ -3300,7 +3329,7 @@
                 var row = document.createElement('label');
                 row.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 8px 12px; '
                     + 'cursor: pointer; border-radius: 6px; margin-bottom: 2px; transition: background 0.15s;';
-                row.addEventListener('mouseenter', function() { row.style.backgroundColor = '#383838'; });
+                row.addEventListener('mouseenter', function() { row.style.backgroundColor = modalTheme.hoverRow; });
                 row.addEventListener('mouseleave', function() { row.style.backgroundColor = 'transparent'; });
 
                 var cb = document.createElement('input');
@@ -3313,7 +3342,7 @@
                 arrow.textContent = '\u2192';
 
                 var dirText = document.createElement('span');
-                dirText.style.cssText = 'font-size: 14px; color: #e0e0e0;';
+                dirText.style.cssText = 'font-size: 14px; color: ' + modalTheme.text + ';';
                 dirText.textContent = direction;
 
                 row.appendChild(cb);
@@ -3333,7 +3362,7 @@
             btnRow.style.cssText = 'display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;';
 
             var backBtn = document.createElement('button');
-            backBtn.style.cssText = 'background: transparent; color: #888; border: 1px solid #555; '
+            backBtn.style.cssText = 'background: transparent; color: ' + modalTheme.muted + '; border: 1px solid ' + modalTheme.softBorder + '; '
                 + 'padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 13px;';
             backBtn.textContent = 'Back';
             backBtn.addEventListener('click', function() { renderAddLineView(); });
