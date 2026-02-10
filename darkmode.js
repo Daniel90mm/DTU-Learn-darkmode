@@ -1743,14 +1743,14 @@
     // ===== FIRST-TIME ONBOARDING HINT =====
     // Show a hint pointing to the gear icon for the first 3 homepage visits
     function showOnboardingHint() {
+        // Only show on DTU Learn homepage where the gear icon lives
+        if (!isDTULearnHomepage()) return;
+
         var HINT_COUNT_KEY = 'dtuDarkModeHintCount';
         var hintCount = parseInt(localStorage.getItem(HINT_COUNT_KEY) || '0', 10);
         if (hintCount >= 3) return;
 
-        // Increment visit counter
-        localStorage.setItem(HINT_COUNT_KEY, (hintCount + 1).toString());
-
-        // Find the gear button by its aria-label (more reliable than shadow DOM search)
+        // Find the gear button before incrementing counter
         var gearBtn = document.querySelector('button[aria-label="Admin Tools"]');
         if (!gearBtn) {
             // Fallback: search shadow DOM for the gear icon
@@ -1770,6 +1770,9 @@
             gearBtn = findGearIcon(document);
         }
         if (!gearBtn) return;
+
+        // Only increment after we confirmed we can actually show the hint
+        localStorage.setItem(HINT_COUNT_KEY, (hintCount + 1).toString());
 
         // Get gear button position
         var gearRect = gearBtn.getBoundingClientRect();

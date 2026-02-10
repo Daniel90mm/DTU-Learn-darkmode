@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "DTU After Dark",
-  "version": "2.1",
+  "version": "2.2",
   "description": "Dark mode for DTU Sites - DTU After Dark",
   "browser_specific_settings": {
     "gecko": {
