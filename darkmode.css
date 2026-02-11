@@ -1453,6 +1453,31 @@ form[action*="/Answer/SaveAnswers/"],
   background-color: #4d4d4d !important;
 }
 
+/* Evaluering result toolbar row (above charts): prevent giant dark block */
+.mx-s.hide-on-print,
+.mx-s.hide-on-print .flex.flex--content-between {
+  background-color: transparent !important;
+  background: transparent !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.mx-s.hide-on-print .flex.flex--content-between {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.mx-s.hide-on-print .flex.flex--content-between > div {
+  background-color: transparent !important;
+  background: transparent !important;
+  min-height: 0 !important;
+}
+
+.mx-s.hide-on-print .flex.flex--content-between > div:first-child {
+  flex: 0 0 auto !important;
+}
+
 /* Help text */
 .text--help,
 .text--help--noopacity,
@@ -2701,6 +2726,33 @@ ul.container_12.topmenuitems {
 }
 
 /* ===== CampusNet Grades (campusnet.dtu.dk) ===== */
+/* Grades page root container (explicit path from capture) - dark 1 */
+#ctl00_ContentBox.main__content--box,
+#ctl00_ContentBox.main__content--box > .gradesPage,
+#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Grades page main containers - dark 1 */
+.gradesEducation,
+.gradesPoints {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.gradesEducation * {
+  color: #e0e0e0 !important;
+}
+
+.gradesEducation select {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #505050 !important;
+}
+
 /* GPA summary row */
 .gpa-row {
   background-color: #2d2d2d !important;
@@ -2830,7 +2882,7 @@ table.gradesList td[style*="color : green"] {
   cursor: pointer !important;
   font-size: 24px !important;
   line-height: 1 !important;
-  width: 30px !important;
+  width: 40px !important;
   height: 30px !important;
   padding: 0 !important;
   border-radius: 6px !important;
@@ -2897,6 +2949,29 @@ article.header__top * {
 /* Header nav icons */
 .header__sub-nav {
   background-color: #2d2d2d !important;
+}
+
+/* CampusNet breadcrumb (Front page) - dark 2 */
+nav#breadcrumb.actualbreadcrumb,
+nav#breadcrumb.actualbreadcrumb a,
+nav#breadcrumb.actualbreadcrumb a.last {
+  background-color: #2d2d2d !important;
+  background: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* CampusNet header search field - dark 1 */
+article.header__search #searchTextfield,
+.header__search #searchTextfield {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+article.header__search #searchTextfield::placeholder,
+.header__search #searchTextfield::placeholder {
+  color: #9a9a9a !important;
 }
 
 .nav__icon .fa-circle {
@@ -3368,3 +3443,88 @@ form.form-horizontal .form-control {
 
 /* Quiz submissions histogram (Class Statistics / Grade Distribution) */
 /* Histogram styles intentionally left to default (light) */
+
+/* CampusNet Grades page wrapper (final override) - dark 1 */
+#ctl00_ContentBox.main__content--box > .gradesPage,
+#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm,
+#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm > div {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+}
+
+/* CampusNet Grades total-points block - dark 1 */
+.gradesPoints > table:not(.gradesList),
+.gradesPoints > table:not(.gradesList) tr,
+.gradesPoints > table:not(.gradesList) td {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+}
+
+/* CampusNet grade-page section titles - dark 1 */
+.gradesPoints > h2,
+.gradesPdfTitle,
+.gradesDtuPaperTitle {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.gradesPoints > h2 {
+  color: #e0e0e0 !important;
+}
+
+.gradesPoints > table:not(.gradesList) {
+  border: 1px solid #404040 !important;
+  border-collapse: collapse !important;
+}
+
+/* CampusNet message truncation fade - darken light gradient */
+.messageText {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  background-image: none !important;
+}
+
+.messageText .postTeaser {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.messageText .messageTruncatebar {
+  background: linear-gradient(to bottom, rgba(26, 26, 26, 0), rgba(26, 26, 26, 0.95) 65%, #1a1a1a 100%) !important;
+  background-color: #1a1a1a !important;
+  background-image: linear-gradient(to bottom, rgba(26, 26, 26, 0), rgba(26, 26, 26, 0.95) 65%, #1a1a1a 100%) !important;
+  color: #e0e0e0 !important;
+  border-top: 1px solid #404040 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.messageTruncatebar {
+  background: linear-gradient(to bottom, rgba(26, 26, 26, 0), rgba(26, 26, 26, 0.95) 65%, #1a1a1a 100%) !important;
+  background-color: #1a1a1a !important;
+  background-image: linear-gradient(to bottom, rgba(26, 26, 26, 0), rgba(26, 26, 26, 0.95) 65%, #1a1a1a 100%) !important;
+  color: #e0e0e0 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.messageText::before,
+.messageText::after,
+.messageText .messageTruncatebar::before,
+.messageText .messageTruncatebar::after,
+.messageTruncatebar::before,
+.messageTruncatebar::after {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* CampusNet main content row - dark 1 */
+main.main.arc-row,
+main.main.arc-row > #ctl00_LeftMenuContainer.main__aside,
+main.main.arc-row > section.main__content {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+}

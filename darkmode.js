@@ -1,4 +1,4 @@
-// Dark mode script to inject styles into Shadow DOM elements
+﻿// Dark mode script to inject styles into Shadow DOM elements
 (function() {
     'use strict';
 
@@ -12,7 +12,7 @@
         }
     })();
 
-    // Check dark mode preference: cookie (.dtu.dk cross-origin) → localStorage → default true
+    // Check dark mode preference: cookie (.dtu.dk cross-origin) â†’ localStorage â†’ default true
     function isDarkModeEnabled() {
         try {
             const match = document.cookie.match(/dtuDarkMode=(\w+)/);
@@ -47,7 +47,7 @@
         (document.head || document.documentElement).appendChild(link);
     }
 
-    // Synchronous check — inject CSS immediately if enabled (runs at document_start)
+    // Synchronous check â€” inject CSS immediately if enabled (runs at document_start)
     const darkModeEnabled = isDarkModeEnabled();
     if (darkModeEnabled) {
         injectDarkCSS();
@@ -536,7 +536,7 @@
             background-color: transparent !important;
         }
 
-        /* Content shortcut button — use a.class to beat .d2l-card-container a specificity */
+        /* Content shortcut button â€” use a.class to beat .d2l-card-container a specificity */
         a.dtu-dark-content-btn,
         a.dtu-dark-content-btn:link,
         a.dtu-dark-content-btn:visited {
@@ -1434,6 +1434,11 @@
         if (!el || !el.style) return;
         // Skip extension-created elements (ECTS bar, GPA rows, sim rows, etc.)
         if (el.hasAttribute && el.hasAttribute('data-dtu-ext')) return;
+        // Evaluering charts use canvas wrappers inside .question__content;
+        // keep them transparent so graph rendering is not blocked by forced dark fills.
+        if (window.location.hostname === 'evaluering.dtu.dk' && el.matches) {
+            if (el.matches('.question__content, .question__content > div[style*="font-size:0"]')) return;
+        }
         // Preserve quiz histogram visuals (bars + axis image overlays)
         if (isDTULearnQuizSubmissionsPage() && el.matches) {
             if (el.matches('img.d2l-histogram-barblue, td.d2l-histogram-disback1, td.d2l-histogram-disyimg2, td.d2l-histogram-xside2')) {
@@ -1451,7 +1456,7 @@
         el.style.setProperty('background', '#1a1a1a', 'important');
         el.style.setProperty('background-color', '#1a1a1a', 'important');
         el.style.setProperty('background-image', 'none', 'important');
-        // Skip color on links — let CSS handle it (nav links grey, content links blue)
+        // Skip color on links â€” let CSS handle it (nav links grey, content links blue)
         if (el.tagName !== 'A') {
             el.style.setProperty('color', '#e0e0e0', 'important');
         }
@@ -1462,7 +1467,7 @@
         if (!el || !el.style) return;
         // Skip extension-created elements (ECTS bar, GPA rows, sim rows, etc.)
         if (el.hasAttribute && el.hasAttribute('data-dtu-ext')) return;
-        // Skip bus departure container — it manages its own colors
+        // Skip bus departure container â€” it manages its own colors
         if (el.closest && el.closest('.dtu-bus-departures')) return;
         if (el.matches && el.matches('.dtu-bus-departures')) return;
         if (isDTULearnQuizSubmissionsPage() && el.matches) {
@@ -1482,10 +1487,24 @@
         el.style.setProperty('background', '#2d2d2d', 'important');
         el.style.setProperty('background-color', '#2d2d2d', 'important');
         el.style.setProperty('background-image', 'none', 'important');
-        // Skip color on links — let CSS handle it (nav links grey, content links blue)
+        // Skip color on links â€” let CSS handle it (nav links grey, content links blue)
         if (el.tagName !== 'A') {
             el.style.setProperty('color', '#e0e0e0', 'important');
         }
+    }
+
+    function forceDtuRedBackgroundDark2(el) {
+        if (!el || !el.style) return;
+        var styleAttr = (el.getAttribute && el.getAttribute('style')) || '';
+        var hasDarkBg = /background(?:-color)?\s*:\s*(?:#2d2d2d|rgb\(\s*45\s*,\s*45\s*,\s*45\s*\))/i.test(styleAttr);
+        var hasDarkBorder = /border-color\s*:\s*(?:#2d2d2d|rgb\(\s*45\s*,\s*45\s*,\s*45\s*\))/i.test(styleAttr);
+        var hasNoBgImage = /background-image\s*:\s*none/i.test(styleAttr);
+        if (hasDarkBg && hasDarkBorder && hasNoBgImage) return;
+
+        el.style.setProperty('background', '#2d2d2d', 'important');
+        el.style.setProperty('background-color', '#2d2d2d', 'important');
+        el.style.setProperty('background-image', 'none', 'important');
+        el.style.setProperty('border-color', '#2d2d2d', 'important');
     }
 
     // Function to aggressively override dynamically applied styles
@@ -1506,17 +1525,7 @@
         });
 
         // Force dark 2 on DTU red background bar (studieplan.dtu.dk, campusnet.dtu.dk)
-        root.querySelectorAll('.dturedbackground').forEach(el => {
-            el.style.setProperty('background', '#2d2d2d', 'important');
-            el.style.setProperty('background-color', '#2d2d2d', 'important');
-            el.style.setProperty('background-image', 'none', 'important');
-            el.style.setProperty('border-color', '#2d2d2d', 'important');
-            // Also force all children (spans, links, containers)
-            el.querySelectorAll('.container, .row, .col-md-12, .pull-right, .pull-right > span, .pull-right > span > a').forEach(child => {
-                child.style.setProperty('background', '#2d2d2d', 'important');
-                child.style.setProperty('background-color', '#2d2d2d', 'important');
-            });
-        });
+        root.querySelectorAll('.dturedbackground').forEach(forceDtuRedBackgroundDark2);
     }
 
     // MutationObserver to watch for style changes
@@ -1750,7 +1759,7 @@
         ]);
     }
 
-    // Initial processing (dark mode only — unified observer handles ongoing changes)
+    // Initial processing (dark mode only â€” unified observer handles ongoing changes)
     if (darkModeEnabled) {
         async function initialize() {
             await waitForCustomElements();
@@ -1797,7 +1806,7 @@
                     img.dataset.darkModeReplaced = 'true';
                     // Resize the sites.dtu.dk DTU logo
                     if (img.classList.contains('websitelogoright__link-image') || img.getAttribute('src')?.includes('dtulogo2_colour') || img.classList.contains('logo-img')) {
-                        img.style.setProperty('max-height', '50px', 'important');
+                        img.style.setProperty('max-height', '60px', 'important');
                         img.style.setProperty('width', 'auto', 'important');
                     }
                 }
@@ -2279,6 +2288,18 @@
         _contextCaptureHotkeyBound = true;
     }
 
+    function triggerContextCaptureFromButton(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+        }
+        // Delay activation so the initiating button event is never treated as capture target.
+        setTimeout(startContextCaptureMode, 0);
+    }
+
     function insertContextCaptureFloatingHelper() {
         if (!IS_TOP_WINDOW) return;
         if (!document.body) return;
@@ -2297,11 +2318,27 @@
             : 'position: fixed; right: 14px; bottom: 54px; z-index: 2147483646; '
                 + 'background: #ffffff; color: #0b67c2; border: 1px solid #c8d0db; border-radius: 6px; '
                 + 'cursor: pointer; font-size: 12px; padding: 6px 10px;';
+        // Prevent host-page global button rules from turning this into a full-width bar.
+        btn.style.setProperty('position', 'fixed', 'important');
+        btn.style.setProperty('right', '14px', 'important');
+        btn.style.setProperty('bottom', '54px', 'important');
+        btn.style.setProperty('left', 'auto', 'important');
+        btn.style.setProperty('top', 'auto', 'important');
+        btn.style.setProperty('display', 'inline-flex', 'important');
+        btn.style.setProperty('align-items', 'center', 'important');
+        btn.style.setProperty('justify-content', 'center', 'important');
+        btn.style.setProperty('width', 'auto', 'important');
+        btn.style.setProperty('max-width', '160px', 'important');
+        btn.style.setProperty('min-width', '0', 'important');
+        btn.style.setProperty('margin', '0', 'important');
+        btn.style.setProperty('float', 'none', 'important');
+        btn.style.setProperty('white-space', 'nowrap', 'important');
+        btn.style.setProperty('pointer-events', 'auto', 'important');
+        btn.style.setProperty('user-select', 'none', 'important');
 
-        btn.addEventListener('click', function(event) {
-            event.preventDefault();
-            setTimeout(startContextCaptureMode, 0);
-        });
+        // Use multiple triggers because CampusNet click handlers sometimes swallow button clicks.
+        btn.addEventListener('pointerdown', triggerContextCaptureFromButton, true);
+        btn.addEventListener('click', triggerContextCaptureFromButton, true);
 
         document.body.appendChild(btn);
     }
@@ -2353,10 +2390,8 @@
             : 'background: #ffffff; color: #0b67c2; border: 1px solid #c8d0db; border-radius: 4px; '
                 + 'cursor: pointer; font-size: 12px; padding: 3px 8px;';
         btn.textContent = 'Capture Context';
-        btn.addEventListener('click', function(event) {
-            event.preventDefault();
-            setTimeout(startContextCaptureMode, 0);
-        });
+        btn.addEventListener('pointerdown', triggerContextCaptureFromButton, true);
+        btn.addEventListener('click', triggerContextCaptureFromButton, true);
 
         const hotkeyHint = document.createElement('span');
         hotkeyHint.setAttribute('data-dtu-ext', '1');
@@ -2627,7 +2662,7 @@
             const ects = parseFloat(cells[3].textContent.trim());
             if (isNaN(ects) || ects <= 0) return;
 
-            // Check if passed: numeric grade >= 2, or "BE" (Bestået/Pass)
+            // Check if passed: numeric grade >= 2, or "BE" (BestÃ¥et/Pass)
             const numMatch = gradeText.match(/^(-?\d+)/);
             if (numMatch) {
                 if (parseInt(numMatch[1], 10) >= 2) passedECTS += ects;
@@ -2851,7 +2886,7 @@
         codeInput.type = 'text';
         codeInput.className = 'gpa-sim-input';
         codeInput.setAttribute('data-dtu-ext', '1');
-        codeInput.placeholder = 'Code';
+        codeInput.placeholder = 'Course num';
         codeInput.value = entry.code || '';
         codeInput.style.cssText = 'width: 96px;';
         codeInput.addEventListener('input', () => { saveSimEntries(); });
@@ -2891,7 +2926,7 @@
         // ECTS
         const tdECTS = document.createElement('td');
         tdECTS.setAttribute('data-dtu-ext', '1');
-        tdECTS.style.cssText = 'text-align: right; padding-right: 5px;';
+        tdECTS.style.cssText = 'text-align: right; padding-right: 8px;';
         const ectsInput = document.createElement('input');
         ectsInput.type = 'number';
         ectsInput.className = 'gpa-sim-input';
@@ -2899,21 +2934,23 @@
         ectsInput.min = '1';
         ectsInput.max = '60';
         ectsInput.value = entry.ects || 5;
-        ectsInput.style.cssText = 'width: 82px; text-align: right;';
+        ectsInput.style.cssText = 'width: 67px; text-align: left; padding-left: 10px; padding-right: 22px; box-sizing: border-box;';
         ectsInput.addEventListener('input', () => { saveSimEntries(); updateProjectedGPA(); });
         tdECTS.appendChild(ectsInput);
 
         // Delete button
         const tdAction = document.createElement('td');
         tdAction.setAttribute('data-dtu-ext', '1');
-        tdAction.style.cssText = 'text-align: center;';
+        tdAction.style.cssText = 'text-align: right; width: 56px;';
         tdAction.style.setProperty('padding-left', '8px', 'important');
+        tdAction.style.setProperty('padding-right', '24px', 'important');
         const delBtn = document.createElement('button');
         delBtn.type = 'button';
         delBtn.className = 'gpa-sim-delete-btn';
         delBtn.setAttribute('data-dtu-ext', '1');
         delBtn.textContent = '\u00D7';
         delBtn.title = 'Remove';
+        delBtn.style.cssText = 'width: 40px; transform: translateX(5px);';
         delBtn.addEventListener('click', () => {
             tr.remove();
             saveSimEntries();
@@ -3001,7 +3038,7 @@
     // Adds a small "Content" button to each course card on the homepage
     // that links directly to /d2l/le/lessons/{courseId}
 
-    // Standalone button CSS — injected into card shadow roots when dark mode styles aren't present
+    // Standalone button CSS â€” injected into card shadow roots when dark mode styles aren't present
     const contentBtnShadowCSS = `
         a.dtu-dark-content-btn,
         a.dtu-dark-content-btn:link,
@@ -3249,9 +3286,9 @@
     const LINE_COLORS = { '150S': '#1565c0', '300S': '#2e7d32', '40E': '#6a1b9a', '15E': '#c62828', '193': '#e65100' };
 
     // Known DTU-area stop IDs (hardcoded for reliability instead of name search)
-    // 6015/6026: Rævehøjvej, DTU (Helsingørmotorvejen) — 150S, 300S, 40E, 15E
-    // 474/496:   Rævehøjvej, DTU (Lundtoftegårdsvej)    — 150S, 300S, 40E, 15E
-    // 497/473:   DTU (Anker Engelunds Vej)               — 300S
+    // 6015/6026: RÃ¦vehÃ¸jvej, DTU (HelsingÃ¸rmotorvejen) â€” 150S, 300S, 40E, 15E
+    // 474/496:   RÃ¦vehÃ¸jvej, DTU (LundtoftegÃ¥rdsvej)    â€” 150S, 300S, 40E, 15E
+    // 497/473:   DTU (Anker Engelunds Vej)               â€” 300S
     const DTU_AREA_STOP_IDS = ['6015', '6026', '474', '496', '497', '473'];
 
     const BUS_ENABLED_KEY = 'dtuDarkModeBusEnabled';
@@ -3358,7 +3395,7 @@
         return getDailyApiCount().count >= DAILY_API_LIMIT;
     }
 
-    // Server-side quota exhaustion (HTTP 429/403) — persists until next month
+    // Server-side quota exhaustion (HTTP 429/403) â€” persists until next month
     function isApiQuotaExhausted() {
         if (_apiQuotaExhausted) return true;
         var stored = localStorage.getItem(API_QUOTA_KEY);
@@ -3719,7 +3756,7 @@
         _cachedDepartures.forEach(function(dep) {
             if (dep.minutes != null && dep.minutes < soonest) soonest = dep.minutes;
         });
-        if (soonest <= 15) return 60000;  // ≤15 min away: poll every 60s (minimum)
+        if (soonest <= 15) return 60000;  // â‰¤15 min away: poll every 60s (minimum)
         return 120000;                     // >15 min: every 2 min
     }
 
@@ -3756,7 +3793,7 @@
         if (document.hidden) {
             stopBusPolling();
         } else {
-            // Tab became visible — do an immediate refresh then resume polling
+            // Tab became visible â€” do an immediate refresh then resume polling
             updateBusDepartures();
         }
     });
@@ -4481,7 +4518,7 @@
             var cText = container.textContent;
             if (!BOOK_KEYWORDS.test(cText)) continue;
 
-            // Check "Textbook:" / "Bog:" pattern — keyword with colon followed by book info
+            // Check "Textbook:" / "Bog:" pattern â€” keyword with colon followed by book info
             var keyColonMatch = cText.match(/\b(textbook|text\s*book|course\s*book|required\s*reading|recommended\s*reading|suggested\s*reading|bog|l\u00e6rebog|kursus\s*bog|anbefalet\s*l\u00e6sning|pensum|litteratur)s?\s*:\s*(.+)/i);
             if (keyColonMatch) {
                 // Extract the text after the keyword, strip trailing noise
@@ -4560,6 +4597,689 @@
     // Run Book Finder initially
     insertBookFinderLinks();
 
+    // ===== TEXTBOOK LINKER (kurser.dtu.dk Course literature) =====
+    var _kurserTextbookLinkerTimer = null;
+    var _finditAvailabilityCache = Object.create(null);
+
+    function isKurserLiteratureLabel(text) {
+        if (!text) return false;
+        var normalized = text.replace(/\s+/g, ' ').trim();
+        if (!normalized) return false;
+        if (normalized.length > 130) return false;
+
+        var lower = normalized.toLowerCase();
+        if (/^(course\s+literature|literature|kursuslitteratur|litteratur)\s*:?\s*$/.test(lower)) return true;
+
+        // Accept common variants, e.g. "Course literature and material".
+        if (/\b(literature|litteratur|kursuslitteratur)\b/.test(lower)) {
+            if (/\b(course|kursus|reading|pensum|material|materials|materiale)\b/.test(lower)) return true;
+            // Short standalone labels that still clearly indicate literature.
+            if (lower.split(' ').length <= 4) return true;
+        }
+        return false;
+    }
+
+    function isNotesOnlyLiterature(text) {
+        if (!text) return true;
+        var normalized = text.replace(/\s+/g, ' ').trim();
+        if (!normalized) return true;
+        if (/^(none|n\/a|-)\s*$/i.test(normalized)) return true;
+        if (/^notes?\s+provided\.?$/i.test(normalized)) return true;
+        if (/^lecture\s+notes?\s+provided\.?$/i.test(normalized)) return true;
+        if (/^notes?\s+will\s+be\s+provided\.?$/i.test(normalized)) return true;
+        return false;
+    }
+
+    function findKurserLiteratureContainers() {
+        var found = [];
+        var seen = new Set();
+        function addCandidate(el) {
+            if (!el || el.nodeType !== 1) return;
+            if (seen.has(el)) return;
+            var txt = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+            if (!txt) return;
+            if (txt.length > 7000) return;
+            seen.add(el);
+            found.push(el);
+        }
+
+        // Table layout: [label][content]
+        document.querySelectorAll('tr').forEach(function(tr) {
+            var cells = tr.querySelectorAll('th, td');
+            if (cells.length < 2) return;
+            var label = (cells[0].textContent || '').replace(/\s+/g, ' ').trim();
+            if (!isKurserLiteratureLabel(label)) return;
+            addCandidate(cells[cells.length - 1]);
+        });
+
+        // Definition list layout: <dt>label</dt><dd>content</dd>
+        document.querySelectorAll('dt').forEach(function(dt) {
+            if (!isKurserLiteratureLabel((dt.textContent || '').trim())) return;
+            var dd = dt.nextElementSibling;
+            while (dd && dd.tagName && dd.tagName.toLowerCase() !== 'dd') dd = dd.nextElementSibling;
+            addCandidate(dd);
+        });
+
+        // Generic heading/label layout.
+        document.querySelectorAll('h1, h2, h3, h4, strong, b, label, div, span, p').forEach(function(el) {
+            var label = (el.textContent || '').replace(/\s+/g, ' ').trim();
+            if (!isKurserLiteratureLabel(label)) return;
+            if (label.length > 50) return;
+
+            var candidate = null;
+            if (el.nextElementSibling) {
+                candidate = el.nextElementSibling;
+            } else if (el.parentElement) {
+                var siblings = Array.prototype.filter.call(el.parentElement.children, function(ch) {
+                    return ch !== el && ((ch.innerText || ch.textContent || '').replace(/\s+/g, ' ').trim().length > 0);
+                });
+                if (siblings.length === 1) {
+                    candidate = siblings[0];
+                } else if (siblings.length > 1) {
+                    candidate = siblings.reduce(function(best, cur) {
+                        var bestLen = (best.innerText || best.textContent || '').length;
+                        var curLen = (cur.innerText || cur.textContent || '').length;
+                        return curLen > bestLen ? cur : best;
+                    });
+                }
+            }
+            addCandidate(candidate);
+        });
+
+        // Inline layout: "Course literature: [1] ...".
+        document.querySelectorAll('p, div, td, dd, span, li').forEach(function(el) {
+            var txt = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+            if (!txt || txt.length < 20 || txt.length > 3000) return;
+            if (!/\b(course\s+literature|literature|kursuslitteratur|litteratur)\b\s*:/i.test(txt)) return;
+            addCandidate(el);
+        });
+
+        return found;
+    }
+
+    function getKurserBarSectionData(barEl) {
+        if (!barEl) return { text: '', lines: [], insertBeforeNode: null };
+        var raw = '';
+        var collected = [];
+        var current = '';
+        var node = barEl.nextSibling;
+        var insertBeforeNode = null;
+
+        function normalizeFragment(text) {
+            return (text || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+        function appendFragment(text) {
+            var t = normalizeFragment(text);
+            if (!t) return;
+            current = current ? (current + ' ' + t) : t;
+        }
+        function flushCurrent() {
+            var t = normalizeFragment(current);
+            if (t) collected.push(t);
+            current = '';
+        }
+
+        while (node) {
+            if (node.nodeType === 1 && node.classList && node.classList.contains('bar')) {
+                insertBeforeNode = node;
+                break;
+            }
+            if (node.nodeType === 3) {
+                var txtNodeText = node.textContent || '';
+                raw += txtNodeText;
+                appendFragment(txtNodeText);
+            } else if (node.nodeType === 1) {
+                if (node.tagName && node.tagName.toUpperCase() === 'BR') {
+                    raw += '\n';
+                    flushCurrent();
+                } else if (node.tagName && /^(UL|OL)$/i.test(node.tagName)) {
+                    flushCurrent();
+                    var listItems = node.querySelectorAll('li');
+                    listItems.forEach(function(li) {
+                        var liTxt = normalizeFragment(li.innerText || li.textContent || '');
+                        if (liTxt) collected.push(liTxt);
+                    });
+                } else {
+                    var elementText = node.innerText || node.textContent || '';
+                    raw += '\n' + elementText + '\n';
+                    if (node.tagName && /^(P|DIV|SECTION|TABLE|TR)$/i.test(node.tagName)) {
+                        flushCurrent();
+                        appendFragment(elementText);
+                        flushCurrent();
+                    } else {
+                        appendFragment(elementText);
+                    }
+                }
+            }
+            node = node.nextSibling;
+        }
+        flushCurrent();
+
+        var lines = [];
+        collected.forEach(function(line) {
+            splitKurserLiteratureText(line).forEach(function(part) {
+                var txt = (part || '').trim();
+                if (!txt) return;
+                if (/^recommended\s*:?\s*$/i.test(txt)) return;
+                if (/^required\s*:?\s*$/i.test(txt)) return;
+                lines.push(txt);
+            });
+        });
+
+        return {
+            text: raw,
+            lines: lines,
+            insertBeforeNode: insertBeforeNode
+        };
+    }
+
+    function shouldMergeWrappedLiteratureLine(prev, next) {
+        if (!prev || !next) return false;
+        if (/^\s*(?:\[\s*\d+\s*\]|\d+\s*[.)])/.test(next)) return false;
+        if (/^\s*(recommended|required|remarks|last\s+updated)\b/i.test(next)) return false;
+        if (/^\s*[A-Z][A-Za-z'.\-]{1,30},\s*[A-Z]/.test(next) && /[.!?]\s*$/.test(prev)) return false;
+        if (/\b(?:and|or|of|for|to|in|on|the|a|an|isbn:?|edition|ed\.)\s*$/i.test(prev)) return true;
+        if (/[,:\-]\s*$/.test(prev)) return true;
+        if (!/[.!?;]\s*$/.test(prev)) return true;
+        if (next.length <= 35) return true;
+        return false;
+    }
+
+    function splitKurserLiteratureText(raw) {
+        var txt = (raw || '').replace(/\u00a0/g, ' ').trim();
+        if (!txt) return [];
+
+        // Normalize multiple spaces but keep line boundaries for merge heuristics.
+        txt = txt.replace(/[ \t]{2,}/g, ' ');
+        var lines = txt.split(/\r?\n+/).map(function(s) { return s.trim(); }).filter(Boolean);
+        if (lines.length > 1) {
+            var merged = [];
+            lines.forEach(function(line) {
+                if (!merged.length) {
+                    merged.push(line);
+                    return;
+                }
+                var prev = merged[merged.length - 1];
+                if (shouldMergeWrappedLiteratureLine(prev, line)) {
+                    merged[merged.length - 1] = (prev + ' ' + line).replace(/\s+/g, ' ').trim();
+                } else {
+                    merged.push(line);
+                }
+            });
+
+            var expanded = [];
+            merged.forEach(function(line) {
+                var bracketParts = line.split(/(?=\[\s*\d+\s*\])/g).map(function(s) { return s.trim(); }).filter(Boolean);
+                if (bracketParts.length > 1) {
+                    bracketParts.forEach(function(p) { expanded.push(p); });
+                    return;
+                }
+                expanded.push(line);
+            });
+            return expanded;
+        }
+
+        // Single-line fallbacks: split on citation markers.
+        var one = txt.replace(/\s+/g, ' ').trim();
+        var splitByBracket = one.split(/(?=\[\s*\d+\s*\])/g).map(function(s) { return s.trim(); }).filter(Boolean);
+        if (splitByBracket.length > 1) return splitByBracket;
+
+        var splitByNumber = one.split(/(?=\b\d+\s*[.)]\s*[A-Z])/g).map(function(s) { return s.trim(); }).filter(Boolean);
+        if (splitByNumber.length > 1) return splitByNumber;
+
+        var splitBySemicolon = one.split(/\s*;\s*/g).map(function(s) { return s.trim(); }).filter(Boolean);
+        if (splitBySemicolon.length > 1) return splitBySemicolon;
+
+        return [one];
+    }
+
+    function extractISBNFromCitationLine(line) {
+        if (!line) return null;
+        var m = line.match(/\bISBN[-\s]?(?:1[03])?[\s:]*\s*([\dXx][\d\s-]{8,}[\dXx])\b/i);
+        if (m && m[1]) {
+            var isbn = normalizeISBN(m[1]);
+            if (isValidISBN13(isbn) || isValidISBN10(isbn)) return isbn;
+        }
+
+        var b = line.match(/\b(97[89][\d-]{10,})\b/);
+        if (b && b[1]) {
+            var isbn13 = normalizeISBN(b[1]);
+            if (isValidISBN13(isbn13)) return isbn13;
+        }
+        return null;
+    }
+
+    function countCapitalizedWords(line) {
+        if (!line) return 0;
+        return (line.match(/\b[A-Z][A-Za-z'`\-]{1,}\b/g) || []).length;
+    }
+
+    function countInitials(line) {
+        if (!line) return 0;
+        return (line.match(/\b[A-Z]\./g) || []).length;
+    }
+
+    function isLikelyBibliographicNameTitlePattern(line) {
+        if (!line) return false;
+        var txt = line.replace(/\s+/g, ' ').trim();
+        if (!txt) return false;
+        if (txt.split(/\s+/).length < 4 || txt.split(/\s+/).length > 65) return false;
+
+        var lower = txt.toLowerCase();
+        if (/^(the|this|that|in|it|course|other|recommended|required|notes?)\b/.test(lower)) return false;
+
+        var capitals = countCapitalizedWords(txt);
+        var initials = countInitials(txt);
+        var connectorCount = (txt.match(/\s(?:and|&)\s|,/gi) || []).length;
+        var punctuationCount = (txt.match(/[,.]/g) || []).length;
+
+        // User-observed pattern: many capitalized names/words separated by and/,&,.,,
+        if ((capitals + initials) < 5) return false;
+        if (connectorCount === 0 && punctuationCount < 2) return false;
+        return true;
+    }
+
+    function parseKurserCitationLine(rawLine) {
+        if (!rawLine) return null;
+        var line = rawLine.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+        if (!line) return null;
+        if (isNotesOnlyLiterature(line)) return null;
+        if (/https?:\/\//i.test(line)) return null;
+
+        var isbn = extractISBNFromCitationLine(line);
+        var leadingCitationPattern = /^\s*(?:\[\s*\d+\s*\]|\d+\s*[.)])\s*/;
+        var hasLeadingCitation = leadingCitationPattern.test(line);
+
+        // Remove leading citation markers like [1], 1), 1.
+        line = line.replace(leadingCitationPattern, '');
+        // Remove explicit ISBN fragments from title parsing.
+        line = line.replace(/\bISBN[-\s]?(?:1[03])?[\s:]*\s*[\dXx][\d\s-]{8,}[\dXx]\b/ig, '').trim();
+        line = line
+            .replace(/\(\s*all\s+editions?\s+are\s+ok\s*\)/ig, '')
+            .replace(/\ball\s+editions?\s+are\s+ok\b/ig, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+
+        var author = '';
+        var title = '';
+
+        // Typical pattern: "Author, Title."
+        var citationMatch = line.match(/^([^,]{2,140}),\s*([^.;][^.;]{2,220})/);
+        var hasAuthorTitle = !!citationMatch;
+        var publisherHint = /\b(press|wiley|springer|pearson|elsevier|cambridge|oxford|mcgraw|macmillan|routledge|cengage|crc)\b/i;
+        var editionHint = /\b(edition|ed\.|e-book|ebook)\b/i;
+        var genericNoise = /\b(in\s+addition|supplements?\s+will\s+be\s+provided|it\s+is\s+not\s+required|other\s+books?\s+on\s+the\s+same\s+topic|course\s+compendium|research\s+articles?|will\s+be\s+made\s+accessible|can\s+be\s+used\s+as\s+well|follow\s+the\s+course|notations?\s+in\s+the\s+course\s+material|freely\s+available)\b/i;
+        var hasNameTitlePattern = isLikelyBibliographicNameTitlePattern(line);
+
+        var hasStandaloneTitle = !hasAuthorTitle
+            && /^[A-Z0-9][A-Za-z0-9&'()\-:,.\s]{8,}$/.test(line)
+            && line.split(/\s+/).length >= 3
+            && (publisherHint.test(line) || editionHint.test(line) || hasNameTitlePattern);
+
+        // Confidence model for very mixed lecturer input formats.
+        var confidence = 0;
+        if (isbn) confidence += 4;
+        if (hasLeadingCitation) confidence += 2;
+        if (hasAuthorTitle) confidence += 2;
+        if (hasStandaloneTitle) confidence += 2;
+        if (hasNameTitlePattern) confidence += 2;
+        if (publisherHint.test(line)) confidence += 1;
+        if (editionHint.test(line)) confidence += 1;
+        if (genericNoise.test(line) && !publisherHint.test(line)) confidence -= 3;
+        if (/https?:\/\//i.test(line)) confidence -= 3;
+        if (line.length < 12) confidence -= 1;
+
+        if (confidence < 2) return null;
+
+        if (citationMatch) {
+            author = citationMatch[1].trim();
+            title = citationMatch[2].trim();
+        } else {
+            // Fallback: treat remaining line as title.
+            title = line;
+        }
+
+        title = title
+            .replace(/\s*\((?:eds?|ed\.|chapter|kapitel)[^)]+\)\s*/ig, ' ')
+            .replace(/[;,.:\-]\s*$/, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+
+        if (!title && !isbn) return null;
+        if (title && title.length < 3 && !isbn) return null;
+
+        var queryText = line
+            .replace(/\bpp?\.?\s*\d+\s*(?:[-–]\s*\d+)?\b/ig, '')
+            .replace(/\bpages?\s*\d+\s*(?:[-–]\s*\d+)?\b/ig, '')
+            .replace(/\b,?\s*pp?\s*[-:]?\s*\d+\s*(?:[-–]\s*\d+)?\b/ig, '')
+            .replace(/[;,.]\s*$/, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+        if (!isbn && (!queryText || queryText.length < 4)) return null;
+
+        return {
+            raw: rawLine,
+            author: author,
+            title: title,
+            isbn: isbn,
+            queryText: queryText
+        };
+    }
+
+    function cleanKurserCitationQuery(query) {
+        return (query || '')
+            .replace(/\bpp?\.?\s*\d+\s*(?:[-–]\s*\d+)?\b/ig, '')
+            .replace(/\bpages?\s*\d+\s*(?:[-–]\s*\d+)?\b/ig, '')
+            .replace(/\b,?\s*pp?\s*[-:]?\s*\d+\s*(?:[-–]\s*\d+)?\b/ig, '')
+            .replace(/\s{2,}/g, ' ')
+            .replace(/[;,.]\s*$/, '')
+            .trim();
+    }
+
+    function buildKurserFinditUrl(citation) {
+        if (!citation) return null;
+        var query = '';
+        if (citation.isbn) {
+            query = 'isbn:' + citation.isbn;
+        } else if (citation.queryText) {
+            query = cleanKurserCitationQuery(citation.queryText);
+        } else {
+            var parts = [];
+            if (citation.title) parts.push(citation.title);
+            if (citation.author) parts.push(citation.author);
+            query = parts.join(' - ');
+        }
+        if (!query) return null;
+        return 'https://findit.dtu.dk/en/catalog?utf8=%E2%9C%93&type=book&q=' + encodeURIComponent(query);
+    }
+
+    function buildKurserGoogleBooksUrl(citation) {
+        if (!citation) return null;
+        var query = '';
+        if (citation.isbn) {
+            query = 'isbn:' + citation.isbn;
+        } else if (citation.queryText) {
+            query = cleanKurserCitationQuery(citation.queryText);
+        } else {
+            var parts = [];
+            if (citation.title) parts.push(citation.title);
+            if (citation.author) parts.push(citation.author);
+            query = parts.join(' - ');
+        }
+        if (!query) return null;
+        return 'https://books.google.com/books?q=' + encodeURIComponent(query);
+    }
+
+    function checkFinditOnlineAccess(url, cb) {
+        if (!url) {
+            cb(false);
+            return;
+        }
+        if (_finditAvailabilityCache[url] && _finditAvailabilityCache[url].done) {
+            cb(!!_finditAvailabilityCache[url].onlineAccess);
+            return;
+        }
+        if (_finditAvailabilityCache[url] && _finditAvailabilityCache[url].pending) {
+            _finditAvailabilityCache[url].callbacks.push(cb);
+            return;
+        }
+
+        _finditAvailabilityCache[url] = { pending: true, callbacks: [cb] };
+        sendRuntimeMessage({ type: 'dtu-findit-availability', url: url }, function(response) {
+            var onlineAccess = !!(response && response.ok && response.onlineAccess);
+            var pending = _finditAvailabilityCache[url];
+            _finditAvailabilityCache[url] = { done: true, onlineAccess: onlineAccess };
+            if (pending && Array.isArray(pending.callbacks)) {
+                pending.callbacks.forEach(function(fn) {
+                    try { fn(onlineAccess); } catch (e) {}
+                });
+            }
+        });
+    }
+
+    function styleLibraryBadgeAsOnline(badge) {
+        if (!badge || !badge.style) return;
+        badge.textContent = 'Free PDF ✅';
+        badge.style.setProperty('background-color', '#2e7d32', 'important');
+        badge.style.setProperty('border-color', '#43a047', 'important');
+        badge.style.setProperty('color', '#ffffff', 'important');
+    }
+
+    function createKurserLibraryBadge(url) {
+        var badge = document.createElement('a');
+        markExt(badge);
+        badge.setAttribute('data-dtu-textbook-linker', '1');
+        badge.setAttribute('data-dtu-textbook-linker-kind', 'library');
+        badge.href = url;
+        badge.target = '_blank';
+        badge.rel = 'noopener noreferrer';
+        badge.textContent = 'Check Library';
+        badge.style.cssText = darkModeEnabled
+            ? 'display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; '
+              + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
+              + 'background: rgba(102,179,255,0.14); color: #7cc0ff; border: 1px solid rgba(102,179,255,0.55);'
+            : 'display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; '
+              + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
+              + 'background: #eef6ff; color: #1a73e8; border: 1px solid #9dc7ff;';
+        return badge;
+    }
+
+    function createKurserGoogleBooksBadge(url) {
+        var badge = document.createElement('a');
+        markExt(badge);
+        badge.setAttribute('data-dtu-textbook-linker', '1');
+        badge.setAttribute('data-dtu-textbook-linker-kind', 'google-books');
+        badge.href = url;
+        badge.target = '_blank';
+        badge.rel = 'noopener noreferrer';
+        badge.textContent = 'Google Books';
+        badge.style.cssText = darkModeEnabled
+            ? 'display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; '
+              + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
+              + 'background: rgba(255,183,77,0.14); color: #ffcc80; border: 1px solid rgba(255,183,77,0.55);'
+            : 'display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; '
+              + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
+              + 'background: #fff6e8; color: #8a4b00; border: 1px solid #f0c07a;';
+        return badge;
+    }
+
+    function extractLiteratureLineTargets(container) {
+        var items = [];
+        var blockCandidates = container.querySelectorAll('li, p');
+
+        if (blockCandidates.length) {
+            blockCandidates.forEach(function(node) {
+                var raw = (node.innerText || node.textContent || '');
+                splitKurserLiteratureText(raw).forEach(function(txt) {
+                    if (!txt) return;
+                    items.push({ text: txt, anchor: node });
+                });
+            });
+        } else {
+            var raw = (container.innerText || container.textContent || '');
+            splitKurserLiteratureText(raw).forEach(function(txt) {
+                items.push({ text: txt, anchor: container });
+            });
+        }
+
+        var seen = Object.create(null);
+        return items.filter(function(item) {
+            if (!item.text || seen[item.text]) return false;
+            seen[item.text] = true;
+            return true;
+        });
+    }
+
+    function injectKurserTextbookBadges(container, lines) {
+        var fallback = null;
+        var injected = 0;
+        var seenKeys = Object.create(null);
+
+        lines.forEach(function(item) {
+            var parsed = parseKurserCitationLine(item.text);
+            if (!parsed) return;
+            var libraryUrl = buildKurserFinditUrl(parsed);
+            var googleBooksUrl = buildKurserGoogleBooksUrl(parsed);
+            if (!libraryUrl && !googleBooksUrl) return;
+
+            var key = (parsed.isbn || cleanKurserCitationQuery(parsed.queryText || parsed.title || '')).toLowerCase();
+            if (!key) key = libraryUrl || googleBooksUrl;
+            if (seenKeys[key]) return;
+            seenKeys[key] = true;
+
+            var libraryBadge = null;
+            var googleBadge = null;
+            if (libraryUrl) {
+                libraryBadge = createKurserLibraryBadge(libraryUrl);
+                checkFinditOnlineAccess(libraryUrl, function(hasOnlineAccess) {
+                    if (hasOnlineAccess) styleLibraryBadgeAsOnline(libraryBadge);
+                });
+            }
+            if (googleBooksUrl) {
+                googleBadge = createKurserGoogleBooksBadge(googleBooksUrl);
+            }
+
+            if (item.anchor !== container) {
+                if (item.anchor.querySelector('[data-dtu-textbook-linker]')) return;
+                if (libraryBadge) {
+                    item.anchor.appendChild(document.createTextNode(' '));
+                    item.anchor.appendChild(libraryBadge);
+                }
+                if (googleBadge) {
+                    item.anchor.appendChild(document.createTextNode(' '));
+                    item.anchor.appendChild(googleBadge);
+                }
+                injected++;
+                return;
+            }
+
+            // Fallback when the literature block is plain text lines in one container.
+            if (!fallback) {
+                fallback = document.createElement('div');
+                markExt(fallback);
+                fallback.setAttribute('data-dtu-textbook-linker-fallback', '1');
+                fallback.style.cssText = 'margin-top: 8px; display: flex; flex-direction: column; gap: 4px;';
+                container.appendChild(fallback);
+            }
+            var row = document.createElement('div');
+            markExt(row);
+            row.style.cssText = 'display: flex; align-items: center; flex-wrap: wrap; gap: 6px;';
+            var excerpt = document.createElement('span');
+            markExt(excerpt);
+            excerpt.style.cssText = 'font-size: 12px; opacity: 0.85;';
+            var clean = item.text.replace(/\s+/g, ' ').trim();
+            excerpt.textContent = clean.length > 90 ? (clean.slice(0, 87) + '...') : clean;
+            row.appendChild(excerpt);
+            if (libraryBadge) row.appendChild(libraryBadge);
+            if (googleBadge) row.appendChild(googleBadge);
+            fallback.appendChild(row);
+            injected++;
+        });
+
+        return injected;
+    }
+
+    function processKurserLiteratureBarSections() {
+        var bars = document.querySelectorAll('.bar');
+        if (!bars.length) return;
+
+        bars.forEach(function(bar) {
+            var label = (bar.textContent || '').replace(/\s+/g, ' ').trim();
+            if (!isKurserLiteratureLabel(label)) return;
+            if (bar.getAttribute('data-dtu-textbook-linker-scanned') === '1') return;
+
+            var attempts = parseInt(bar.getAttribute('data-dtu-textbook-linker-attempts') || '0', 10);
+            if (attempts >= 5) return;
+            bar.setAttribute('data-dtu-textbook-linker-attempts', String(attempts + 1));
+
+            var section = getKurserBarSectionData(bar);
+            if (!section || !section.lines.length) return;
+            if (isNotesOnlyLiterature((section.text || '').replace(/\s+/g, ' ').trim())) {
+                bar.setAttribute('data-dtu-textbook-linker-scanned', '1');
+                return;
+            }
+
+            var host = bar.parentElement
+                ? bar.parentElement.querySelector('[data-dtu-textbook-linker-bar-host-for="' + label.toLowerCase() + '"]')
+                : null;
+            if (!host) {
+                host = document.createElement('div');
+                markExt(host);
+                host.setAttribute('data-dtu-textbook-linker-bar-host', '1');
+                host.setAttribute('data-dtu-textbook-linker-bar-host-for', label.toLowerCase());
+                host.style.cssText = 'margin: 6px 0 10px;';
+                if (bar.parentNode) {
+                    if (section.insertBeforeNode) {
+                        bar.parentNode.insertBefore(host, section.insertBeforeNode);
+                    } else {
+                        bar.parentNode.appendChild(host);
+                    }
+                }
+            }
+            if (!host || host.querySelector('[data-dtu-textbook-linker]')) {
+                bar.setAttribute('data-dtu-textbook-linker-scanned', '1');
+                return;
+            }
+
+            var items = section.lines.map(function(line) {
+                return { text: line, anchor: host };
+            });
+            var injected = injectKurserTextbookBadges(host, items);
+            if (injected > 0 || attempts >= 4) {
+                bar.setAttribute('data-dtu-textbook-linker-scanned', '1');
+            }
+        });
+    }
+
+    function insertKurserTextbookLinks() {
+        if (!IS_TOP_WINDOW) return;
+        if (!isKurserCoursePage()) return;
+
+        // First handle the common kurser.dtu.dk "single .box with .bar sections" layout.
+        processKurserLiteratureBarSections();
+
+        var containers = findKurserLiteratureContainers();
+        if (!containers.length) return;
+
+        containers.forEach(function(container) {
+            if (!container || container.getAttribute('data-dtu-textbook-linker-scanned') === '1') return;
+            var attempts = parseInt(container.getAttribute('data-dtu-textbook-linker-attempts') || '0', 10);
+            if (attempts >= 5) return;
+            container.setAttribute('data-dtu-textbook-linker-attempts', String(attempts + 1));
+
+            if (container.querySelector('[data-dtu-textbook-linker]')) {
+                container.setAttribute('data-dtu-textbook-linker-scanned', '1');
+                return;
+            }
+
+            var fullText = (container.innerText || container.textContent || '').replace(/\s+/g, ' ').trim();
+            if (isNotesOnlyLiterature(fullText)) {
+                container.setAttribute('data-dtu-textbook-linker-scanned', '1');
+                return;
+            }
+
+            var lines = extractLiteratureLineTargets(container);
+            if (!lines.length) {
+                return;
+            }
+
+            var injected = injectKurserTextbookBadges(container, lines);
+            if (injected > 0) {
+                container.setAttribute('data-dtu-textbook-linker-scanned', '1');
+            }
+        });
+    }
+
+    function scheduleKurserTextbookLinker(delayMs) {
+        if (!IS_TOP_WINDOW) return;
+        if (window.location.hostname !== 'kurser.dtu.dk') return;
+        if (_kurserTextbookLinkerTimer) return;
+        _kurserTextbookLinkerTimer = setTimeout(function() {
+            _kurserTextbookLinkerTimer = null;
+            insertKurserTextbookLinks();
+        }, delayMs || 550);
+    }
+
     // ===== COURSE GRADE STATISTICS (kurser.dtu.dk) =====
     var _gradeStatsRequested = false;
     var _gradeStatsCourseCode = null;
@@ -4590,6 +5310,17 @@
         if (styledH2) return styledH2;
 
         return document.querySelector('h1') || document.querySelector('h2');
+    }
+
+    function findKurserGradeStatsInsertAnchor(titleEl) {
+        if (!titleEl) return null;
+        var titleCol = titleEl.closest('.col-sm-9, .col-md-9, .col-lg-9, [class*="col-"]');
+        if (titleCol && titleCol.parentElement) {
+            var row = titleCol.parentElement;
+            var cls = row.className || '';
+            if (/\brow\b/.test(cls)) return row;
+        }
+        return titleEl;
     }
 
     function buildGradeStatsSemesters() {
@@ -4639,14 +5370,16 @@
         if (!courseCode) return;
         var titleEl = findKurserCourseTitleElement(courseCode);
         if (!titleEl) return;
+        var insertAnchor = findKurserGradeStatsInsertAnchor(titleEl);
+        if (!insertAnchor || !insertAnchor.parentNode) return;
 
         var container = document.createElement('div');
         container.setAttribute('data-dtu-grade-stats', '1');
         markExt(container);
         container.style.cssText = darkModeEnabled
-            ? 'margin: 10px 0 12px 0; padding: 10px 12px; border-radius: 6px; max-width: 760px; '
+            ? 'margin: 10px 0 12px 0; padding: 12px 14px; border-radius: 6px; width: 100%; max-width: none; box-sizing: border-box; '
               + 'background-color: #2d2d2d; border: 1px solid #404040; color: #e0e0e0; font-family: inherit;'
-            : 'margin: 10px 0 12px 0; padding: 10px 12px; border-radius: 6px; max-width: 760px; '
+            : 'margin: 10px 0 12px 0; padding: 12px 14px; border-radius: 6px; width: 100%; max-width: none; box-sizing: border-box; '
               + 'background-color: #ffffff; border: 1px solid #e0e0e0; color: #222; font-family: inherit;';
 
         var title = document.createElement('div');
@@ -4661,7 +5394,7 @@
         status.style.cssText = 'font-size: 13px; opacity: 0.9;';
         container.appendChild(status);
 
-        titleEl.insertAdjacentElement('afterend', container);
+        insertAnchor.insertAdjacentElement('afterend', container);
 
         if (_gradeStatsRequested && _gradeStatsCourseCode === courseCode) return;
         _gradeStatsRequested = true;
@@ -4672,50 +5405,181 @@
             courseCode: courseCode,
             semesters: buildGradeStatsSemesters()
         }, function(response) {
-            if (!response || !response.ok || !response.data) {
+            var iterations = [];
+            if (response && response.ok && Array.isArray(response.iterations) && response.iterations.length) {
+                iterations = response.iterations;
+            } else if (response && response.ok && response.data) {
+                iterations = [{ semester: response.semester || '', data: response.data }];
+            }
+            if (!iterations.length) {
                 status.textContent = 'No Data Available';
                 return;
             }
 
-            var data = response.data;
-            var semester = response.semester || '';
+            var latest = iterations[0];
+            var data = latest.data || {};
+            var semester = latest.semester || '';
             var grades = ['12', '10', '7', '4', '02', '00', '-3'];
             var total = data.total || 0;
 
             status.textContent = '';
 
-            var summary = document.createElement('div');
-            markExt(summary);
-            summary.style.cssText = 'display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px;';
-
-            var passRate = document.createElement('div');
-            markExt(passRate);
             var passPct = (data.passRate || 0);
             var passColor = passPct > 85 ? '#4caf50' : (passPct > 70 ? '#ffb300' : '#ef5350');
-            passRate.textContent = 'Pass Rate: ' + passPct.toFixed(1) + '%';
-            passRate.style.cssText = 'font-size: 18px; font-weight: 700;';
-            passRate.style.setProperty('color', passColor, 'important');
-            summary.appendChild(passRate);
+            var softSurface = darkModeEnabled ? '#252525' : '#f6f8fb';
+            var softBorder = darkModeEnabled ? '#3b3b3b' : '#dce2ea';
+            var mutedText = darkModeEnabled ? '#bababa' : '#5e6976';
 
+            var layout = document.createElement('div');
+            markExt(layout);
+            layout.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); '
+                + 'gap: 14px; margin-top: 8px; align-items: stretch;';
+            container.appendChild(layout);
+
+            var infoCol = document.createElement('div');
+            markExt(infoCol);
+            infoCol.style.cssText = 'display: flex; flex-direction: column; gap: 10px;';
+            layout.appendChild(infoCol);
+
+            var summary = document.createElement('div');
+            markExt(summary);
+            summary.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); '
+                + 'gap: 10px; padding: 10px 12px; border-radius: 6px; '
+                + 'border: 1px solid ' + softBorder + '; background: ' + softSurface + ';';
+            infoCol.appendChild(summary);
+
+            var passWrap = document.createElement('div');
+            markExt(passWrap);
+            var passLabel = document.createElement('div');
+            markExt(passLabel);
+            passLabel.textContent = 'Pass Rate';
+            passLabel.style.cssText = 'font-size: 11px; letter-spacing: 0.02em; opacity: 0.85;';
+            passWrap.appendChild(passLabel);
+            var passRate = document.createElement('div');
+            markExt(passRate);
+            passRate.textContent = passPct.toFixed(1) + '%';
+            passRate.style.cssText = 'font-size: 26px; line-height: 1.15; font-weight: 700;';
+            passRate.style.setProperty('color', passColor, 'important');
+            passWrap.appendChild(passRate);
+            summary.appendChild(passWrap);
+
+            var avgWrap = document.createElement('div');
+            markExt(avgWrap);
+            var avgLabel = document.createElement('div');
+            markExt(avgLabel);
+            avgLabel.textContent = 'Average Grade';
+            avgLabel.style.cssText = 'font-size: 11px; letter-spacing: 0.02em; opacity: 0.85;';
+            avgWrap.appendChild(avgLabel);
             var avg = document.createElement('div');
             markExt(avg);
-            avg.textContent = 'Average Grade: ' + (data.average || 0).toFixed(2);
-            avg.style.cssText = 'font-size: 13px; opacity: 0.9;';
-            summary.appendChild(avg);
+            avg.textContent = (data.average || 0).toFixed(2);
+            avg.style.cssText = 'font-size: 21px; line-height: 1.15; font-weight: 650;';
+            avgWrap.appendChild(avg);
+            summary.appendChild(avgWrap);
 
             if (semester) {
+                var semWrap = document.createElement('div');
+                markExt(semWrap);
+                var semLabel = document.createElement('div');
+                markExt(semLabel);
+                semLabel.textContent = 'Latest Offering';
+                semLabel.style.cssText = 'font-size: 11px; letter-spacing: 0.02em; opacity: 0.85;';
+                semWrap.appendChild(semLabel);
+
                 var sem = document.createElement('div');
                 markExt(sem);
                 sem.textContent = semester;
-                sem.style.cssText = 'font-size: 12px; opacity: 0.7;';
-                summary.appendChild(sem);
+                sem.style.cssText = 'font-size: 15px; line-height: 1.15; color: ' + mutedText + ';';
+                semWrap.appendChild(sem);
+                summary.appendChild(semWrap);
             }
 
-            container.appendChild(summary);
+            if (iterations.length > 1) {
+                var historyCard = document.createElement('div');
+                markExt(historyCard);
+                historyCard.style.cssText = 'padding: 10px 12px; border-radius: 6px; '
+                    + 'border: 1px solid ' + softBorder + '; background: ' + softSurface + ';';
+                infoCol.appendChild(historyCard);
+
+                var historyTitle = document.createElement('div');
+                markExt(historyTitle);
+                historyTitle.textContent = 'Last 3 offerings';
+                historyTitle.style.cssText = 'font-size: 12px; font-weight: 600; margin-bottom: 5px;';
+                historyCard.appendChild(historyTitle);
+
+                iterations.slice(0, 3).forEach(function(iter, idx) {
+                    if (!iter || !iter.data) return;
+                    var iterRow = document.createElement('div');
+                    markExt(iterRow);
+                    iterRow.style.cssText = 'display: grid; grid-template-columns: minmax(80px, 1fr) auto auto; '
+                        + 'gap: 10px; align-items: baseline; padding: 4px 0;'
+                        + (idx > 0 ? (' border-top: 1px solid ' + softBorder + ';') : '');
+
+                    var iterSem = document.createElement('span');
+                    markExt(iterSem);
+                    iterSem.textContent = iter.semester || '';
+                    iterSem.style.cssText = 'font-size: 12px; color: ' + mutedText + ';';
+                    iterRow.appendChild(iterSem);
+
+                    var iterPassPct = (iter.data.passRate || 0);
+                    var iterPass = document.createElement('span');
+                    markExt(iterPass);
+                    var iterPassColor = iterPassPct > 85 ? '#4caf50' : (iterPassPct > 70 ? '#ffb300' : '#ef5350');
+                    iterPass.textContent = 'Pass: ' + iterPassPct.toFixed(1) + '%';
+                    iterPass.style.cssText = 'font-size: 12px; font-weight: 700;';
+                    iterPass.style.setProperty('color', iterPassColor, 'important');
+                    iterRow.appendChild(iterPass);
+
+                    var iterAvg = document.createElement('span');
+                    markExt(iterAvg);
+                    iterAvg.textContent = 'Avg: ' + (iter.data.average || 0).toFixed(2);
+                    iterAvg.style.cssText = 'font-size: 12px; color: ' + mutedText + ';';
+                    iterRow.appendChild(iterAvg);
+
+                    historyCard.appendChild(iterRow);
+                });
+            }
+
+            var chartCard = document.createElement('div');
+            markExt(chartCard);
+            chartCard.style.cssText = 'display: flex; flex-direction: column; '
+                + 'padding: 10px 12px; border-radius: 6px; border: 1px solid ' + softBorder + '; '
+                + 'background: ' + softSurface + ';';
+            layout.appendChild(chartCard);
+
+            var chartHeader = document.createElement('div');
+            markExt(chartHeader);
+            chartHeader.style.cssText = 'display: flex; justify-content: space-between; gap: 8px; align-items: baseline;';
+            chartCard.appendChild(chartHeader);
+
+            var chartTitle = document.createElement('div');
+            markExt(chartTitle);
+            chartTitle.textContent = 'Grade Distribution';
+            chartTitle.style.cssText = 'font-size: 12px; font-weight: 600;';
+            chartHeader.appendChild(chartTitle);
+
+            var chartMetaWrap = document.createElement('div');
+            markExt(chartMetaWrap);
+            chartMetaWrap.style.cssText = 'display: flex; flex-direction: column; align-items: flex-end; text-align: right;';
+            chartMetaWrap.title = 'This count is for the latest offering only, not summed across multiple offerings.';
+
+            var chartMeta = document.createElement('div');
+            markExt(chartMeta);
+            chartMeta.textContent = total + ' students';
+            chartMeta.style.cssText = 'font-size: 11px; color: ' + mutedText + ';';
+            chartMetaWrap.appendChild(chartMeta);
+
+            var chartMetaScope = document.createElement('div');
+            markExt(chartMetaScope);
+            chartMetaScope.textContent = semester ? (semester + ' only (not summed)') : 'Latest offering only (not summed)';
+            chartMetaScope.style.cssText = 'font-size: 10px; color: ' + mutedText + '; opacity: 0.9;';
+            chartMetaWrap.appendChild(chartMetaScope);
+
+            chartHeader.appendChild(chartMetaWrap);
 
             var chart = document.createElement('div');
             markExt(chart);
-            chart.style.cssText = 'display: flex; align-items: flex-end; gap: 8px; height: 64px; margin-top: 8px;';
+            chart.style.cssText = 'display: flex; align-items: flex-end; gap: 10px; height: 128px; margin-top: 8px;';
 
             var maxCount = 0;
             grades.forEach(function(g) {
@@ -4725,38 +5589,242 @@
 
             grades.forEach(function(g) {
                 var count = data.counts && data.counts[g] ? data.counts[g] : 0;
-                var height = maxCount ? Math.round((count / maxCount) * 42) : 0;
-                if (count > 0 && height < 2) height = 2;
+                var height = maxCount ? Math.round((count / maxCount) * 88) : 0;
+                if (count > 0 && height < 4) height = 4;
 
                 var wrap = document.createElement('div');
                 markExt(wrap);
-                wrap.style.cssText = 'display: flex; flex-direction: column; align-items: center; gap: 3px; width: 24px;';
+                wrap.style.cssText = 'display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1 1 0; min-width: 30px;';
+
+                var countLabel = document.createElement('div');
+                markExt(countLabel);
+                countLabel.textContent = String(count);
+                countLabel.style.cssText = 'font-size: 11px; color: ' + mutedText + '; min-height: 14px;';
+                wrap.appendChild(countLabel);
+
+                var barTrack = document.createElement('div');
+                markExt(barTrack);
+                barTrack.style.cssText = 'height: 90px; width: 100%; display: flex; align-items: flex-end;';
 
                 var bar = document.createElement('div');
                 markExt(bar);
                 var isPass = (g === '02' || g === '4' || g === '7' || g === '10' || g === '12');
                 var barColor = isPass ? '#66b3ff' : '#ef5350';
-                bar.style.cssText = 'width: 14px; height: ' + height + 'px; border-radius: 3px;';
+                bar.style.cssText = 'width: 100%; height: ' + height + 'px; border-radius: 4px;';
                 bar.style.setProperty('background', barColor, 'important');
                 bar.style.setProperty('background-color', barColor, 'important');
                 if (height === 0) {
                     bar.style.setProperty('background', 'transparent', 'important');
                     bar.style.setProperty('background-color', 'transparent', 'important');
-                    bar.style.border = darkModeEnabled ? '1px solid #555' : '1px solid #ccc';
+                    bar.style.border = darkModeEnabled ? '1px solid #555' : '1px solid #c4c9cf';
                 }
                 bar.title = g + ': ' + count + ' students';
+
+                barTrack.appendChild(bar);
+                wrap.appendChild(barTrack);
 
                 var label = document.createElement('div');
                 markExt(label);
                 label.textContent = g;
-                label.style.cssText = 'font-size: 11px; opacity: 0.85;';
+                label.style.cssText = 'font-size: 11px; opacity: 0.9;';
 
-                wrap.appendChild(bar);
                 wrap.appendChild(label);
                 chart.appendChild(wrap);
             });
 
-            container.appendChild(chart);
+            chartCard.appendChild(chart);
+        });
+    }
+
+    function fixEvalueringResultCharts() {
+        if (!IS_TOP_WINDOW) return;
+        if (window.location.hostname !== 'evaluering.dtu.dk') return;
+
+        // Keep the "text answers" toolbar row compact and transparent.
+        document.querySelectorAll('.mx-s.hide-on-print, .mx-s.hide-on-print .flex.flex--content-between').forEach(function(row) {
+            row.style.setProperty('background', 'transparent', 'important');
+            row.style.setProperty('background-color', 'transparent', 'important');
+            row.style.setProperty('height', 'auto', 'important');
+            row.style.setProperty('min-height', '0', 'important');
+        });
+
+        // Chart scripts wait until legend headers are not pure black before drawing.
+        document.querySelectorAll('.comparison__legend > .legend__header').forEach(function(header) {
+            var bg = '';
+            try {
+                bg = window.getComputedStyle(header).backgroundColor || '';
+            } catch (e) {}
+            if (bg === 'rgb(0, 0, 0)') {
+                header.style.setProperty('background', '#990000', 'important');
+                header.style.setProperty('background-color', '#990000', 'important');
+                header.style.setProperty('color', '#ffffff', 'important');
+            }
+        });
+
+        // Keep chart canvases and wrappers transparent to avoid giant dark blocks.
+        document.querySelectorAll('canvas[id^="CanvasQuestion_"]').forEach(function(canvas) {
+            canvas.style.setProperty('background', 'transparent', 'important');
+            canvas.style.setProperty('background-color', 'transparent', 'important');
+
+            var wrap = canvas.parentElement;
+            if (wrap && wrap.style) {
+                wrap.style.setProperty('background', 'transparent', 'important');
+                wrap.style.setProperty('background-color', 'transparent', 'important');
+            }
+
+            var content = canvas.closest('.question__content');
+            if (content && content.style) {
+                content.style.setProperty('background', 'transparent', 'important');
+                content.style.setProperty('background-color', 'transparent', 'important');
+            }
+        });
+    }
+
+    function fixCampusnetHeaderStyling() {
+        if (!IS_TOP_WINDOW) return;
+        if (window.location.hostname !== 'campusnet.dtu.dk') return;
+
+        var breadcrumb = document.querySelector('nav#breadcrumb.actualbreadcrumb');
+        if (breadcrumb && breadcrumb.style) {
+            breadcrumb.style.setProperty('background', '#2d2d2d', 'important');
+            breadcrumb.style.setProperty('background-color', '#2d2d2d', 'important');
+            breadcrumb.style.setProperty('color', '#e0e0e0', 'important');
+        }
+
+        document.querySelectorAll('nav#breadcrumb.actualbreadcrumb a, nav#breadcrumb.actualbreadcrumb a.last').forEach(function(link) {
+            if (!link || !link.style) return;
+            link.style.setProperty('background', '#2d2d2d', 'important');
+            link.style.setProperty('background-color', '#2d2d2d', 'important');
+            link.style.setProperty('color', '#e0e0e0', 'important');
+        });
+
+        var searchInput = document.querySelector('article.header__search #searchTextfield, .header__search #searchTextfield');
+        if (searchInput && searchInput.style) {
+            searchInput.style.setProperty('background', '#1a1a1a', 'important');
+            searchInput.style.setProperty('background-color', '#1a1a1a', 'important');
+            searchInput.style.setProperty('color', '#e0e0e0', 'important');
+            searchInput.style.setProperty('border-color', '#505050', 'important');
+        }
+
+        // Grades page main container should be dark 1.
+        // Apply inline to beat site CSS and broad form rules.
+        var path = (window.location.pathname || '').toLowerCase();
+        var onGradesPage = path.indexOf('/cnnet/grades/grades.aspx') !== -1
+            || !!document.querySelector('#ctl00_ContentBox.main__content--box > .gradesPage');
+        if (onGradesPage) {
+            // Prevent dark-2 bleed on the large lower area of the grades page layout.
+            document.querySelectorAll(
+                'main.main.arc-row, '
+                + 'main.main.arc-row > section.main__content#koContainer, '
+                + 'main.main.arc-row > section.main__content#koContainer > #ctl00_ContentBox.main__content--box'
+            ).forEach(function(el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background', '#1a1a1a', 'important');
+                el.style.setProperty('background-color', '#1a1a1a', 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+            });
+
+            document.querySelectorAll(
+                '#ctl00_ContentBox.main__content--box, '
+                + '#ctl00_ContentBox.main__content--box > .gradesPage, '
+                + '#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm, '
+                + '#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm > div'
+            ).forEach(function(el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background', '#1a1a1a', 'important');
+                el.style.setProperty('background-color', '#1a1a1a', 'important');
+            });
+
+            // Grade page section headers should be dark 1 (not the default dark 2 bars).
+            document.querySelectorAll(
+                '.gradesPoints > h2, '
+                + '.gradesPublicationTitle, '
+                + '.gradesPdfTitle, '
+                + '.gradesDtuPaperTitle, '
+                + '.gradesPublishedResultsTitle'
+            ).forEach(function(el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background', '#1a1a1a', 'important');
+                el.style.setProperty('background-color', '#1a1a1a', 'important');
+                el.style.setProperty('color', '#e0e0e0', 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+            });
+
+            // Keep "Total points for this education" table stable across postbacks.
+            document.querySelectorAll(
+                '.gradesPoints > table:not(.gradesList), '
+                + '.gradesPoints > table:not(.gradesList) tr, '
+                + '.gradesPoints > table:not(.gradesList) td'
+            ).forEach(function(el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background', '#1a1a1a', 'important');
+                el.style.setProperty('background-color', '#1a1a1a', 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+                el.style.setProperty('border-color', '#404040', 'important');
+                var inlineStyle = (el.getAttribute && el.getAttribute('style')) || '';
+                if (!/color\s*:/i.test(inlineStyle)) {
+                    el.style.setProperty('color', '#e0e0e0', 'important');
+                }
+            });
+        }
+
+        // Message truncation bars sometimes keep a site gradient despite stylesheet overrides.
+        // Set inline styles so CampusNet cannot repaint it back to light.
+        document.querySelectorAll('.messageText').forEach(function(el) {
+            if (!el || !el.style) return;
+            el.style.setProperty('background', '#1a1a1a', 'important');
+            el.style.setProperty('background-color', '#1a1a1a', 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+        });
+
+        document.querySelectorAll('.messageText .postTeaser').forEach(function(el) {
+            if (!el || !el.style) return;
+            el.style.setProperty('background', '#1a1a1a', 'important');
+            el.style.setProperty('background-color', '#1a1a1a', 'important');
+            el.style.setProperty('color', '#e0e0e0', 'important');
+        });
+
+        document.querySelectorAll('.messageText .messageTruncatebar, .messageTruncatebar').forEach(function(el) {
+            if (!el || !el.style) return;
+            var darkFade = 'linear-gradient(to bottom, rgba(26,26,26,0), rgba(26,26,26,0.95) 65%, #1a1a1a 100%)';
+            el.style.setProperty('background', darkFade, 'important');
+            el.style.setProperty('background-image', darkFade, 'important');
+            el.style.setProperty('background-color', '#1a1a1a', 'important');
+            el.style.setProperty('color', '#e0e0e0', 'important');
+            el.style.setProperty('border-top-color', '#404040', 'important');
+            el.style.setProperty('filter', 'none', 'important');
+            el.style.setProperty('mix-blend-mode', 'normal', 'important');
+        });
+    }
+
+    function styleStudyPlannerTabLink(anchor) {
+        if (!anchor || !anchor.style) return;
+        anchor.style.setProperty('background-color', '#990000', 'important');
+        anchor.style.setProperty('background', '#990000', 'important');
+        anchor.style.setProperty('color', '#ffffff', 'important');
+        anchor.style.setProperty('border-color', '#990000', 'important');
+    }
+
+    function styleStudyPlannerTabs() {
+        if (!IS_TOP_WINDOW) return;
+        var host = window.location.hostname;
+        if (host !== 'studieplan.dtu.dk' && host !== 'kurser.dtu.dk') return;
+
+        if (host === 'kurser.dtu.dk') {
+            document.querySelectorAll('li[role="presentation"] > a[href="/search"], li[role="presentation"] > a[href$="/search"]').forEach(function(a) {
+                styleStudyPlannerTabLink(a);
+            });
+
+            document.querySelectorAll('li[role="presentation"] > a[href="/course/gotoStudyplanner"], li[role="presentation"] > a[href$="/course/gotoStudyplanner"]').forEach(function(a) {
+                styleStudyPlannerTabLink(a);
+            });
+        }
+
+        document.querySelectorAll('li[role="presentation"] > a[href="#"]').forEach(function(a) {
+            var txt = (a.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            if (txt === 'studieplanlÃ¦ggeren' || txt === 'study planner' || txt === 'course search') {
+                styleStudyPlannerTabLink(a);
+            }
         });
     }
 
@@ -4816,6 +5884,9 @@
         var host = window.location.hostname;
         setupContextCaptureHotkey();
         insertContextCaptureHelper();
+        styleStudyPlannerTabs();
+        fixEvalueringResultCharts();
+        fixCampusnetHeaderStyling();
 
         if (host === 'learn.inside.dtu.dk') {
             insertMojanglesText();
@@ -4835,10 +5906,11 @@
         }
         if (host === 'kurser.dtu.dk') {
             insertKurserGradeStats();
+            scheduleKurserTextbookLinker(refreshBus ? 240 : 620);
         }
     }
 
-    // Unified MutationObserver — handles style re-overrides immediately,
+    // Unified MutationObserver â€” handles style re-overrides immediately,
     // and debounces heavier processing (shadow roots, logos, etc.)
     let _heavyWorkTimer = null;
     let _pendingMutationRoots = [];
@@ -4850,7 +5922,7 @@
 
         for (const mutation of mutations) {
             if (darkModeEnabled) {
-                // Style / class attribute changes — apply dark overrides immediately
+                // Style / class attribute changes â€” apply dark overrides immediately
                 if (mutation.type === 'attributes') {
                     const el = mutation.target;
                     if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
@@ -4860,6 +5932,9 @@
                             } else if (el.matches(DARK_SELECTORS)) {
                                 applyDarkStyle(el);
                             }
+                        }
+                        if (el.matches && el.matches('.dturedbackground')) {
+                            forceDtuRedBackgroundDark2(el);
                         }
                         if (el.classList && el.classList.contains('typebox')) {
                             const inlineStyle = el.getAttribute('style');
@@ -4878,7 +5953,7 @@
                 }
             }
 
-            // New nodes added — schedule feature checks (and dark styles if enabled)
+            // New nodes added â€” schedule feature checks (and dark styles if enabled)
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(node => {
                     if (node.nodeType === 1) {
@@ -4886,9 +5961,15 @@
                         if (darkModeEnabled) {
                             if (node.matches && node.matches(DARK_SELECTORS)) applyDarkStyle(node);
                             if (node.matches && node.matches(LIGHTER_DARK_SELECTORS)) applyLighterDarkStyle(node);
+                            if (node.matches && node.matches('.dturedbackground')) {
+                                forceDtuRedBackgroundDark2(node);
+                            }
                             if (node.querySelectorAll) {
                                 node.querySelectorAll(DARK_SELECTORS).forEach(applyDarkStyle);
                                 node.querySelectorAll(LIGHTER_DARK_SELECTORS).forEach(applyLighterDarkStyle);
+                                if (node.querySelector('.dturedbackground')) {
+                                    node.querySelectorAll('.dturedbackground').forEach(forceDtuRedBackgroundDark2);
+                                }
                             }
                         }
                         needsHeavyWork = true;
@@ -4964,3 +6045,4 @@
         }, 10000);
     }
 })();
+
