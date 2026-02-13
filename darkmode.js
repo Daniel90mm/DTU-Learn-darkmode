@@ -1,6 +1,86 @@
-// Dark mode script to inject styles into Shadow DOM elements
+﻿// Dark mode script to inject styles into Shadow DOM elements
 (function() {
     'use strict';
+
+    // ===== DARK MODE TOGGLE =====
+    const DARK_MODE_KEY = 'dtuDarkModeEnabled';
+    const DEV_CONTEXT_CAPTURE_KEY = 'dtuDevContextCapture';
+    const IS_TOP_WINDOW = (() => {
+        try {
+            return window === window.top;
+        } catch (e) {
+            return false;
+        }
+    })();
+    const ENABLE_CONTEXT_CAPTURE_DEV_TOOL = (() => {
+        try {
+            return localStorage.getItem(DEV_CONTEXT_CAPTURE_KEY) === 'true';
+        } catch (e) {
+            return false;
+        }
+    })();
+
+    // Check dark mode preference: cookie (.dtu.dk cross-origin) â†’ localStorage â†’ default true
+    function isDarkModeEnabled() {
+        try {
+            const match = document.cookie.match(/dtuDarkMode=(\w+)/);
+            if (match) return match[1] !== 'false';
+        } catch (e) { /* cookie access blocked in some iframes */ }
+        const stored = localStorage.getItem(DARK_MODE_KEY);
+        if (stored !== null) return stored === 'true';
+        return true;
+    }
+
+    // Save preference to all available stores (localStorage + cookie + browser.storage)
+    function saveDarkModePreference(enabled) {
+        localStorage.setItem(DARK_MODE_KEY, String(enabled));
+        try {
+            if (location.hostname.endsWith('.dtu.dk')) {
+                document.cookie = 'dtuDarkMode=' + enabled + '; domain=.dtu.dk; path=/; max-age=31536000; SameSite=Lax';
+            }
+        } catch (e) { /* cookie access blocked */ }
+        if (typeof browser !== 'undefined' && browser.storage && browser.storage.local) {
+            browser.storage.local.set({ [DARK_MODE_KEY]: enabled });
+        }
+    }
+
+    // Inject the dark mode CSS stylesheet via <link> element
+    function injectDarkCSS() {
+        if (document.getElementById('dtu-dark-mode-css')) return;
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = browser.runtime.getURL('darkmode.css');
+        link.id = 'dtu-dark-mode-css';
+        (document.head || document.documentElement).appendChild(link);
+    }
+
+    // Synchronous check â€” inject CSS immediately if enabled (runs at document_start)
+    const darkModeEnabled = isDarkModeEnabled();
+    if (darkModeEnabled) {
+        injectDarkCSS();
+    }
+
+    // Async cross-origin check via browser.storage.local (covers s.brightspace.com etc.)
+    if (typeof browser !== 'undefined' && browser.storage && browser.storage.local) {
+        browser.storage.local.get(DARK_MODE_KEY).then(function(result) {
+            var storedEnabled = result[DARK_MODE_KEY];
+            if (storedEnabled === undefined) return; // no stored value yet
+            // Sync local stores for faster sync check next time
+            localStorage.setItem(DARK_MODE_KEY, String(storedEnabled));
+            try {
+                if (location.hostname.endsWith('.dtu.dk')) {
+                    document.cookie = 'dtuDarkMode=' + storedEnabled + '; domain=.dtu.dk; path=/; max-age=31536000; SameSite=Lax';
+                }
+            } catch (e) {}
+            // If mismatch between sync and async check, reload to correct
+            if (storedEnabled !== darkModeEnabled && window === window.top) {
+                location.reload();
+            }
+        }).catch(function() {});
+    }
+
+    // Dark mode toggle for light mode (re-enable): inserted via runFeatureChecks below
 
     // Dark mode colors
     const DARK_BG = '#2d2d2d';
@@ -51,11 +131,60 @@
             opacity: 1 !important;
         }
 
-        /* List role containers */
-        div[role="list"],
-        [role="list"] {
+        /* List role containers (except left nav wrapper) */
+        div[role="list"]:not(.d2l-navigation-s-main-wrapper),
+        [role="list"]:not(.d2l-navigation-s-main-wrapper) {
+            background: #1a1a1a !important;
+            background-color: #1a1a1a !important;
+            background-image: none !important;
+            color: ${DARK_TEXT} !important;
+        }
+
+        /* Breadcrumb list container can have gradient backgrounds in DTU Learn */
+        nav[aria-label="Breadcrumb"],
+        nav[aria-label="Breadcrumb"] div[role="list"],
+        nav[aria-label="Breadcrumb"] [role="list"] {
+            background: #1a1a1a !important;
+            background-color: #1a1a1a !important;
+            background-image: none !important;
+            color: ${DARK_TEXT} !important;
+        }
+
+        /* Action trigger buttons */
+        button[aria-haspopup="true"][aria-label^="Actions for"],
+        button[aria-label^="Actions for"] {
+            background-color: #1a1a1a !important;
+            color: ${DARK_TEXT} !important;
+            border-color: ${DARK_BORDER} !important;
+        }
+
+        button[aria-label^="Actions for"] d2l-icon[icon="tier1:chevron-down"] {
+            background-color: #1a1a1a !important;
+            background: #1a1a1a !important;
+            background-image: none !important;
+        }
+
+        /* Specific action buttons that stay dark 2 */
+        button[aria-haspopup="true"][aria-label="Actions for Work To Do"],
+        button[aria-label^="Actions for Work To Do"],
+        button[aria-haspopup="true"][aria-label="Actions for Study Announcements"],
+        button[aria-label^="Actions for Study Announcements"],
+        button[aria-haspopup="true"][aria-label="Actions for Calendar"],
+        button[aria-label^="Actions for Calendar"],
+        button[aria-haspopup="true"][aria-label="Actions for Lecture 01, Quiz 1"],
+        button[aria-label^="Actions for Lecture 01, Quiz 1"] {
             background-color: #2d2d2d !important;
             color: ${DARK_TEXT} !important;
+            border-color: ${DARK_BORDER} !important;
+        }
+
+        button[aria-label^="Actions for Work To Do"] d2l-icon[icon="tier1:chevron-down"],
+        button[aria-label^="Actions for Study Announcements"] d2l-icon[icon="tier1:chevron-down"],
+        button[aria-label^="Actions for Calendar"] d2l-icon[icon="tier1:chevron-down"],
+        button[aria-label^="Actions for Lecture 01, Quiz 1"] d2l-icon[icon="tier1:chevron-down"] {
+            background-color: #2d2d2d !important;
+            background: #2d2d2d !important;
+            background-image: none !important;
         }
 
         /* Breadcrumb elements */
@@ -64,14 +193,20 @@
         d2l-breadcrumb-current-page,
         .d2l-breadcrumb,
         .d2l-breadcrumbs {
-            background-color: #2d2d2d !important;
+            background: #1a1a1a !important;
+            background-color: #1a1a1a !important;
+            background-image: none !important;
             color: ${DARK_TEXT} !important;
         }
 
-        /* Breadcrumb links and icons */
+        /* Breadcrumb links */
         a.d2l-link-small:not(.d2l-link-inline),
-        d2l-icon[icon="tier1:chevron-right"],
         span[aria-current="page"] {
+            background-color: #1a1a1a !important;
+        }
+
+        /* Keep chevron separators on dark 2 */
+        d2l-icon[icon="tier1:chevron-right"] {
             background-color: #2d2d2d !important;
         }
 
@@ -81,10 +216,11 @@
         }
 
         /* Floating buttons */
+        d2l-floating-buttons,
         .d2l-floating-buttons-container,
         .d2l-floating-buttons,
         .d2l-floating-buttons-inner-container {
-            background-color: #2d2d2d !important;
+            background-color: #1a1a1a !important;
             color: ${DARK_TEXT} !important;
         }
 
@@ -407,6 +543,48 @@
         a {
             background-color: transparent !important;
         }
+
+        /* Content shortcut button â€” use a.class to beat .d2l-card-container a specificity */
+        a.dtu-dark-content-btn,
+        a.dtu-dark-content-btn:link,
+        a.dtu-dark-content-btn:visited {
+            position: absolute !important;
+            bottom: 6px !important;
+            right: 6px !important;
+            transform: translate(195px, 60px) !important;
+            min-width: 42px !important;
+            min-height: 42px !important;
+            width: 42px !important;
+            height: 42px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 6px !important;
+            background-color: #2d2d2d !important;
+            color: #ffffff !important;
+            font-size: 18px !important;
+            font-family: sans-serif !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            z-index: 5 !important;
+            border: none !important;
+            box-sizing: border-box !important;
+            line-height: 1 !important;
+            transition: opacity 0.2s, background-color 0.2s !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        :host(:hover) a.dtu-dark-content-btn,
+        .d2l-card-container:hover a.dtu-dark-content-btn,
+        .d2l-card-header:hover a.dtu-dark-content-btn {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+        a.dtu-dark-content-btn:hover {
+            background-color: rgba(0, 0, 0, 0.85) !important;
+        }
     `;
 
     // Styles for expand/collapse content and LTI launch elements
@@ -442,33 +620,75 @@
     const menuStyles = `
         /* Dark background for menus */
         :host {
-            background-color: ${DARK_BG} !important;
+            background-color: #1a1a1a !important;
             color: ${DARK_TEXT} !important;
         }
 
         .d2l-menu,
         .d2l-menu-mvc,
         .d2l-contextmenu {
-            background-color: ${DARK_BG} !important;
+            background-color: #1a1a1a !important;
             color: ${DARK_TEXT} !important;
             border-color: ${DARK_BORDER} !important;
         }
 
         .d2l-menu-item,
         .d2l-menu-item-text {
-            background-color: ${DARK_BG} !important;
+            background-color: #1a1a1a !important;
             color: ${DARK_TEXT} !important;
         }
 
         .d2l-menu-item:hover,
         .d2l-menu-item:focus {
-            background-color: #3d3d3d !important;
+            background-color: #2d2d2d !important;
             color: ${DARK_TEXT} !important;
         }
 
-        a, button {
+        a {
             color: ${DARK_TEXT} !important;
             background-color: transparent !important;
+        }
+
+        button,
+        button[aria-haspopup="true"][aria-label^="Actions for"] {
+            color: ${DARK_TEXT} !important;
+            background-color: #1a1a1a !important;
+            border-color: ${DARK_BORDER} !important;
+        }
+
+        button[aria-haspopup="true"][aria-label="Actions for Work To Do"],
+        button[aria-label^="Actions for Work To Do"],
+        button[aria-haspopup="true"][aria-label="Actions for Study Announcements"],
+        button[aria-label^="Actions for Study Announcements"],
+        button[aria-haspopup="true"][aria-label="Actions for Calendar"],
+        button[aria-label^="Actions for Calendar"],
+        button[aria-haspopup="true"][aria-label="Actions for Lecture 01, Quiz 1"],
+        button[aria-label^="Actions for Lecture 01, Quiz 1"] {
+            background-color: #2d2d2d !important;
+            border-color: ${DARK_BORDER} !important;
+        }
+
+        button[aria-label^="Actions for Work To Do"] d2l-icon[icon="tier1:chevron-down"],
+        button[aria-label^="Actions for Study Announcements"] d2l-icon[icon="tier1:chevron-down"],
+        button[aria-label^="Actions for Calendar"] d2l-icon[icon="tier1:chevron-down"],
+        button[aria-label^="Actions for Lecture 01, Quiz 1"] d2l-icon[icon="tier1:chevron-down"] {
+            background-color: #2d2d2d !important;
+            background: #2d2d2d !important;
+            background-image: none !important;
+        }
+
+        div[role="list"] {
+            background: #1a1a1a !important;
+            background-color: #1a1a1a !important;
+            background-image: none !important;
+        }
+
+        nav[aria-label="Breadcrumb"],
+        nav[aria-label="Breadcrumb"] div[role="list"],
+        nav[aria-label="Breadcrumb"] [role="list"] {
+            background: #1a1a1a !important;
+            background-color: #1a1a1a !important;
+            background-image: none !important;
         }
     `;
 
@@ -726,49 +946,166 @@
             style.textContent = styleText;
         }
 
+        observeInjectedShadowRoot(shadowRoot);
         processNestedShadowRoots(shadowRoot);
     }
 
     // Function to process shadow roots nested inside a shadow root
+    const _pendingShadowHostRetry = new WeakMap();
+    const _shadowHostRetryCount = new WeakMap();
+    const _observedShadowRoots = new WeakSet();
+    const SHADOW_HOST_RETRY_DELAY_MS = 350;
+    const SHADOW_HOST_MAX_RETRIES = 20;
+
+    function isShadowHostCandidate(element) {
+        if (!element || !element.tagName) return false;
+        var tagName = element.tagName.toLowerCase();
+        return tagName.startsWith('d2l-');
+    }
+
+    function scheduleShadowHostRetry(element) {
+        if (!isShadowHostCandidate(element)) return;
+
+        if (element.shadowRoot) {
+            var existingTimer = _pendingShadowHostRetry.get(element);
+            if (existingTimer) {
+                clearTimeout(existingTimer);
+                _pendingShadowHostRetry.delete(element);
+            }
+            injectStylesIntoShadowRoot(element.shadowRoot, element);
+            return;
+        }
+
+        if (_pendingShadowHostRetry.has(element)) return;
+
+        var retryCount = _shadowHostRetryCount.get(element) || 0;
+        if (retryCount >= SHADOW_HOST_MAX_RETRIES) return;
+        _shadowHostRetryCount.set(element, retryCount + 1);
+
+        var retryTimer = setTimeout(function() {
+            _pendingShadowHostRetry.delete(element);
+            if (!element.isConnected) return;
+            scheduleShadowHostRetry(element);
+        }, SHADOW_HOST_RETRY_DELAY_MS);
+        _pendingShadowHostRetry.set(element, retryTimer);
+    }
+
+    function processShadowMutationNode(node) {
+        if (!node || node.nodeType !== 1) return;
+        if (shouldExcludeElement(node) || isInsideExcludedContainer(node)) return;
+
+        if (node.shadowRoot) {
+            injectStylesIntoShadowRoot(node.shadowRoot, node);
+        } else {
+            scheduleShadowHostRetry(node);
+        }
+
+        const walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT, null);
+        let child = walker.nextNode();
+        while (child) {
+            if (!shouldExcludeElement(child) && !isInsideExcludedContainer(child)) {
+                if (child.shadowRoot) {
+                    injectStylesIntoShadowRoot(child.shadowRoot, child);
+                } else {
+                    scheduleShadowHostRetry(child);
+                }
+            }
+            child = walker.nextNode();
+        }
+
+        processHtmlBlocks(node);
+        insertContentButtons(node);
+    }
+
+    function observeInjectedShadowRoot(shadowRoot) {
+        if (!shadowRoot || _observedShadowRoots.has(shadowRoot)) return;
+
+        const observer = new MutationObserver(function(mutations) {
+            for (var i = 0; i < mutations.length; i++) {
+                var mutation = mutations[i];
+                if (mutation.type !== 'childList') continue;
+                for (var j = 0; j < mutation.addedNodes.length; j++) {
+                    var added = mutation.addedNodes[j];
+                    if (added.nodeType === 1) {
+                        processShadowMutationNode(added);
+                    }
+                }
+            }
+        });
+
+        observer.observe(shadowRoot, {
+            childList: true,
+            subtree: true
+        });
+
+        _observedShadowRoots.add(shadowRoot);
+    }
+
     function processNestedShadowRoots(shadowRoot) {
         if (!shadowRoot) return;
 
-        // Find all elements inside this shadow root
-        const elements = shadowRoot.querySelectorAll('*');
-        elements.forEach(element => {
+        const walker = document.createTreeWalker(shadowRoot, NodeFilter.SHOW_ELEMENT, null);
+        let element = walker.nextNode();
+        while (element) {
             if (element.shadowRoot) {
                 injectStylesIntoShadowRoot(element.shadowRoot, element);
+            } else {
+                scheduleShadowHostRetry(element);
             }
-        });
+            element = walker.nextNode();
+        }
+    }
+
+    const _styledHtmlBlocks = new WeakSet();
+    const _pendingHtmlBlockRetry = new WeakMap();
+    const _htmlBlockRetryCount = new WeakMap();
+    const HTML_BLOCK_MAX_RETRIES = 8;
+
+    function ensureHtmlBlockStyled(block) {
+        if (!block || _styledHtmlBlocks.has(block)) return;
+
+        if (block.shadowRoot) {
+            var pendingTimer = _pendingHtmlBlockRetry.get(block);
+            if (pendingTimer) {
+                clearTimeout(pendingTimer);
+                _pendingHtmlBlockRetry.delete(block);
+            }
+            injectStylesIntoShadowRoot(block.shadowRoot, block);
+            _styledHtmlBlocks.add(block);
+            return;
+        }
+
+        if (_pendingHtmlBlockRetry.has(block)) return;
+
+        var retryCount = _htmlBlockRetryCount.get(block) || 0;
+        if (retryCount >= HTML_BLOCK_MAX_RETRIES) return;
+        _htmlBlockRetryCount.set(block, retryCount + 1);
+
+        // Keep one short retry timer per block to avoid timer fan-out.
+        const retryTimer = setTimeout(function() {
+            _pendingHtmlBlockRetry.delete(block);
+            ensureHtmlBlockStyled(block);
+        }, 400);
+        _pendingHtmlBlockRetry.set(block, retryTimer);
     }
 
     // Function to specifically process d2l-html-block elements
     function processHtmlBlocks(root) {
+        if (!root || !root.querySelectorAll) return;
+        if (root.matches && root.matches('d2l-html-block')) {
+            ensureHtmlBlockStyled(root);
+        }
         const htmlBlocks = root.querySelectorAll('d2l-html-block');
         htmlBlocks.forEach(block => {
-            // Try immediately
-            if (block.shadowRoot) {
-                injectStylesIntoShadowRoot(block.shadowRoot, block);
-            }
-            // Also poll multiple times to catch late shadow root creation
-            const delays = [50, 100, 200, 500, 1000, 2000];
-            delays.forEach(delay => {
-                setTimeout(() => {
-                    if (block.shadowRoot) {
-                        injectStylesIntoShadowRoot(block.shadowRoot, block);
-                    }
-                }, delay);
-            });
+            ensureHtmlBlockStyled(block);
         });
     }
 
-    // Aggressively poll for d2l-html-block elements
+    // Light scan for d2l-html-block elements to catch late DOM inserts.
     function pollForHtmlBlocks() {
         const htmlBlocks = document.querySelectorAll('d2l-html-block');
         htmlBlocks.forEach(block => {
-            if (block.shadowRoot) {
-                injectStylesIntoShadowRoot(block.shadowRoot, block);
-            }
+            ensureHtmlBlockStyled(block);
         });
     }
 
@@ -942,7 +1279,36 @@
         .servicemenu nav *,
         .servicemenu__link-text,
         .breadcrumb.linkset6,
-        .breadcrumb.linkset6 *
+        .breadcrumb.linkset6 *,
+        #d_content_r_c1,
+        #d_content_r_c2,
+        #d_content_r,
+        #d_content_r_p,
+        form#d2l_form,
+        d2l-dropdown-context-menu,
+        d2l-dropdown-menu,
+        d2l-dropdown-menu-contextmenu,
+        d2l-menu,
+        d2l-menu-item,
+        button[aria-haspopup="true"][aria-label^="Actions for"],
+        d2l-dropdown-context-menu button[aria-label^="Actions for"],
+        d2l-floating-buttons,
+        .d2l-floating-buttons-container,
+        .d2l-floating-buttons,
+        .d2l-floating-buttons-inner-container,
+        div[role="list"]:not(.d2l-navigation-s-main-wrapper),
+        d2l-breadcrumb,
+        d2l-breadcrumbs,
+        d2l-breadcrumb-current-page,
+        d2l-breadcrumbs a,
+        d2l-breadcrumbs span,
+        d2l-breadcrumbs d2l-icon,
+        table.d_FG,
+        table.d_FG *,
+        .d_fgh,
+        .fct_w,
+        .fl_n,
+        .fl_top
     `;
 
     // Selectors for elements that should be #2d2d2d (lighter dark)
@@ -952,6 +1318,8 @@
         .d2l-navigation-s-item,
         .d2l-navigation-s-group,
         .d2l-navigation-s-link,
+        .dco,
+        .dco_c,
         .dco a.d2l-link,
         .dco_c a.d2l-link,
         td.d_gn a.d2l-link,
@@ -959,6 +1327,8 @@
         .d2l-inline,
         .d2l-inline a,
         .d2l-inline a.d2l-link,
+        td.d2l-table-cell-first,
+        td.d2l-table-cell-first *,
         .d2l-datalist,
         .vui-list,
         .vui-no-separator,
@@ -1044,22 +1414,14 @@
         ul.d2l-action-buttons-list,
         .d2l-action-buttons-list,
         .d2l-action-buttons-item,
-        .d2l-floating-buttons-container,
-        .d2l-floating-buttons,
-        .d2l-floating-buttons-inner-container,
-        table.d_FG,
-        table.d_FG td,
-        .d_fgh,
-        .fct_w,
-        .fl_n,
-        .fl_top,
-        div[role="list"]:not(.d2l-navigation-s-main-wrapper),
-        d2l-breadcrumb,
-        d2l-breadcrumbs,
-        d2l-breadcrumb-current-page,
-        span[aria-current="page"],
-        a.d2l-link-small:not(.d2l-link-inline),
-        d2l-icon[icon="tier1:chevron-right"],
+        button[aria-haspopup="true"][aria-label="Actions for Work To Do"],
+        button[aria-label^="Actions for Work To Do"],
+        button[aria-haspopup="true"][aria-label="Actions for Study Announcements"],
+        button[aria-label^="Actions for Study Announcements"],
+        button[aria-haspopup="true"][aria-label="Actions for Calendar"],
+        button[aria-label^="Actions for Calendar"],
+        button[aria-haspopup="true"][aria-label="Actions for Lecture 01, Quiz 1"],
+        button[aria-label^="Actions for Lecture 01, Quiz 1"],
         .d2l-tool-areas-item,
         li.d2l-tool-areas-item,
         h2.d2l-heading-none,
@@ -1068,12 +1430,29 @@
         .d2l-accordion-content,
         .d2l-accordion-content-expanded,
         .d2l-hpg-opener,
-        button.d2l-hpg-opener
+        button.d2l-hpg-opener,
+        a.ddl_li_c,
+        a.ddl_li_c *,
+        #z_g,
+        #z_g .dco_c
     `;
 
     // Function to apply darkest style to an element (#1a1a1a)
     function applyDarkStyle(el) {
         if (!el || !el.style) return;
+        // Skip extension-created elements (ECTS bar, GPA rows, sim rows, etc.)
+        if (el.hasAttribute && el.hasAttribute('data-dtu-ext')) return;
+        // Evaluering charts use canvas wrappers inside .question__content;
+        // keep them transparent so graph rendering is not blocked by forced dark fills.
+        if (window.location.hostname === 'evaluering.dtu.dk' && el.matches) {
+            if (el.matches('.question__content, .question__content > div[style*="font-size:0"]')) return;
+        }
+        // Preserve quiz histogram visuals (bars + axis image overlays)
+        if (isDTULearnQuizSubmissionsPage() && el.matches) {
+            if (el.matches('img.d2l-histogram-barblue, td.d2l-histogram-disback1, td.d2l-histogram-disyimg2, td.d2l-histogram-xside2')) {
+                return;
+            }
+        }
         // Skip navigation wrapper elements
         if (el.closest && el.closest('.d2l-navigation-s-main-wrapper')) return;
         // Skip elements inside pagefooter (those should be dark 2)
@@ -1085,7 +1464,7 @@
         el.style.setProperty('background', '#1a1a1a', 'important');
         el.style.setProperty('background-color', '#1a1a1a', 'important');
         el.style.setProperty('background-image', 'none', 'important');
-        // Skip color on links — let CSS handle it (nav links grey, content links blue)
+        // Skip color on links â€” let CSS handle it (nav links grey, content links blue)
         if (el.tagName !== 'A') {
             el.style.setProperty('color', '#e0e0e0', 'important');
         }
@@ -1094,16 +1473,46 @@
     // Function to apply lighter dark style to an element (#2d2d2d)
     function applyLighterDarkStyle(el) {
         if (!el || !el.style) return;
+        // Skip extension-created elements (ECTS bar, GPA rows, sim rows, etc.)
+        if (el.hasAttribute && el.hasAttribute('data-dtu-ext')) return;
+        // Skip bus departure container â€” it manages its own colors
+        if (el.closest && el.closest('.dtu-bus-departures')) return;
+        if (el.matches && el.matches('.dtu-bus-departures')) return;
+        if (isDTULearnQuizSubmissionsPage() && el.matches) {
+            if (el.matches('img.d2l-histogram-barblue, td.d2l-histogram-disback1, td.d2l-histogram-disyimg2, td.d2l-histogram-xside2')) {
+                return;
+            }
+        }
+        if (isDTULearnQuizSubmissionsPage()) {
+            var graphRow = el.closest && el.closest('tr');
+            if (graphRow && graphRow.querySelector && graphRow.querySelector('img[src*="Framework.GraphBar"]')) return;
+        }
+        // Keep quiz details tables dark 1
+        if (el.closest && el.closest('table.d_FG')) return;
         // Skip breadcrumb.linkset6 (should be dark 1)
         if (el.matches && el.matches('.breadcrumb.linkset6')) return;
         if (el.closest && el.closest('.breadcrumb.linkset6')) return;
         el.style.setProperty('background', '#2d2d2d', 'important');
         el.style.setProperty('background-color', '#2d2d2d', 'important');
         el.style.setProperty('background-image', 'none', 'important');
-        // Skip color on links — let CSS handle it (nav links grey, content links blue)
+        // Skip color on links â€” let CSS handle it (nav links grey, content links blue)
         if (el.tagName !== 'A') {
             el.style.setProperty('color', '#e0e0e0', 'important');
         }
+    }
+
+    function forceDtuRedBackgroundDark2(el) {
+        if (!el || !el.style) return;
+        var styleAttr = (el.getAttribute && el.getAttribute('style')) || '';
+        var hasDarkBg = /background(?:-color)?\s*:\s*(?:#2d2d2d|rgb\(\s*45\s*,\s*45\s*,\s*45\s*\))/i.test(styleAttr);
+        var hasDarkBorder = /border-color\s*:\s*(?:#2d2d2d|rgb\(\s*45\s*,\s*45\s*,\s*45\s*\))/i.test(styleAttr);
+        var hasNoBgImage = /background-image\s*:\s*none/i.test(styleAttr);
+        if (hasDarkBg && hasDarkBorder && hasNoBgImage) return;
+
+        el.style.setProperty('background', '#2d2d2d', 'important');
+        el.style.setProperty('background-color', '#2d2d2d', 'important');
+        el.style.setProperty('background-image', 'none', 'important');
+        el.style.setProperty('border-color', '#2d2d2d', 'important');
     }
 
     // Function to aggressively override dynamically applied styles
@@ -1115,6 +1524,16 @@
         // Apply lighter dark color to navigation wrapper
         const lighterElements = root.querySelectorAll(LIGHTER_DARK_SELECTORS);
         lighterElements.forEach(applyLighterDarkStyle);
+
+        // Force white text on nav dropdown (Courses/Groups/Shortcuts menu)
+        root.querySelectorAll('.nav__dropdown, article.nav__dropdown').forEach(dropdown => {
+            dropdown.querySelectorAll('a, span, h2, li, div, header').forEach(el => {
+                el.style.setProperty('color', '#ffffff', 'important');
+            });
+        });
+
+        // Force dark 2 on DTU red background bar (studieplan.dtu.dk, campusnet.dtu.dk)
+        root.querySelectorAll('.dturedbackground').forEach(forceDtuRedBackgroundDark2);
     }
 
     // MutationObserver to watch for style changes
@@ -1190,8 +1609,8 @@
         });
     }
 
-    // Run immediately (unified scheduling handles periodic checks)
-    pollOverrideDynamicStyles();
+    // Run immediately (dark mode only)
+    if (darkModeEnabled) pollOverrideDynamicStyles();
 
     // Function to check if element is inside a PDF viewer or media player
     function isInsideExcludedContainer(element) {
@@ -1219,26 +1638,31 @@
 
     // Function to find and inject into all shadow roots
     function processElement(element) {
+        if (!element || element.nodeType !== 1) return;
+
         // Skip if inside PDF viewer
         if (isInsideExcludedContainer(element)) {
             return;
         }
 
-        if (element.shadowRoot) {
-            injectStylesIntoShadowRoot(element.shadowRoot, element);
+        function processNode(node) {
+            if (!node || node.nodeType !== 1) return;
+            if (shouldExcludeElement(node) || isInsideExcludedContainer(node)) return;
+            if (node.shadowRoot) {
+                injectStylesIntoShadowRoot(node.shadowRoot, node);
+            } else {
+                scheduleShadowHostRetry(node);
+            }
         }
 
-        // Check all children (excluding PDF viewer contents)
-        const children = element.querySelectorAll('*');
-        children.forEach(child => {
-            // Skip PDF viewer elements
-            if (shouldExcludeElement(child) || isInsideExcludedContainer(child)) {
-                return;
-            }
-            if (child.shadowRoot) {
-                injectStylesIntoShadowRoot(child.shadowRoot, child);
-            }
-        });
+        processNode(element);
+
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, null);
+        let child = walker.nextNode();
+        while (child) {
+            processNode(child);
+            child = walker.nextNode();
+        }
 
         // Specifically process d2l-html-block elements
         processHtmlBlocks(element);
@@ -1246,8 +1670,39 @@
         processIframes(element);
     }
 
+    function sweepForLateShadowRoots(root) {
+        if (!darkModeEnabled) return;
+        var baseRoot = root && root.nodeType === 1 ? root : (document.body || document.documentElement);
+        if (!baseRoot) return;
+
+        function processCandidate(node) {
+            if (!node || node.nodeType !== 1 || !node.tagName) return;
+            if (!node.tagName.toLowerCase().startsWith('d2l-')) return;
+            if (shouldExcludeElement(node) || isInsideExcludedContainer(node)) return;
+            if (node.shadowRoot) {
+                injectStylesIntoShadowRoot(node.shadowRoot, node);
+            } else {
+                scheduleShadowHostRetry(node);
+            }
+        }
+
+        processCandidate(baseRoot);
+
+        var walker = document.createTreeWalker(baseRoot, NodeFilter.SHOW_ELEMENT, null);
+        var node = walker.nextNode();
+        while (node) {
+            processCandidate(node);
+            node = walker.nextNode();
+        }
+    }
+
     function processIframes(root) {
-        const iframes = root.querySelectorAll('iframe');
+        const iframes = [];
+        if (root.matches && root.matches('iframe')) {
+            iframes.push(root);
+        }
+        root.querySelectorAll('iframe').forEach(iframe => iframes.push(iframe));
+
         iframes.forEach(iframe => {
             try {
                 // Skip PDF viewer iframes
@@ -1312,25 +1767,42 @@
         ]);
     }
 
-    // Initial processing (unified observer handles ongoing changes)
-    async function initialize() {
-        await waitForCustomElements();
-        processElement(document.body);
-    }
+    // Initial processing (dark mode only â€” unified observer handles ongoing changes)
+    if (darkModeEnabled) {
+        async function initialize() {
+            await waitForCustomElements();
+            processElement(document.body);
+        }
 
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initialize);
-    } else {
-        initialize();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
     }
 
     // Load and visibility handlers are managed by unified scheduling section below
 
     // ===== LOGO REPLACEMENT =====
     // Replace the "My Home" logo with custom white DTU logo for dark mode
-    function replaceLogoImage() {
+    function replaceLogoImage(rootNode) {
         const newSrc = chrome.runtime.getURL('Corp_White_Transparent.png');
+
+        function replaceHostLogosInRoot(root) {
+            if (!root || !root.querySelectorAll) return;
+            const hostLogos = root.querySelectorAll(
+                'd2l-labs-navigation-link-image.d2l-navigation-s-logo, '
+                + 'd2l-labs-navigation-link-image[text="My Home"], '
+                + 'd2l-labs-navigation-link-image[href*="/d2l/lp/ouHome/"]'
+            );
+            hostLogos.forEach(host => {
+                if (!host.dataset.darkModeReplaced || host.getAttribute('src') !== newSrc) {
+                    host.setAttribute('src', newSrc);
+                    host.src = newSrc;
+                    host.dataset.darkModeReplaced = 'true';
+                }
+            });
+        }
 
         // Helper function to replace logo in a given root
         function replaceInRoot(root) {
@@ -1342,15 +1814,16 @@
                     img.dataset.darkModeReplaced = 'true';
                     // Resize the sites.dtu.dk DTU logo
                     if (img.classList.contains('websitelogoright__link-image') || img.getAttribute('src')?.includes('dtulogo2_colour') || img.classList.contains('logo-img')) {
-                        img.style.setProperty('max-height', '50px', 'important');
+                        img.style.setProperty('max-height', '60px', 'important');
                         img.style.setProperty('width', 'auto', 'important');
                     }
                 }
             });
         }
 
-        // Check main document
-        replaceInRoot(document);
+        const baseRoot = (rootNode && rootNode.nodeType === 1) ? rootNode : document;
+        replaceHostLogosInRoot(baseRoot);
+        replaceInRoot(baseRoot);
 
         // Check all shadow roots recursively
         function checkShadowRoots(root) {
@@ -1358,17 +1831,18 @@
             const elements = root.querySelectorAll('*');
             elements.forEach(el => {
                 if (el.shadowRoot) {
+                    replaceHostLogosInRoot(el.shadowRoot);
                     replaceInRoot(el.shadowRoot);
                     checkShadowRoots(el.shadowRoot);
                 }
             });
         }
 
-        checkShadowRoots(document);
+        checkShadowRoots(baseRoot);
     }
 
-    // Run logo replacement (unified observer handles updates)
-    replaceLogoImage();
+    // Run logo replacement (dark mode only)
+    if (darkModeEnabled) replaceLogoImage();
 
     // ===== MOJANGLES TEXT INSERTION =====
     // Insert Mojangles text image into the navigation header with Minecraft-style animation
@@ -1392,6 +1866,8 @@
     }
 
     function insertMojanglesText() {
+        if (!IS_TOP_WINDOW) return;
+
         // If disabled, hide all existing Mojangles images (including in shadow DOM) and return
         if (!isMojanglesEnabled()) {
             findAllMojanglesImages(document).forEach(img => {
@@ -1405,7 +1881,7 @@
             img.style.display = '';
         });
 
-        const mojanglesImgSrc = chrome.runtime.getURL('Mojangles text.png');
+        const mojanglesImgSrc = chrome.runtime.getURL(darkModeEnabled ? 'Mojangles text.png' : 'Mojangles text darkmode off.png');
         const isHomePage = /^\/d2l\/home\/?$/.test(window.location.pathname);
 
         // Helper function to insert in a given root
@@ -1481,6 +1957,7 @@
 
     // ===== MOJANGLES TOGGLE IN ADMIN TOOLS =====
     function insertMojanglesToggle() {
+        if (!IS_TOP_WINDOW) return;
         if (document.querySelector('#mojangles-toggle')) return;
 
         const placeholder = document.querySelector('#AdminToolsPlaceholderId');
@@ -1488,22 +1965,26 @@
 
         const column = document.createElement('div');
         column.className = 'd2l-admin-tools-column';
-        column.style.cssText = 'background-color: #2d2d2d !important; color: #e0e0e0 !important;';
+        if (darkModeEnabled) column.style.cssText = 'background-color: #2d2d2d !important; color: #e0e0e0 !important;';
 
         const heading = document.createElement('h2');
         heading.className = 'd2l-heading vui-heading-4 d2l-heading-none';
         heading.textContent = 'DTU After Dark';
-        heading.style.cssText = 'background-color: #2d2d2d !important; color: #e0e0e0 !important;';
+        if (darkModeEnabled) heading.style.cssText = 'background-color: #2d2d2d !important; color: #e0e0e0 !important;';
 
         const list = document.createElement('ul');
         list.className = 'd2l-list';
-        list.style.cssText = 'background-color: #2d2d2d !important;';
+        if (darkModeEnabled) list.style.cssText = 'background-color: #2d2d2d !important;';
 
         const li = document.createElement('li');
-        li.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 4px 0; background-color: #2d2d2d !important;';
+        li.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; padding: 4px 0; background-color: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; padding: 4px 0;';
 
         const label = document.createElement('label');
-        label.style.cssText = 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;';
+        label.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;';
 
         const toggle = document.createElement('input');
         toggle.type = 'checkbox';
@@ -1528,48 +2009,472 @@
     // Run toggle insertion (unified observer handles updates)
     insertMojanglesToggle();
 
-    // ===== FIRST-TIME ONBOARDING HINT =====
-    // Show a hint pointing to the gear icon the first time the extension is used
-    function showOnboardingHint() {
-        if (localStorage.getItem('dtuDarkModeHintSeen')) return;
+    // ===== DARK MODE TOGGLE (works in both dark and light modes) =====
+    function insertDarkModeToggle() {
+        if (!IS_TOP_WINDOW) return;
+        if (document.querySelector('#dark-mode-toggle')) return;
 
-        // Find the gear icon — it lives inside shadow DOM
-        function findGearIcon(root) {
-            if (!root) return null;
-            const icon = root.querySelector('d2l-icon[icon="tier3:gear"]');
-            if (icon) return icon;
-            const els = root.querySelectorAll('*');
-            for (const el of els) {
-                if (el.shadowRoot) {
-                    const found = findGearIcon(el.shadowRoot);
-                    if (found) return found;
-                }
+        const placeholder = document.querySelector('#AdminToolsPlaceholderId');
+        if (!placeholder) return;
+
+        // Find or create the "DTU After Dark" column
+        let targetList = null;
+        const columns = placeholder.querySelectorAll('.d2l-admin-tools-column');
+        columns.forEach(col => {
+            const h2 = col.querySelector('h2');
+            if (h2 && h2.textContent === 'DTU After Dark') {
+                targetList = col.querySelector('ul.d2l-list');
             }
-            return null;
+        });
+
+        if (!targetList) {
+            if (!darkModeEnabled) {
+                // In light mode, create the column if it doesn't exist
+                const column = document.createElement('div');
+                column.className = 'd2l-admin-tools-column';
+
+                const heading = document.createElement('h2');
+                heading.className = 'd2l-heading vui-heading-4 d2l-heading-none';
+                heading.textContent = 'DTU After Dark';
+
+                const list = document.createElement('ul');
+                list.className = 'd2l-list';
+
+                column.appendChild(heading);
+                column.appendChild(list);
+                placeholder.appendChild(column);
+                targetList = list;
+            } else {
+                return;
+            }
         }
 
-        const gear = findGearIcon(document);
-        if (!gear) return;
+        const li = document.createElement('li');
+        li.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; padding: 4px 0; background-color: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; padding: 4px 0;';
 
-        // Get gear icon position
-        const gearRect = gear.getBoundingClientRect();
+        const label = document.createElement('label');
+        label.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; '
+                + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;';
+
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.id = 'dark-mode-toggle';
+        toggle.checked = darkModeEnabled;
+        toggle.style.cssText = 'width: 16px; height: 16px; cursor: pointer; accent-color: #c62828;';
+
+        toggle.addEventListener('change', () => {
+            saveDarkModePreference(!darkModeEnabled);
+            location.reload();
+        });
+
+        label.appendChild(toggle);
+        label.appendChild(document.createTextNode('Dark Mode'));
+        li.appendChild(label);
+
+        // Insert as the first item in the list
+        if (targetList.firstChild) {
+            targetList.insertBefore(li, targetList.firstChild);
+        } else {
+            targetList.appendChild(li);
+        }
+    }
+
+    // Run dark mode toggle insertion
+    insertDarkModeToggle();
+
+    // ===== CONTEXT CAPTURE HELPER =====
+    var _contextCaptureActive = false;
+    var _contextCaptureCleanup = null;
+    var _contextCaptureHotkeyBound = false;
+    var _contextCaptureToastTimer = null;
+    var CONTEXT_CAPTURE_HTML_MAX = 60000;
+
+    function getContextCaptureTheme() {
+        if (darkModeEnabled) {
+            return {
+                bg: '#1f2937',
+                fg: '#e0e0e0',
+                border: '#3f4b5e',
+                errorBg: '#5b1c1c',
+                errorBorder: '#8c2d2d'
+            };
+        }
+        return {
+            bg: '#ffffff',
+            fg: '#1f2937',
+            border: '#cbd5e1',
+            errorBg: '#fee2e2',
+            errorBorder: '#fca5a5'
+        };
+    }
+
+    function showContextCaptureToast(message, isError) {
+        if (!document.body) return;
+
+        var theme = getContextCaptureTheme();
+        var toast = document.querySelector('#dtu-context-capture-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'dtu-context-capture-toast';
+            toast.setAttribute('data-dtu-ext', '1');
+            document.body.appendChild(toast);
+        }
+
+        toast.textContent = message;
+        toast.style.cssText =
+            'position: fixed; right: 14px; bottom: 14px; z-index: 2147483647; '
+            + 'max-width: 420px; padding: 10px 12px; border-radius: 8px; '
+            + 'font-size: 12px; line-height: 1.4; white-space: normal; '
+            + 'box-shadow: 0 6px 18px rgba(0,0,0,0.35); '
+            + 'background: ' + (isError ? theme.errorBg : theme.bg) + '; '
+            + 'color: ' + theme.fg + '; '
+            + 'border: 1px solid ' + (isError ? theme.errorBorder : theme.border) + ';';
+
+        if (_contextCaptureToastTimer) clearTimeout(_contextCaptureToastTimer);
+        _contextCaptureToastTimer = setTimeout(function() {
+            if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 3600);
+    }
+
+    async function copyTextToClipboard(text) {
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+                return true;
+            }
+        } catch (e) {
+            // Fallback below
+        }
+
+        try {
+            var area = document.createElement('textarea');
+            area.value = text;
+            area.setAttribute('readonly', 'readonly');
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            area.style.left = '-9999px';
+            document.body.appendChild(area);
+            area.focus();
+            area.select();
+            var copied = document.execCommand('copy');
+            document.body.removeChild(area);
+            return !!copied;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function getCaptureElementFromEvent(event) {
+        var path = event.composedPath ? event.composedPath() : [];
+        var candidate = (path && path.length > 0) ? path[0] : event.target;
+        if (!candidate) return null;
+
+        if (candidate.nodeType !== 1) {
+            candidate = candidate.parentElement;
+        }
+        if (!candidate || candidate.nodeType !== 1) return null;
+        return candidate;
+    }
+
+    function getCaptureParentElement(element) {
+        if (!element) return null;
+        if (element.parentElement) return element.parentElement;
+        try {
+            var root = element.getRootNode ? element.getRootNode() : null;
+            if (root && root.host && root.host.nodeType === 1) return root.host;
+        } catch (e) {}
+        return null;
+    }
+
+    function trimCapturedHtml(html, maxLen) {
+        if (!html) return '(not available)';
+        if (html.length <= maxLen) return html;
+        return html.slice(0, maxLen)
+            + '\n<!-- truncated by DTU After Dark context helper (' + html.length + ' chars total) -->';
+    }
+
+    function buildContextCapturePayload(element) {
+        var parent = getCaptureParentElement(element);
+        var elementHtml = trimCapturedHtml(element.outerHTML || '', CONTEXT_CAPTURE_HTML_MAX);
+        var parentHtml = trimCapturedHtml(parent ? parent.outerHTML : '', CONTEXT_CAPTURE_HTML_MAX);
+
+        return [
+            'DTU After Dark Context Capture',
+            'URL: ' + window.location.href,
+            'TITLE: ' + document.title,
+            'TIMESTAMP: ' + new Date().toISOString(),
+            '',
+            'ELEMENT_OUTER_HTML:',
+            elementHtml,
+            '',
+            'PARENT_OUTER_HTML:',
+            parentHtml
+        ].join('\n');
+    }
+
+    function stopContextCaptureMode() {
+        _contextCaptureActive = false;
+        if (_contextCaptureCleanup) {
+            _contextCaptureCleanup();
+            _contextCaptureCleanup = null;
+        }
+    }
+
+    function startContextCaptureMode() {
+        if (!IS_TOP_WINDOW) return;
+        if (_contextCaptureActive) {
+            showContextCaptureToast('Context capture is already active. Click an element or press Esc.', false);
+            return;
+        }
+
+        _contextCaptureActive = true;
+        showContextCaptureToast('Context capture active: click one element. Press Esc to cancel.', false);
+
+        var clickHandler = async function(event) {
+            if (!_contextCaptureActive) return;
+            if (event.button !== 0) return; // Left click only
+
+            var targetEl = getCaptureElementFromEvent(event);
+            if (!targetEl) return;
+
+            if (targetEl.closest && targetEl.closest('[data-dtu-ext], #dtu-context-capture-toast')) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+
+            stopContextCaptureMode();
+            var payload = buildContextCapturePayload(targetEl);
+            var copied = await copyTextToClipboard(payload);
+            if (copied) {
+                showContextCaptureToast('Context copied to clipboard. Paste it here.', false);
+            } else {
+                showContextCaptureToast('Could not copy context automatically. Clipboard permission blocked.', true);
+            }
+        };
+
+        var keydownHandler = function(event) {
+            if (!_contextCaptureActive) return;
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                stopContextCaptureMode();
+                showContextCaptureToast('Context capture cancelled.', false);
+            }
+        };
+
+        document.addEventListener('click', clickHandler, true);
+        document.addEventListener('keydown', keydownHandler, true);
+
+        _contextCaptureCleanup = function() {
+            document.removeEventListener('click', clickHandler, true);
+            document.removeEventListener('keydown', keydownHandler, true);
+        };
+    }
+
+    function setupContextCaptureHotkey() {
+        if (!IS_TOP_WINDOW || _contextCaptureHotkeyBound) return;
+
+        document.addEventListener('keydown', function(event) {
+            if (event.defaultPrevented) return;
+            if (!event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey) return;
+
+            var key = event.key ? event.key.toLowerCase() : '';
+            if (key !== 'c') return;
+
+            event.preventDefault();
+            startContextCaptureMode();
+        }, true);
+
+        _contextCaptureHotkeyBound = true;
+    }
+
+    function triggerContextCaptureFromButton(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+        }
+        // Delay activation so the initiating button event is never treated as capture target.
+        setTimeout(startContextCaptureMode, 0);
+    }
+
+    function insertContextCaptureFloatingHelper() {
+        if (!IS_TOP_WINDOW) return;
+        if (!document.body) return;
+        if (document.querySelector('#dtu-context-capture-floating-btn')) return;
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'dtu-context-capture-floating-btn';
+        btn.setAttribute('data-dtu-ext', '1');
+        btn.title = 'Capture Context (Alt+Shift+C)';
+        btn.textContent = 'Capture';
+        btn.style.cssText = darkModeEnabled
+            ? 'position: fixed; right: 14px; bottom: 54px; z-index: 2147483646; '
+                + 'background: #2d2d2d; color: #66b3ff; border: 1px solid #4f5f74; border-radius: 6px; '
+                + 'cursor: pointer; font-size: 12px; padding: 6px 10px;'
+            : 'position: fixed; right: 14px; bottom: 54px; z-index: 2147483646; '
+                + 'background: #ffffff; color: #0b67c2; border: 1px solid #c8d0db; border-radius: 6px; '
+                + 'cursor: pointer; font-size: 12px; padding: 6px 10px;';
+        // Prevent host-page global button rules from turning this into a full-width bar.
+        btn.style.setProperty('position', 'fixed', 'important');
+        btn.style.setProperty('right', '14px', 'important');
+        btn.style.setProperty('bottom', '54px', 'important');
+        btn.style.setProperty('left', 'auto', 'important');
+        btn.style.setProperty('top', 'auto', 'important');
+        btn.style.setProperty('display', 'inline-flex', 'important');
+        btn.style.setProperty('align-items', 'center', 'important');
+        btn.style.setProperty('justify-content', 'center', 'important');
+        btn.style.setProperty('width', 'auto', 'important');
+        btn.style.setProperty('max-width', '160px', 'important');
+        btn.style.setProperty('min-width', '0', 'important');
+        btn.style.setProperty('margin', '0', 'important');
+        btn.style.setProperty('float', 'none', 'important');
+        btn.style.setProperty('white-space', 'nowrap', 'important');
+        btn.style.setProperty('pointer-events', 'auto', 'important');
+        btn.style.setProperty('user-select', 'none', 'important');
+
+        // Use multiple triggers because CampusNet click handlers sometimes swallow button clicks.
+        btn.addEventListener('pointerdown', triggerContextCaptureFromButton, true);
+        btn.addEventListener('click', triggerContextCaptureFromButton, true);
+
+        document.body.appendChild(btn);
+    }
+
+    function insertContextCaptureHelper() {
+        if (!IS_TOP_WINDOW) return;
+        if (document.querySelector('#dtu-context-capture-btn')
+            || document.querySelector('#dtu-context-capture-floating-btn')) return;
+
+        // Preferred placement on DTU Learn homepage admin tools.
+        if (!isDTULearnHomepage()) {
+            insertContextCaptureFloatingHelper();
+            return;
+        }
+
+        const placeholder = document.querySelector('#AdminToolsPlaceholderId');
+        if (!placeholder) {
+            insertContextCaptureFloatingHelper();
+            return;
+        }
+
+        const columns = placeholder.querySelectorAll('.d2l-admin-tools-column');
+        let targetList = null;
+        columns.forEach(col => {
+            const h2 = col.querySelector('h2');
+            if (h2 && h2.textContent === 'DTU After Dark') {
+                targetList = col.querySelector('ul.d2l-list');
+            }
+        });
+
+        if (!targetList) {
+            insertContextCaptureFloatingHelper();
+            return;
+        }
+
+        const li = document.createElement('li');
+        li.setAttribute('data-dtu-ext', '1');
+        li.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; padding: 4px 0; background-color: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; padding: 4px 0;';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'dtu-context-capture-btn';
+        btn.setAttribute('data-dtu-ext', '1');
+        btn.style.cssText = darkModeEnabled
+            ? 'background: #2d2d2d; color: #66b3ff; border: 1px solid #4f5f74; border-radius: 4px; '
+                + 'cursor: pointer; font-size: 12px; padding: 3px 8px;'
+            : 'background: #ffffff; color: #0b67c2; border: 1px solid #c8d0db; border-radius: 4px; '
+                + 'cursor: pointer; font-size: 12px; padding: 3px 8px;';
+        btn.textContent = 'Capture Context';
+        btn.addEventListener('pointerdown', triggerContextCaptureFromButton, true);
+        btn.addEventListener('click', triggerContextCaptureFromButton, true);
+
+        const hotkeyHint = document.createElement('span');
+        hotkeyHint.setAttribute('data-dtu-ext', '1');
+        hotkeyHint.style.cssText = darkModeEnabled
+            ? 'font-size: 11px; color: #9aa7b8;'
+            : 'font-size: 11px; color: #6b7280;';
+        hotkeyHint.textContent = 'Alt+Shift+C';
+
+        li.appendChild(btn);
+        li.appendChild(hotkeyHint);
+        targetList.appendChild(li);
+    }
+
+    // ===== FIRST-TIME ONBOARDING HINT =====
+    // Show a hint pointing to the gear icon for the first 3 homepage visits
+    function showOnboardingHint() {
+        if (!IS_TOP_WINDOW) return;
+        // Only show on DTU Learn homepage where the gear icon lives
+        if (!isDTULearnHomepage()) return;
+
+        var HINT_COUNT_KEY = 'dtuDarkModeHintCount';
+        var hintCount = parseInt(localStorage.getItem(HINT_COUNT_KEY) || '0', 10);
+        if (hintCount >= 3) return;
+
+        // Find the gear button before incrementing counter
+        var gearBtn = document.querySelector('button[aria-label="Admin Tools"]');
+        if (!gearBtn) {
+            // Fallback: search shadow DOM for the gear icon
+            function findGearIcon(root) {
+                if (!root) return null;
+                var icon = root.querySelector('d2l-icon[icon="tier3:gear"]');
+                if (icon) return icon;
+                var els = root.querySelectorAll('*');
+                for (var i = 0; i < els.length; i++) {
+                    if (els[i].shadowRoot) {
+                        var found = findGearIcon(els[i].shadowRoot);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            }
+            gearBtn = findGearIcon(document);
+        }
+        if (!gearBtn) return;
+
+        // Only increment after we confirmed we can actually show the hint
+        localStorage.setItem(HINT_COUNT_KEY, (hintCount + 1).toString());
+
+        // Get gear button position
+        var gearRect = gearBtn.getBoundingClientRect();
         if (gearRect.width === 0) return; // not visible yet
 
+        // Arrow should point to the center of the gear button
+        var bubbleWidth = 240;
+        var gearCenterX = gearRect.left + gearRect.width / 2;
+        var bubbleLeft = gearCenterX - bubbleWidth / 2;
+        // Keep bubble on screen
+        if (bubbleLeft < 8) bubbleLeft = 8;
+        if (bubbleLeft + bubbleWidth > window.innerWidth - 8) bubbleLeft = window.innerWidth - bubbleWidth - 8;
+        var arrowLeft = gearCenterX - bubbleLeft;
+
         // Create the hint bubble
-        const bubble = document.createElement('div');
+        var bubble = document.createElement('div');
         bubble.id = 'dtu-dark-hint';
-        // Build hint bubble using DOM API (avoids innerHTML)
-        const outer = document.createElement('div');
+        var outer = document.createElement('div');
         outer.id = 'dtu-dark-hint-inner';
         Object.assign(outer.style, {
             position: 'fixed',
             top: (gearRect.bottom + 12) + 'px',
-            left: (gearRect.left + gearRect.width / 2 - 120) + 'px',
+            left: bubbleLeft + 'px',
             zIndex: '999999',
             pointerEvents: 'auto'
         });
 
-        const card = document.createElement('div');
+        var card = document.createElement('div');
         Object.assign(card.style, {
             position: 'relative',
             background: 'linear-gradient(135deg, #c62828, #8e0000)',
@@ -1579,17 +2484,18 @@
             fontFamily: "'Segoe UI', sans-serif",
             fontSize: '13px',
             lineHeight: '1.4',
-            maxWidth: '240px',
+            width: bubbleWidth + 'px',
+            boxSizing: 'border-box',
             boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
             cursor: 'pointer',
             animation: 'dtuHintBounce 2s ease-in-out infinite'
         });
 
-        const arrow = document.createElement('div');
+        var arrow = document.createElement('div');
         Object.assign(arrow.style, {
             position: 'absolute',
             top: '-8px',
-            left: '110px',
+            left: (arrowLeft - 8) + 'px',
             width: '0',
             height: '0',
             borderLeft: '8px solid transparent',
@@ -1597,53 +2503,47 @@
             borderBottom: '8px solid #c62828'
         });
 
-        const title = document.createElement('span');
+        var title = document.createElement('span');
         Object.assign(title.style, { fontWeight: 'bold', fontSize: '14px' });
         title.textContent = '\u2699 DTU After Dark';
 
-        const desc = document.createElement('span');
+        var desc = document.createElement('span');
         desc.style.opacity = '0.9';
         desc.textContent = 'Click the gear to customize your dark mode experience!';
 
-        const dismiss = document.createElement('div');
-        Object.assign(dismiss.style, { marginTop: '6px', fontSize: '11px', opacity: '0.7', textAlign: 'right' });
-        dismiss.textContent = 'click to dismiss';
+        var visitNote = document.createElement('div');
+        Object.assign(visitNote.style, { marginTop: '6px', fontSize: '11px', opacity: '0.7', textAlign: 'right' });
+        visitNote.textContent = 'click to dismiss (' + (3 - hintCount - 1) + ' more)';
+        if (hintCount + 1 >= 3) visitNote.textContent = 'click to dismiss';
 
         card.appendChild(arrow);
         card.appendChild(title);
         card.appendChild(document.createElement('br'));
         card.appendChild(desc);
-        card.appendChild(dismiss);
+        card.appendChild(visitNote);
         outer.appendChild(card);
         bubble.appendChild(outer);
 
         // Add bounce animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes dtuHintBounce {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(6px); }
-            }
-        `;
-        document.head.appendChild(style);
+        if (!document.querySelector('#dtu-hint-bounce-style')) {
+            var style = document.createElement('style');
+            style.id = 'dtu-hint-bounce-style';
+            style.textContent = '@keyframes dtuHintBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }';
+            document.head.appendChild(style);
+        }
         document.body.appendChild(bubble);
 
-        // Dismiss on click
-        bubble.addEventListener('click', () => {
-            localStorage.setItem('dtuDarkModeHintSeen', 'true');
+        // Dismiss on click (for this visit only, will reappear until 3 visits)
+        function dismissBubble() {
             bubble.style.transition = 'opacity 0.3s';
             bubble.style.opacity = '0';
-            setTimeout(() => bubble.remove(), 300);
-        });
+            setTimeout(function() { bubble.remove(); }, 300);
+        }
+        bubble.addEventListener('click', dismissBubble);
 
-        // Also dismiss after 15 seconds
-        setTimeout(() => {
-            if (document.querySelector('#dtu-dark-hint')) {
-                localStorage.setItem('dtuDarkModeHintSeen', 'true');
-                bubble.style.transition = 'opacity 0.3s';
-                bubble.style.opacity = '0';
-                setTimeout(() => bubble.remove(), 300);
-            }
+        // Auto-dismiss after 15 seconds
+        setTimeout(function() {
+            if (document.querySelector('#dtu-dark-hint')) dismissBubble();
         }, 15000);
     }
 
@@ -1668,12 +2568,13 @@
         });
     }
 
-    // Run typebox preservation (unified observer handles updates)
-    preserveTypeboxColors();
+    // Run typebox preservation (dark mode only)
+    if (darkModeEnabled) preserveTypeboxColors();
 
     // ===== CAMPUSNET GPA CALCULATION (campusnet.dtu.dk) =====
     // Calculate weighted GPA from the grades table and insert a summary row
     function insertGPARow() {
+        if (!IS_TOP_WINDOW) return;
         const table = document.querySelector('table.gradesList');
         if (!table || table.querySelector('.gpa-row')) return;
 
@@ -1682,6 +2583,7 @@
         let totalECTS = 0;
 
         rows.forEach(row => {
+            if (row.classList.contains('gpa-sim-row') || row.classList.contains('gpa-sim-add-row')) return;
             const cells = row.querySelectorAll('td');
             if (cells.length < 4) return;
 
@@ -1709,32 +2611,3230 @@
 
         const gpaRow = document.createElement('tr');
         gpaRow.className = 'gpa-row';
+        gpaRow.setAttribute('data-dtu-ext', '1');
 
         const tdLabel = document.createElement('td');
+        tdLabel.setAttribute('data-dtu-ext', '1');
         tdLabel.colSpan = 2;
         tdLabel.style.cssText = 'text-align: left; font-weight: bold; padding: 8px 0;';
         tdLabel.textContent = 'Weighted GPA';
 
         const tdGrade = document.createElement('td');
+        tdGrade.setAttribute('data-dtu-ext', '1');
         tdGrade.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold; white-space: nowrap;';
         tdGrade.textContent = gpa.toFixed(2);
 
         const tdECTS = document.createElement('td');
+        tdECTS.setAttribute('data-dtu-ext', '1');
         tdECTS.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold;';
         tdECTS.textContent = totalECTS;
 
         const tdDate = document.createElement('td');
+        tdDate.setAttribute('data-dtu-ext', '1');
 
         gpaRow.appendChild(tdLabel);
         gpaRow.appendChild(tdGrade);
         gpaRow.appendChild(tdECTS);
         gpaRow.appendChild(tdDate);
 
-        headerRow.after(gpaRow);
+        // Insert at the bottom of the table
+        const lastRow = table.querySelector('tr:last-child');
+        if (lastRow) {
+            lastRow.after(gpaRow);
+        } else {
+            table.appendChild(gpaRow);
+        }
     }
 
     // Run GPA insertion (unified observer handles updates)
     insertGPARow();
+
+    // ===== CAMPUSNET ECTS PROGRESS BAR (campusnet.dtu.dk) =====
+    // Show a visual progress bar of earned ECTS above the grades table
+    function insertECTSProgressBar() {
+        if (!IS_TOP_WINDOW) return;
+        const table = document.querySelector('table.gradesList');
+        if (!table || document.querySelector('.ects-progress-container')) return;
+
+        const rows = table.querySelectorAll('tr:not(.gradesListHeader)');
+        let passedECTS = 0;
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 4) return;
+
+            const gradeSpan = cells[2].querySelector('span');
+            if (!gradeSpan) return;
+
+            const gradeText = gradeSpan.textContent.trim();
+            const ects = parseFloat(cells[3].textContent.trim());
+            if (isNaN(ects) || ects <= 0) return;
+
+            // Check if passed: numeric grade >= 2, or "BE" (BestÃ¥et/Pass)
+            const numMatch = gradeText.match(/^(-?\d+)/);
+            if (numMatch) {
+                if (parseInt(numMatch[1], 10) >= 2) passedECTS += ects;
+            } else if (/^BE\b/i.test(gradeText)) {
+                passedECTS += ects;
+            }
+        });
+
+        if (passedECTS === 0) return;
+
+        // Target: 180 ECTS for BSc, then 120 ECTS for MSc (300 total)
+        const inMasters = passedECTS > 180;
+        const target = inMasters ? 300 : 180;
+        const pct = Math.min((passedECTS / target) * 100, 100);
+        const mscECTS = inMasters ? passedECTS - 180 : 0;
+        const targetLabel = inMasters
+            ? 'BSc done \u00B7 MSc ' + mscECTS + ' / 120 ECTS'
+            : 'BSc (' + passedECTS + ' / 180 ECTS)';
+
+        const container = document.createElement('div');
+        container.className = 'ects-progress-container';
+        container.setAttribute('data-dtu-ext', '1');
+        container.style.cssText = darkModeEnabled
+            ? 'margin: 12px 0 16px 0; padding: 10px 12px; background: #2d2d2d; border-radius: 6px;'
+            : 'margin: 12px 0 16px 0; padding: 10px 12px; background: #ffffff; border-radius: 6px; border: 1px solid #ddd;';
+
+        const label = document.createElement('div');
+        label.setAttribute('data-dtu-ext', '1');
+        label.style.cssText = darkModeEnabled
+            ? 'display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; color: #e0e0e0;'
+            : 'display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; color: #333;';
+        label.textContent = '';
+
+        const labelLeft = document.createElement('span');
+        labelLeft.setAttribute('data-dtu-ext', '1');
+        labelLeft.style.fontWeight = 'bold';
+        labelLeft.textContent = passedECTS + ' ECTS earned';
+
+        const labelRight = document.createElement('span');
+        labelRight.setAttribute('data-dtu-ext', '1');
+        labelRight.style.color = darkModeEnabled ? '#b0b0b0' : '#666';
+        labelRight.textContent = targetLabel;
+
+        label.appendChild(labelLeft);
+        label.appendChild(labelRight);
+
+        const barBg = document.createElement('div');
+        barBg.className = 'ects-bar-bg';
+        barBg.setAttribute('data-dtu-ext', '1');
+        barBg.style.cssText = 'width: 100%; height: 18px; border-radius: 9px; overflow: hidden; position: relative;';
+        barBg.style.setProperty('background', darkModeEnabled ? '#1a1a1a' : '#e0e0e0', 'important');
+        barBg.style.setProperty('background-color', darkModeEnabled ? '#1a1a1a' : '#e0e0e0', 'important');
+
+        const barFill = document.createElement('div');
+        barFill.className = 'ects-bar-fill';
+        barFill.setAttribute('data-dtu-ext', '1');
+        const barColor = pct >= 100 ? '#4caf50' : pct >= 66 ? '#66b3ff' : pct >= 33 ? '#ffa726' : '#ef5350';
+        barFill.style.cssText = 'height: 100%; border-radius: 9px; transition: width 0.3s; width: ' + pct + '%;';
+        barFill.style.setProperty('background', barColor, 'important');
+        barFill.style.setProperty('background-color', barColor, 'important');
+        barFill.setAttribute('data-bar-color', barColor);
+
+        const pctLabel = document.createElement('div');
+        pctLabel.className = 'ects-bar-pct';
+        pctLabel.setAttribute('data-dtu-ext', '1');
+        pctLabel.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.5);';
+        pctLabel.style.setProperty('color', '#ffffff', 'important');
+        pctLabel.style.setProperty('background', 'transparent', 'important');
+        pctLabel.textContent = Math.round(pct) + '%';
+
+        barBg.appendChild(barFill);
+        barBg.appendChild(pctLabel);
+        container.appendChild(label);
+        container.appendChild(barBg);
+
+        // Insert above the grades table
+        table.parentNode.insertBefore(container, table);
+    }
+
+    // Run ECTS progress bar (unified observer handles updates)
+    insertECTSProgressBar();
+
+    // ===== CAMPUSNET GPA SIMULATOR (campusnet.dtu.dk) =====
+    // Adds hypothetical grade rows to the grades table so users can simulate future GPA
+
+    const DANISH_GRADES = [12, 10, 7, 4, 2, 0, -3];
+
+    function saveSimEntries() {
+        const rows = document.querySelectorAll('.gpa-sim-row');
+        const entries = [];
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 5) return;
+            const codeInput = cells[0].querySelector('input');
+            const nameInput = cells[1].querySelector('input');
+            const gradeSelect = cells[2].querySelector('select');
+            const ectsInput = cells[3].querySelector('input');
+            if (!gradeSelect || !ectsInput) return;
+            entries.push({
+                code: codeInput ? codeInput.value : '',
+                name: nameInput ? nameInput.value : '',
+                grade: parseInt(gradeSelect.value, 10),
+                ects: parseFloat(ectsInput.value) || 5
+            });
+        });
+        localStorage.setItem('gpaSimEntries', JSON.stringify(entries));
+    }
+
+    function updateProjectedGPA() {
+        const table = document.querySelector('table.gradesList');
+        if (!table) return;
+
+        // Read actual grades (same logic as insertGPARow)
+        const rows = table.querySelectorAll('tr:not(.gradesListHeader)');
+        let actualWeighted = 0;
+        let actualECTS = 0;
+        rows.forEach(row => {
+            if (row.classList.contains('gpa-sim-row') || row.classList.contains('gpa-sim-add-row')
+                || row.classList.contains('gpa-row') || row.classList.contains('gpa-projected-row')) return;
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 4) return;
+            const gradeSpan = cells[2].querySelector('span');
+            if (!gradeSpan) return;
+            const gradeText = gradeSpan.textContent.trim();
+            const gradeMatch = gradeText.match(/^(-?\d+)/);
+            if (!gradeMatch) return;
+            const grade = parseInt(gradeMatch[1], 10);
+            const ects = parseFloat(cells[3].textContent.trim());
+            if (isNaN(ects) || ects <= 0) return;
+            actualWeighted += grade * ects;
+            actualECTS += ects;
+        });
+
+        // Read simulated entries
+        let simWeighted = 0;
+        let simECTS = 0;
+        const simRows = table.querySelectorAll('.gpa-sim-row');
+        simRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 4) return;
+            const gradeSelect = cells[2].querySelector('select');
+            const ectsInput = cells[3].querySelector('input');
+            if (!gradeSelect || !ectsInput) return;
+            const grade = parseInt(gradeSelect.value, 10);
+            const ects = parseFloat(ectsInput.value);
+            if (isNaN(ects) || ects <= 0) return;
+            simWeighted += grade * ects;
+            simECTS += ects;
+        });
+
+        // Remove existing projected row
+        const existingProjected = table.querySelector('.gpa-projected-row');
+        if (existingProjected) existingProjected.remove();
+
+        // Only show projected row if there are sim entries
+        if (simECTS === 0) return;
+
+        const currentGPA = actualECTS > 0 ? actualWeighted / actualECTS : 0;
+        const projectedGPA = (actualECTS + simECTS) > 0
+            ? (actualWeighted + simWeighted) / (actualECTS + simECTS) : 0;
+        const delta = projectedGPA - currentGPA;
+
+        const projRow = document.createElement('tr');
+        projRow.className = 'gpa-projected-row';
+        projRow.setAttribute('data-dtu-ext', '1');
+
+        const tdLabel = document.createElement('td');
+        tdLabel.setAttribute('data-dtu-ext', '1');
+        tdLabel.colSpan = 2;
+        tdLabel.style.cssText = 'text-align: left; font-weight: bold; padding: 8px 0;';
+        tdLabel.style.setProperty('color', '#66b3ff', 'important');
+        tdLabel.textContent = 'Projected GPA';
+
+        const tdGrade = document.createElement('td');
+        tdGrade.setAttribute('data-dtu-ext', '1');
+        tdGrade.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold; white-space: nowrap;';
+        tdGrade.style.setProperty('color', '#66b3ff', 'important');
+        tdGrade.textContent = projectedGPA.toFixed(2);
+
+        const tdECTS = document.createElement('td');
+        tdECTS.setAttribute('data-dtu-ext', '1');
+        tdECTS.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold;';
+        tdECTS.style.setProperty('color', '#66b3ff', 'important');
+        tdECTS.textContent = (actualECTS + simECTS);
+
+        const tdDelta = document.createElement('td');
+        tdDelta.setAttribute('data-dtu-ext', '1');
+        tdDelta.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold; font-size: 12px;';
+        if (delta > 0) {
+            tdDelta.style.setProperty('color', '#4caf50', 'important');
+            tdDelta.textContent = '+' + delta.toFixed(2);
+        } else if (delta < 0) {
+            tdDelta.style.setProperty('color', '#ef5350', 'important');
+            tdDelta.textContent = delta.toFixed(2);
+        }
+
+        projRow.appendChild(tdLabel);
+        projRow.appendChild(tdGrade);
+        projRow.appendChild(tdECTS);
+        projRow.appendChild(tdDelta);
+
+        // Insert after the GPA row
+        const gpaRow = table.querySelector('.gpa-row');
+        if (gpaRow) {
+            gpaRow.after(projRow);
+        } else {
+            const lastRow = table.querySelector('tr:last-child');
+            if (lastRow) lastRow.after(projRow);
+        }
+    }
+
+    function createSimRow(entry) {
+        const tr = document.createElement('tr');
+        tr.className = 'gpa-sim-row';
+        tr.setAttribute('data-dtu-ext', '1');
+
+        // Course code
+        const tdCode = document.createElement('td');
+        tdCode.setAttribute('data-dtu-ext', '1');
+        const codeInput = document.createElement('input');
+        codeInput.type = 'text';
+        codeInput.className = 'gpa-sim-input';
+        codeInput.setAttribute('data-dtu-ext', '1');
+        codeInput.placeholder = 'Course num';
+        codeInput.value = entry.code || '';
+        codeInput.style.cssText = 'width: 96px;';
+        codeInput.addEventListener('input', () => { saveSimEntries(); });
+        tdCode.appendChild(codeInput);
+
+        // Course name
+        const tdName = document.createElement('td');
+        tdName.setAttribute('data-dtu-ext', '1');
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'gpa-sim-input';
+        nameInput.setAttribute('data-dtu-ext', '1');
+        nameInput.placeholder = 'Course name';
+        nameInput.value = entry.name || '';
+        nameInput.style.cssText = 'width: 100%;';
+        nameInput.addEventListener('input', () => { saveSimEntries(); });
+        tdName.appendChild(nameInput);
+
+        // Grade dropdown
+        const tdGrade = document.createElement('td');
+        tdGrade.setAttribute('data-dtu-ext', '1');
+        tdGrade.style.cssText = 'text-align: right; padding-right: 5px;';
+        const gradeSelect = document.createElement('select');
+        gradeSelect.className = 'gpa-sim-select';
+        gradeSelect.setAttribute('data-dtu-ext', '1');
+        DANISH_GRADES.forEach(g => {
+            const option = document.createElement('option');
+            option.setAttribute('data-dtu-ext', '1');
+            option.value = g.toString();
+            option.textContent = g === 2 ? '02' : g === 0 ? '00' : g.toString();
+            if (g === entry.grade) option.selected = true;
+            gradeSelect.appendChild(option);
+        });
+        gradeSelect.addEventListener('change', () => { saveSimEntries(); updateProjectedGPA(); });
+        tdGrade.appendChild(gradeSelect);
+
+        // ECTS
+        const tdECTS = document.createElement('td');
+        tdECTS.setAttribute('data-dtu-ext', '1');
+        tdECTS.style.cssText = 'text-align: right; padding-right: 8px;';
+        const ectsInput = document.createElement('input');
+        ectsInput.type = 'number';
+        ectsInput.className = 'gpa-sim-input';
+        ectsInput.setAttribute('data-dtu-ext', '1');
+        ectsInput.min = '1';
+        ectsInput.max = '60';
+        ectsInput.value = entry.ects || 5;
+        ectsInput.style.cssText = 'width: 67px; text-align: left; padding-left: 10px; padding-right: 22px; box-sizing: border-box;';
+        ectsInput.addEventListener('input', () => { saveSimEntries(); updateProjectedGPA(); });
+        tdECTS.appendChild(ectsInput);
+
+        // Delete button
+        const tdAction = document.createElement('td');
+        tdAction.setAttribute('data-dtu-ext', '1');
+        tdAction.style.cssText = 'text-align: right; width: 56px;';
+        tdAction.style.setProperty('padding-left', '8px', 'important');
+        tdAction.style.setProperty('padding-right', '24px', 'important');
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'gpa-sim-delete-btn';
+        delBtn.setAttribute('data-dtu-ext', '1');
+        delBtn.textContent = '\u00D7';
+        delBtn.title = 'Remove';
+        delBtn.style.cssText = 'width: 40px; transform: translateX(5px);';
+        delBtn.addEventListener('click', () => {
+            tr.remove();
+            saveSimEntries();
+            updateProjectedGPA();
+        });
+        tdAction.appendChild(delBtn);
+
+        tr.appendChild(tdCode);
+        tr.appendChild(tdName);
+        tr.appendChild(tdGrade);
+        tr.appendChild(tdECTS);
+        tr.appendChild(tdAction);
+
+        return tr;
+    }
+
+    function insertGPASimulator() {
+        if (!IS_TOP_WINDOW) return;
+        const table = document.querySelector('table.gradesList');
+        if (!table || table.querySelector('.gpa-sim-add-row')) return;
+
+        const headerRow = table.querySelector('tr.gradesListHeader');
+        if (!headerRow) return;
+
+        // Load saved entries
+        let savedEntries = [];
+        try {
+            const stored = localStorage.getItem('gpaSimEntries');
+            if (stored) savedEntries = JSON.parse(stored);
+        } catch (e) { /* ignore parse errors */ }
+
+        // Create the "add" button row first (it goes right after header)
+        const addRow = document.createElement('tr');
+        addRow.className = 'gpa-sim-add-row';
+        addRow.setAttribute('data-dtu-ext', '1');
+        const addTd = document.createElement('td');
+        addTd.setAttribute('data-dtu-ext', '1');
+        addTd.colSpan = 5;
+        addTd.style.cssText = 'text-align: left; padding: 6px 0;';
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'gpa-sim-add-btn';
+        addBtn.setAttribute('data-dtu-ext', '1');
+        addBtn.textContent = '+ Add hypothetical grade';
+        addBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            _suppressHeavyWork = true;
+            const newEntry = { code: '', name: '', grade: 7, ects: 5 };
+            const newRow = createSimRow(newEntry);
+            // Insert before the first real grade row (after all sim rows)
+            const lastSimRow = table.querySelector('.gpa-sim-row:last-of-type');
+            if (lastSimRow) {
+                lastSimRow.after(newRow);
+            } else {
+                addRow.after(newRow);
+            }
+            saveSimEntries();
+            updateProjectedGPA();
+            _suppressHeavyWork = false;
+        });
+        addTd.appendChild(addBtn);
+        addRow.appendChild(addTd);
+
+        // Insert add row after header
+        headerRow.after(addRow);
+
+        // Insert saved entries after the add row
+        let insertAfter = addRow;
+        savedEntries.forEach(entry => {
+            const simRow = createSimRow(entry);
+            insertAfter.after(simRow);
+            insertAfter = simRow;
+        });
+
+        // Calculate projected GPA if there are saved entries
+        if (savedEntries.length > 0) {
+            updateProjectedGPA();
+        }
+    }
+
+    // Run GPA simulator (unified observer handles updates)
+    insertGPASimulator();
+
+    // ===== CONTENT SHORTCUT BUTTON =====
+    // Adds a small "Content" button to each course card on the homepage
+    // that links directly to /d2l/le/lessons/{courseId}
+
+    // Standalone button CSS â€” injected into card shadow roots when dark mode styles aren't present
+    const contentBtnShadowCSS = `
+        a.dtu-dark-content-btn,
+        a.dtu-dark-content-btn:link,
+        a.dtu-dark-content-btn:visited {
+            position: absolute !important;
+            bottom: 6px !important;
+            right: 6px !important;
+            transform: translate(195px, 60px) !important;
+            min-width: 42px !important;
+            min-height: 42px !important;
+            width: 42px !important;
+            height: 42px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 6px !important;
+            background-color: #2d2d2d !important;
+            color: #ffffff !important;
+            font-size: 18px !important;
+            font-family: sans-serif !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            z-index: 5 !important;
+            border: none !important;
+            box-sizing: border-box !important;
+            line-height: 1 !important;
+            transition: opacity 0.2s, background-color 0.2s !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        :host(:hover) a.dtu-dark-content-btn,
+        .d2l-card-container:hover a.dtu-dark-content-btn,
+        .d2l-card-header:hover a.dtu-dark-content-btn {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+        a.dtu-dark-content-btn:hover {
+            background-color: rgba(0, 0, 0, 0.85) !important;
+        }
+    `;
+
+    // Recursively find all elements matching a selector, traversing shadow roots
+    function deepQueryAll(selector, root) {
+        const results = [];
+        if (!root) return results;
+        if (root.matches && root.matches(selector)) {
+            results.push(root);
+        }
+
+        const pendingRoots = [root.shadowRoot || root];
+        while (pendingRoots.length > 0) {
+            const searchRoot = pendingRoots.pop();
+            if (!searchRoot || !searchRoot.querySelectorAll) continue;
+
+            searchRoot.querySelectorAll(selector).forEach(match => results.push(match));
+
+            const walker = document.createTreeWalker(searchRoot, NodeFilter.SHOW_ELEMENT, null);
+            let el = walker.nextNode();
+            while (el) {
+                if (el.shadowRoot) {
+                    pendingRoots.push(el.shadowRoot);
+                }
+                el = walker.nextNode();
+            }
+        }
+
+        return results;
+    }
+
+    function parseCourseIdFromString(str) {
+        if (!str) return null;
+        const patterns = [
+            /\/d2l\/home\/(\d+)/i,
+            /[?&]ou=(\d+)/i,
+            /\/org(?:units?|Units?)\/(\d+)/i,
+            /(?:orgUnitId|courseOfferingId|offeringId)[=:"\s]+(\d+)/i
+        ];
+        for (var i = 0; i < patterns.length; i++) {
+            var match = str.match(patterns[i]);
+            if (match && match[1]) return match[1];
+        }
+        return null;
+    }
+
+    function normalizeD2LPath(urlStr) {
+        if (!urlStr) return null;
+        try {
+            const parsed = new URL(urlStr, location.origin);
+            if (parsed.pathname && parsed.pathname.startsWith('/d2l/')) {
+                return parsed.pathname + parsed.search + parsed.hash;
+            }
+        } catch (e) {}
+        if (/^\/d2l\//.test(urlStr)) return urlStr;
+        return null;
+    }
+
+    function extractCourseId(ec, card, roots) {
+        const candidates = [];
+        if (ec) {
+            candidates.push(ec.getAttribute('href') || '');
+            if (ec.attributes) {
+                for (var i = 0; i < ec.attributes.length; i++) {
+                    const attr = ec.attributes[i];
+                    if (/(ou|org|course|offering)/i.test(attr.name)) {
+                        candidates.push(attr.value || '');
+                    }
+                }
+            }
+        }
+        if (card) {
+            candidates.push(card.getAttribute('href') || '');
+            if (card.attributes) {
+                for (var j = 0; j < card.attributes.length; j++) {
+                    const cardAttr = card.attributes[j];
+                    if (/(ou|org|course|offering)/i.test(cardAttr.name)) {
+                        candidates.push(cardAttr.value || '');
+                    }
+                }
+            }
+        }
+        roots.forEach(root => {
+            if (!root || !root.querySelectorAll) return;
+            root.querySelectorAll('[href]').forEach(linkEl => {
+                candidates.push(linkEl.getAttribute('href') || '');
+            });
+        });
+        for (var k = 0; k < candidates.length; k++) {
+            var id = parseCourseIdFromString(candidates[k]);
+            if (id) return id;
+        }
+        return null;
+    }
+
+    function extractFallbackHref(ec, card, roots) {
+        const candidates = [];
+        if (card) candidates.push(card.getAttribute('href') || '');
+        if (ec) candidates.push(ec.getAttribute('href') || '');
+        roots.forEach(root => {
+            if (!root || !root.querySelectorAll) return;
+            root.querySelectorAll('[href]').forEach(linkEl => {
+                candidates.push(linkEl.getAttribute('href') || '');
+            });
+        });
+        for (var i = 0; i < candidates.length; i++) {
+            var normalized = normalizeD2LPath(candidates[i]);
+            if (normalized) return normalized;
+        }
+        return null;
+    }
+
+    function insertContentButtons(rootNode) {
+        if (!IS_TOP_WINDOW) return;
+        if (!isDTULearnHomepage()) return;
+
+        const scanRoot = rootNode && rootNode.nodeType === 1 ? rootNode : document.body;
+        if (!scanRoot) return;
+
+        // Enrollment cards can be nested deep inside multiple shadow roots.
+        const enrollmentCards = deepQueryAll('d2l-enrollment-card', scanRoot);
+        enrollmentCards.forEach(ec => {
+            const ecShadow = ec.shadowRoot;
+            if (!ecShadow) return;
+
+            const card = ecShadow.querySelector('d2l-card[href*="/d2l/home/"], d2l-card[href], d2l-card');
+            const cardShadow = card && card.shadowRoot ? card.shadowRoot : null;
+            const styleRoot = cardShadow || ecShadow;
+
+            // Ensure content button CSS is in the shadow root (needed when dark mode is off)
+            if (!styleRoot.querySelector('#dtu-content-btn-styles')) {
+                const btnStyle = document.createElement('style');
+                btnStyle.id = 'dtu-content-btn-styles';
+                btnStyle.textContent = contentBtnShadowCSS;
+                styleRoot.appendChild(btnStyle);
+            }
+
+            // Append to the card header (image area) for bottom-right positioning
+            const header = styleRoot.querySelector('.d2l-card-header, .d2l-enrollment-card-image-container');
+            const container = header || styleRoot.querySelector('.d2l-card-container, .d2l-enrollment-card-content, .d2l-enrollment-card-container');
+            if (!container) return;
+            if (container.querySelector('.dtu-dark-content-btn')) return;
+            container.style.setProperty('position', 'relative', 'important');
+
+            const roots = [styleRoot, ecShadow];
+            const courseId = extractCourseId(ec, card, roots);
+            const fallbackHref = extractFallbackHref(ec, card, roots);
+            if (!courseId && !fallbackHref) return;
+            const targetHref = courseId ? ('/d2l/le/lessons/' + courseId) : fallbackHref;
+
+            // Styling is handled by cardShadowStyles CSS (.dtu-dark-content-btn)
+            const btn = document.createElement('a');
+            btn.className = 'dtu-dark-content-btn';
+            btn.href = targetHref;
+            btn.title = 'Go to Content';
+            btn.textContent = '\u{1F4D6}';
+            btn.addEventListener('click', (e) => e.stopPropagation());
+
+            container.appendChild(btn);
+        });
+    }
+
+    let _contentButtonBootstrapTimer = null;
+
+    function startContentButtonBootstrap() {
+        if (!IS_TOP_WINDOW || !isDTULearnHomepage()) return;
+        if (_contentButtonBootstrapTimer) return;
+
+        let attempts = 0;
+        _contentButtonBootstrapTimer = setInterval(function() {
+            if (!isDTULearnHomepage()) {
+                clearInterval(_contentButtonBootstrapTimer);
+                _contentButtonBootstrapTimer = null;
+                return;
+            }
+            insertContentButtons();
+            attempts++;
+            if (document.querySelector('.dtu-dark-content-btn') || attempts >= 24) {
+                clearInterval(_contentButtonBootstrapTimer);
+                _contentButtonBootstrapTimer = null;
+            }
+        }, 500);
+    }
+
+    // Run content buttons (unified observer handles updates)
+    insertContentButtons();
+    startContentButtonBootstrap();
+
+    // ===== BUS DEPARTURE TIMES (Rejseplanen 2.0 API) =====
+    // Live bus departure information for DTU-area stops, shown on the DTU Learn homepage
+
+    const REJSEPLANEN_API = 'https://www.rejseplanen.dk/api';
+    const REJSEPLANEN_KEY = (typeof CONFIG !== 'undefined' && CONFIG.REJSEPLANEN_API_KEY) || '';
+
+    // Bus lines that serve the DTU campus area
+    const DTU_BUS_LINES = [
+        { line: '150S', name: 'Bus 150S' },
+        { line: '300S', name: 'Bus 300S' },
+        { line: '40E', name: 'Bus 40E' },
+        { line: '15E', name: 'Bus 15E' },
+        { line: '193', name: 'Bus 193' }
+    ];
+
+    // Badge colors per bus line
+    const LINE_COLORS = { '150S': '#1565c0', '300S': '#2e7d32', '40E': '#6a1b9a', '15E': '#c62828', '193': '#e65100' };
+
+    // Known DTU-area stop IDs (hardcoded for reliability instead of name search)
+    // 6015/6026: RÃ¦vehÃ¸jvej, DTU (HelsingÃ¸rmotorvejen) â€” 150S, 300S, 40E, 15E
+    // 474/496:   RÃ¦vehÃ¸jvej, DTU (LundtoftegÃ¥rdsvej)    â€” 150S, 300S, 40E, 15E
+    // 497/473:   DTU (Anker Engelunds Vej)               â€” 300S
+    const DTU_AREA_STOP_IDS = ['6015', '6026', '474', '496', '497', '473'];
+
+    const BUS_ENABLED_KEY = 'dtuDarkModeBusEnabled';
+    const BUS_CONFIG_KEY = 'dtuDarkModeBusConfig';
+    const BUS_SETUP_DONE_KEY = 'dtuDarkModeBusSetupDone';
+
+    let _lastBusFetch = 0;
+    let _cachedDepartures = [];
+    let _busFetchInProgress = false;
+
+    function isBusEnabled() {
+        return localStorage.getItem(BUS_ENABLED_KEY) === 'true';
+    }
+
+    function getBusConfig() {
+        try {
+            const raw = localStorage.getItem(BUS_CONFIG_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function saveBusConfig(config) {
+        localStorage.setItem(BUS_CONFIG_KEY, JSON.stringify(config));
+    }
+
+    function isDTULearnHomepage() {
+        return window.location.hostname === 'learn.inside.dtu.dk'
+            && /^\/d2l\/home\/?$/.test(window.location.pathname);
+    }
+
+    function isDTULearnQuizSubmissionsPage() {
+        return window.location.hostname === 'learn.inside.dtu.dk'
+            && /\/d2l\/lms\/quizzing\/user\/quiz_submissions\.d2l$/i.test(window.location.pathname);
+    }
+
+    function styleQuizSubmissionHistogram(rootNode) {
+        if (!isDTULearnQuizSubmissionsPage()) return;
+
+        var root = (rootNode && rootNode.querySelectorAll) ? rootNode : document;
+        function forceDark1(el) {
+            if (!el || !el.style) return;
+            el.style.setProperty('background', '#1a1a1a', 'important');
+            el.style.setProperty('background-color', '#1a1a1a', 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+            el.style.setProperty('color', '#e0e0e0', 'important');
+            el.style.setProperty('border-color', '#404040', 'important');
+        }
+
+        // Grade rows with blue/white graph bars should keep a dark-1 row background.
+        root.querySelectorAll('tr').forEach(function(row) {
+            if (!row.querySelector('img[src*="Framework.GraphBar"]')) return;
+
+            row.querySelectorAll('td.d_tl.d_tm.d_tn, td.d_tr.d_tm.d_tn').forEach(function(td) { forceDark1(td); });
+            row.querySelectorAll('.d2l-grades-score, .dco, .dco_c').forEach(function(el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background-color', '#1a1a1a', 'important');
+                el.style.setProperty('background', '#1a1a1a', 'important');
+                el.style.setProperty('color', '#e0e0e0', 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+            });
+            row.querySelectorAll('label').forEach(function(label) {
+                if (!label || !label.style) return;
+                label.style.setProperty('color', '#e0e0e0', 'important');
+                label.style.setProperty('background-color', '#1a1a1a', 'important');
+                label.style.setProperty('background-image', 'none', 'important');
+            });
+        });
+    }
+
+    // ===== API RATE LIMITING =====
+    // Per-user daily limit to protect the shared API key (resets each day)
+    var DAILY_API_LIMIT = 200; // max API calls per user per day
+    var API_CALLS_KEY = 'dtuDarkModeBusApiCalls';
+    var API_QUOTA_KEY = 'dtuDarkModeBusQuotaExhausted';
+    var BUS_FETCH_TIMEOUT_MS = 8000;
+    var _apiQuotaExhausted = false;
+
+    function getLocalDateString() {
+        var d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function getDailyApiCount() {
+        try {
+            var data = JSON.parse(localStorage.getItem(API_CALLS_KEY) || '{}');
+            var today = getLocalDateString();
+            if (data.date !== today) return { date: today, count: 0 };
+            return data;
+        } catch (e) {
+            return { date: getLocalDateString(), count: 0 };
+        }
+    }
+
+    function incrementApiCount() {
+        var data = getDailyApiCount();
+        data.count++;
+        localStorage.setItem(API_CALLS_KEY, JSON.stringify(data));
+        return data.count;
+    }
+
+    function isDailyLimitReached() {
+        return getDailyApiCount().count >= DAILY_API_LIMIT;
+    }
+
+    // Server-side quota exhaustion (HTTP 429/403) â€” persists until next month
+    function isApiQuotaExhausted() {
+        if (_apiQuotaExhausted) return true;
+        var stored = localStorage.getItem(API_QUOTA_KEY);
+        if (!stored) return false;
+        var exhaustedDate = new Date(stored);
+        var now = new Date();
+        if (now.getMonth() !== exhaustedDate.getMonth() || now.getFullYear() !== exhaustedDate.getFullYear()) {
+            localStorage.removeItem(API_QUOTA_KEY);
+            _apiQuotaExhausted = false;
+            return false;
+        }
+        _apiQuotaExhausted = true;
+        return true;
+    }
+
+    function setApiQuotaExhausted() {
+        _apiQuotaExhausted = true;
+        localStorage.setItem(API_QUOTA_KEY, new Date().toISOString());
+        localStorage.setItem(BUS_ENABLED_KEY, 'false');
+        var toggle = document.querySelector('#bus-departures-toggle');
+        if (toggle) toggle.checked = false;
+    }
+
+    // Get departures for a specific stop
+    async function getDepartures(stopId) {
+        if (isApiQuotaExhausted()) return [];
+        if (isDailyLimitReached()) {
+            showQuotaExhaustedMessage('daily');
+            return [];
+        }
+        const url = REJSEPLANEN_API + '/departureBoard?accessId=' + encodeURIComponent(REJSEPLANEN_KEY)
+            + '&format=json&id=' + encodeURIComponent(stopId);
+
+        var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        var timeoutId = null;
+        if (controller) {
+            timeoutId = setTimeout(function() {
+                controller.abort();
+            }, BUS_FETCH_TIMEOUT_MS);
+        }
+
+        try {
+            const fetchOptions = controller ? { signal: controller.signal } : undefined;
+            const resp = await fetch(url, fetchOptions);
+            if (resp.status === 429 || resp.status === 403) {
+                setApiQuotaExhausted();
+                showQuotaExhaustedMessage('monthly');
+                return [];
+            }
+            if (!resp.ok) return [];
+            const data = await resp.json();
+            const deps = data.DepartureBoard ? data.DepartureBoard.Departure : (data.Departure || []);
+            const arr = !Array.isArray(deps) ? (deps ? [deps] : []) : deps;
+            arr.forEach(d => {
+                if (!d.line) {
+                    if (d.ProductAtStop && d.ProductAtStop.line) d.line = d.ProductAtStop.line;
+                    else if (d.Product && d.Product[0] && d.Product[0].line) d.line = d.Product[0].line;
+                }
+            });
+            incrementApiCount();
+            return arr;
+        } catch (e) {
+            return [];
+        } finally {
+            if (timeoutId) clearTimeout(timeoutId);
+        }
+    }
+
+    // Show a notification when API limits are hit
+    function showQuotaExhaustedMessage(type) {
+        if (document.querySelector('.dtu-quota-exhausted')) return;
+
+        var isDaily = type === 'daily';
+        var notice = document.createElement('div');
+        notice.className = 'dtu-quota-exhausted';
+        notice.style.cssText = 'position: fixed; bottom: 24px; right: 24px; z-index: 999999; '
+            + 'background: linear-gradient(135deg, #b71c1c 0%, #880e0e 100%); '
+            + 'color: #fff; padding: 16px 20px; border-radius: 12px; '
+            + 'font-family: "Segoe UI", sans-serif; font-size: 13px; line-height: 1.5; '
+            + 'max-width: 320px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); '
+            + 'animation: dtuSlideIn 0.3s ease-out;';
+
+        var title = document.createElement('div');
+        title.style.cssText = 'font-weight: 700; font-size: 14px; margin-bottom: 6px;';
+        title.textContent = 'Bus Departures Paused';
+
+        var msg = document.createElement('div');
+        msg.style.opacity = '0.95';
+        var countdownEl = null;
+        var countdownInterval = null;
+
+        if (isDaily) {
+            msg.textContent = 'You\u2019ve used ' + getDailyApiCount().count + '/' + DAILY_API_LIMIT
+                + ' bus lookups today.';
+
+            // Countdown to local midnight
+            countdownEl = document.createElement('div');
+            countdownEl.style.cssText = 'margin-top: 8px; font-size: 13px; font-weight: 600; '
+                + 'font-variant-numeric: tabular-nums; letter-spacing: 0.5px;';
+
+            function updateCountdown() {
+                var now = new Date();
+                var midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+                var diff = midnight.getTime() - now.getTime();
+                if (diff <= 0) {
+                    countdownEl.textContent = 'Bus times are available now! Reload the page.';
+                    if (countdownInterval) clearInterval(countdownInterval);
+                    return;
+                }
+                var h = Math.floor(diff / 3600000);
+                var m = Math.floor((diff % 3600000) / 60000);
+                var s = Math.floor((diff % 60000) / 1000);
+                countdownEl.textContent = 'Bus times available in '
+                    + String(h).padStart(2, '0') + ':'
+                    + String(m).padStart(2, '0') + ':'
+                    + String(s).padStart(2, '0');
+            }
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        } else {
+            msg.textContent = 'The monthly API request limit for Rejseplanen has been reached. '
+                + 'Bus departures have been turned off and will automatically resume next month.';
+            localStorage.setItem(BUS_ENABLED_KEY, 'false');
+            var toggle = document.querySelector('#bus-departures-toggle');
+            if (toggle) toggle.checked = false;
+        }
+
+        var dismiss = document.createElement('button');
+        dismiss.style.cssText = 'margin-top: 10px; background: rgba(255,255,255,0.15); color: #fff; '
+            + 'border: 1px solid rgba(255,255,255,0.3); padding: 6px 16px; border-radius: 6px; '
+            + 'cursor: pointer; font-size: 12px; font-weight: 600;';
+        dismiss.textContent = 'Got it';
+        dismiss.addEventListener('click', function() {
+            if (countdownInterval) clearInterval(countdownInterval);
+            notice.style.transition = 'opacity 0.3s';
+            notice.style.opacity = '0';
+            setTimeout(function() { notice.remove(); }, 300);
+        });
+
+        notice.appendChild(title);
+        notice.appendChild(msg);
+        if (countdownEl) notice.appendChild(countdownEl);
+        notice.appendChild(dismiss);
+        document.body.appendChild(notice);
+    }
+
+    // Calculate minutes until a departure
+    function minutesUntilDeparture(dep) {
+        const timeStr = dep.rtTime || dep.time;
+        const dateStr = dep.rtDate || dep.date;
+        if (!timeStr || !dateStr) return null;
+        let depDate;
+        if (dateStr.includes('.')) {
+            const parts = dateStr.split('.');
+            const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+            depDate = new Date(year + '-' + parts[1] + '-' + parts[0] + 'T' + timeStr);
+        } else {
+            depDate = new Date(dateStr + 'T' + timeStr);
+        }
+        if (isNaN(depDate.getTime())) return null;
+        return Math.round((depDate.getTime() - Date.now()) / 60000);
+    }
+
+    // Check if a departure is delayed and by how many minutes
+    function isDelayed(dep) {
+        if (!dep.rtTime || !dep.time) return false;
+        return dep.rtTime !== dep.time;
+    }
+
+    function getDelayMinutes(dep) {
+        if (!dep.rtTime || !dep.time || dep.rtTime === dep.time) return 0;
+        var scheduled = dep.time.split(':');
+        var realtime = dep.rtTime.split(':');
+        if (scheduled.length < 2 || realtime.length < 2) return 0;
+        var sMins = parseInt(scheduled[0], 10) * 60 + parseInt(scheduled[1], 10);
+        var rMins = parseInt(realtime[0], 10) * 60 + parseInt(realtime[1], 10);
+        var diff = rMins - sMins;
+        // Handle midnight wrap (e.g. scheduled 23:58, realtime 00:01)
+        if (diff < -720) diff += 1440;
+        return diff > 0 ? diff : 0;
+    }
+
+    // Format the time display, showing delay as (+N)
+    function formatDepartureTime(dep) {
+        const mins = minutesUntilDeparture(dep);
+        if (mins === null) return dep.rtTime || dep.time;
+        if (mins <= 0) return 'Now';
+        if (mins < 60) return mins + ' min';
+        return (dep.rtTime || dep.time).substring(0, 5);
+    }
+
+    function formatDelayTag(dep) {
+        var delay = getDelayMinutes(dep);
+        if (delay <= 0) return '';
+        return ' (+' + delay + ')';
+    }
+
+    // Fetch departures sequentially, stopping early once we have 2 per configured line
+    var DEPS_PER_LINE = 2;
+
+    async function fetchBusDepartures() {
+        if (isApiQuotaExhausted()) return [];
+        const config = getBusConfig();
+        if (!config || !config.stopIds || config.stopIds.length === 0) return [];
+
+        _busFetchInProgress = true;
+        const allDeps = [];
+        const seen = new Set();
+        // Track how many departures we have per line
+        const lineCounts = {};
+        config.lines.forEach(function(l) { lineCounts[l.line] = 0; });
+
+        function hasEnough() {
+            return config.lines.every(function(l) { return lineCounts[l.line] >= DEPS_PER_LINE; });
+        }
+
+        try {
+            // Fetch stops one by one, stop early when we have enough
+            for (var i = 0; i < config.stopIds.length; i++) {
+                if (hasEnough()) break;
+                var deps = await getDepartures(config.stopIds[i]);
+                deps.forEach(function(dep) {
+                    var configLine = config.lines.find(function(l) { return l.line === dep.line; });
+                    if (!configLine) return;
+                    if (lineCounts[dep.line] >= DEPS_PER_LINE) return;
+                    var matchesDir = configLine.directions.some(function(d) {
+                        return dep.direction && dep.direction.includes(d);
+                    });
+                    if (!matchesDir) return;
+
+                    var key = dep.line + '|' + dep.direction + '|' + dep.time + '|' + dep.date;
+                    if (seen.has(key)) return;
+                    seen.add(key);
+
+                    lineCounts[dep.line]++;
+                    allDeps.push({
+                        line: dep.line,
+                        direction: dep.direction,
+                        time: formatDepartureTime(dep),
+                        delayTag: formatDelayTag(dep),
+                        minutes: minutesUntilDeparture(dep),
+                        stop: dep.stop || '',
+                        delayed: isDelayed(dep),
+                        type: dep.type
+                    });
+                });
+            }
+        } catch (e) {
+            // Silently fail
+        }
+
+        _busFetchInProgress = false;
+        allDeps.sort(function(a, b) { return (a.minutes || 999) - (b.minutes || 999); });
+        return allDeps;
+    }
+
+    // Insert or update the bus departure display in the navigation bar
+    function insertBusDisplay() {
+        if (!isDTULearnHomepage() || !isBusEnabled()) {
+            const existing = document.querySelector('.dtu-bus-departures');
+            if (existing) existing.remove();
+            return;
+        }
+
+        const wrapper = document.querySelector('.d2l-navigation-s-main-wrapper');
+        if (!wrapper) return;
+
+        let container = document.querySelector('.dtu-bus-departures');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'dtu-bus-departures';
+            container.setAttribute('role', 'listitem');
+            container.style.cssText = 'display: flex; gap: 12px; padding: 8px 14px; '
+                + 'margin-left: auto; font-size: 12px; '
+                + 'border-left: 2px solid #c62828; align-self: center; border-radius: 0 6px 6px 0; '
+                + (darkModeEnabled
+                    ? 'background: #2d2d2d !important; color: #e0e0e0 !important;'
+                    : 'background: #ffffff !important; color: #333 !important;');
+            wrapper.appendChild(container);
+        }
+
+        // Clear existing content
+        while (container.firstChild) container.removeChild(container.firstChild);
+
+        if (_cachedDepartures.length === 0) {
+            var empty = document.createElement('span');
+            empty.style.cssText = 'color: ' + (darkModeEnabled ? '#888' : '#999') + ' !important; font-style: italic; font-size: 11px;';
+            empty.textContent = _busFetchInProgress ? 'Loading bus times...' : 'No upcoming buses';
+            container.appendChild(empty);
+            return;
+        }
+
+        // Group departures by line, sort each group earliest-first
+        var lineGroups = {};
+        _cachedDepartures.forEach(function(dep) {
+            if (!lineGroups[dep.line]) lineGroups[dep.line] = [];
+            lineGroups[dep.line].push(dep);
+        });
+        // Fixed alphabetical order so columns never swap
+        var lineOrder = Object.keys(lineGroups).sort();
+        // Sort departures within each line: earliest first
+        lineOrder.forEach(function(line) {
+            lineGroups[line].sort(function(a, b) { return (a.minutes != null ? a.minutes : 999) - (b.minutes != null ? b.minutes : 999); });
+        });
+
+        // One column per line, side by side
+        lineOrder.forEach(function(line, li) {
+            var col = document.createElement('div');
+            col.style.cssText = 'display: flex; flex-direction: column; gap: 2px; min-width: 0;'
+                + (li < lineOrder.length - 1 ? ' padding-right: 12px; border-right: 1px solid ' + (darkModeEnabled ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.1)') + ';' : '');
+
+            // Line header badge
+            var color = LINE_COLORS[line] || '#1565c0';
+            var badge = document.createElement('span');
+            badge.style.cssText = 'display: inline-block; background-color: ' + color + ' !important; color: #fff !important; '
+                + 'padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; margin-bottom: 3px; '
+                + 'letter-spacing: 0.3px; text-align: center; align-self: flex-start;';
+            badge.textContent = line;
+            col.appendChild(badge);
+
+            // Departure rows
+            lineGroups[line].forEach(function(dep) {
+                var row = document.createElement('div');
+                row.style.cssText = 'display: flex; align-items: center; gap: 6px; white-space: nowrap;';
+
+                var dir = document.createElement('span');
+                dir.style.cssText = 'color: ' + (darkModeEnabled ? '#b0b0b0' : '#666') + ' !important; overflow: hidden; text-overflow: ellipsis; flex: 1; font-size: 11px;';
+                dir.textContent = dep.direction;
+
+                var time = document.createElement('span');
+                var timeColor = dep.delayed
+                    ? (darkModeEnabled ? '#ffa726' : '#e65100')
+                    : (darkModeEnabled ? '#66bb6a' : '#2e7d32');
+                time.style.cssText = 'font-weight: bold; font-size: 11px; color: ' + timeColor + ' !important;';
+                time.textContent = dep.time;
+
+                row.appendChild(dir);
+                row.appendChild(time);
+
+                if (dep.delayTag) {
+                    var delay = document.createElement('span');
+                    delay.style.cssText = 'font-size: 10px; color: ' + (darkModeEnabled ? '#ffa726' : '#e65100') + ' !important; font-weight: 600;';
+                    delay.textContent = dep.delayTag;
+                    row.appendChild(delay);
+                }
+                col.appendChild(row);
+            });
+
+            container.appendChild(col);
+        });
+    }
+
+    // ===== SMART POLLING: Visibility API + Intelligent Backoff =====
+    // Determine poll interval based on soonest departure
+    function getSmartPollInterval() {
+        if (_cachedDepartures.length === 0) return 60000; // 60s default
+        var soonest = Infinity;
+        _cachedDepartures.forEach(function(dep) {
+            if (dep.minutes != null && dep.minutes < soonest) soonest = dep.minutes;
+        });
+        if (soonest <= 15) return 60000;  // â‰¤15 min away: poll every 60s (minimum)
+        return 120000;                     // >15 min: every 2 min
+    }
+
+    var _busPollingTimer = null;
+
+    function startBusPolling() {
+        stopBusPolling();
+        if (!isDTULearnHomepage() || !isBusEnabled()) return;
+        // Schedule next poll based on how soon the next bus is
+        var interval = getSmartPollInterval();
+        _busPollingTimer = setTimeout(async function pollCycle() {
+            if (document.hidden || !isDTULearnHomepage() || !isBusEnabled()) return;
+            if (!_busFetchInProgress) {
+                _lastBusFetch = Date.now();
+                _cachedDepartures = await fetchBusDepartures();
+                insertBusDisplay();
+            }
+            // Re-schedule with updated interval
+            var nextInterval = getSmartPollInterval();
+            _busPollingTimer = setTimeout(pollCycle, nextInterval);
+        }, interval);
+    }
+
+    function stopBusPolling() {
+        if (_busPollingTimer) {
+            clearTimeout(_busPollingTimer);
+            _busPollingTimer = null;
+        }
+    }
+
+    // Visibility API: pause when tab is hidden, resume when visible
+    document.addEventListener('visibilitychange', function() {
+        if (!IS_TOP_WINDOW) return;
+        if (document.hidden) {
+            stopBusPolling();
+        } else {
+            // Tab became visible â€” do an immediate refresh then resume polling
+            updateBusDepartures();
+        }
+    });
+
+    // Orchestrate: fetch + update display + start smart polling
+    async function updateBusDepartures() {
+        if (!IS_TOP_WINDOW) return;
+        if (!isDTULearnHomepage() || !isBusEnabled()) {
+            stopBusPolling();
+            insertBusDisplay();
+            return;
+        }
+        const config = getBusConfig();
+        if (!config) return;
+
+        const now = Date.now();
+        var interval = getSmartPollInterval();
+        if (now - _lastBusFetch >= interval && !_busFetchInProgress) {
+            _lastBusFetch = now;
+            _cachedDepartures = await fetchBusDepartures();
+        }
+        insertBusDisplay();
+        startBusPolling();
+    }
+
+    // ===== BUS SETUP PROMPT (first-time) =====
+    function showBusSetupPrompt() {
+        if (!IS_TOP_WINDOW) return;
+        if (!isDTULearnHomepage()) return;
+        if (localStorage.getItem(BUS_SETUP_DONE_KEY)) return;
+        if (document.querySelector('.dtu-bus-setup-prompt')) return;
+
+        const prompt = document.createElement('div');
+        prompt.className = 'dtu-bus-setup-prompt';
+        prompt.style.cssText = 'position: fixed; bottom: 24px; right: 24px; z-index: 999999; '
+            + 'background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); '
+            + 'border: 1px solid #1565c0; border-radius: 12px; padding: 20px 24px; '
+            + 'box-shadow: 0 8px 32px rgba(21,101,192,0.3), 0 0 0 1px rgba(21,101,192,0.1); '
+            + 'max-width: 360px; font-family: sans-serif; '
+            + 'transform: translateX(120%); transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);';
+
+        // Slide in after a frame
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                prompt.style.transform = 'translateX(0)';
+            });
+        });
+
+        const header = document.createElement('div');
+        header.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 10px;';
+
+        const busIcon = document.createElement('span');
+        busIcon.style.cssText = 'font-size: 28px; line-height: 1;';
+        busIcon.textContent = '\uD83D\uDE8C';
+
+        const title = document.createElement('div');
+        title.style.cssText = 'color: #fff; font-size: 16px; font-weight: bold;';
+        title.textContent = 'Never miss your bus!';
+
+        header.appendChild(busIcon);
+        header.appendChild(title);
+
+        const desc = document.createElement('div');
+        desc.style.cssText = 'color: #b0b0b0; font-size: 13px; margin-bottom: 16px; line-height: 1.5;';
+        desc.textContent = 'Get live departure times for buses near DTU right here on your homepage.';
+
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display: flex; gap: 10px;';
+
+        const setupBtn = document.createElement('button');
+        setupBtn.style.cssText = 'background: #1565c0; color: #fff; border: none; padding: 8px 20px; '
+            + 'border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; flex: 1; '
+            + 'transition: background 0.2s;';
+        setupBtn.textContent = 'Set it up';
+        setupBtn.addEventListener('mouseenter', () => { setupBtn.style.background = '#1976d2'; });
+        setupBtn.addEventListener('mouseleave', () => { setupBtn.style.background = '#1565c0'; });
+        setupBtn.addEventListener('click', () => {
+            prompt.style.transform = 'translateX(120%)';
+            setTimeout(() => { prompt.remove(); showBusConfigModal(); }, 300);
+        });
+
+        const dismissBtn = document.createElement('button');
+        dismissBtn.style.cssText = 'background: transparent; color: #666; border: 1px solid #444; '
+            + 'padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; '
+            + 'transition: border-color 0.2s, color 0.2s;';
+        dismissBtn.textContent = 'Not now';
+        dismissBtn.addEventListener('mouseenter', () => { dismissBtn.style.borderColor = '#666'; dismissBtn.style.color = '#999'; });
+        dismissBtn.addEventListener('mouseleave', () => { dismissBtn.style.borderColor = '#444'; dismissBtn.style.color = '#666'; });
+        dismissBtn.addEventListener('click', () => {
+            localStorage.setItem(BUS_SETUP_DONE_KEY, 'dismissed');
+            prompt.style.transform = 'translateX(120%)';
+            setTimeout(() => prompt.remove(), 300);
+        });
+
+        btnRow.appendChild(setupBtn);
+        btnRow.appendChild(dismissBtn);
+        prompt.appendChild(header);
+        prompt.appendChild(desc);
+        prompt.appendChild(btnRow);
+        document.body.appendChild(prompt);
+    }
+
+    // ===== BUS CONFIGURATION MODAL =====
+    function showBusConfigModal() {
+        if (!IS_TOP_WINDOW) return;
+        const existing = document.querySelector('.dtu-bus-config-modal');
+        if (existing) existing.remove();
+
+
+        const MAX_LINES = 2;
+        const isDarkTheme = isDarkModeEnabled();
+        const modalTheme = isDarkTheme
+            ? {
+                background: 'rgba(30,30,30,0.92)',
+                text: '#e0e0e0',
+                heading: '#fff',
+                subtle: '#999',
+                muted: '#888',
+                border: '#404040',
+                softBorder: '#555',
+                overlayShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)',
+                overlayBorder: '1px solid rgba(255,255,255,0.08)',
+                hoverRow: '#383838',
+                hoverAddCard: 'rgba(255,255,255,0.03)'
+            }
+            : {
+                background: 'rgba(255,255,255,0.96)',
+                text: '#1f2937',
+                heading: '#111827',
+                subtle: '#4b5563',
+                muted: '#6b7280',
+                border: '#d1d5db',
+                softBorder: '#9ca3af',
+                overlayShadow: '0 12px 48px rgba(15,23,42,0.22), 0 0 0 1px rgba(15,23,42,0.08)',
+                overlayBorder: '1px solid rgba(15,23,42,0.12)',
+                hoverRow: '#f3f4f6',
+                hoverAddCard: 'rgba(17,24,39,0.04)'
+            };
+
+        // Overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'dtu-bus-config-modal';
+        overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000000; '
+            + 'background: transparent !important; backdrop-filter: blur(16px) brightness(2.5); '
+            + '-webkit-backdrop-filter: blur(16px) brightness(2.5); '
+            + 'display: flex; align-items: center; justify-content: center; '
+            + 'font-family: sans-serif; opacity: 0; transition: opacity 0.3s;';
+        requestAnimationFrame(function() { overlay.style.opacity = '1'; });
+
+        var modal = document.createElement('div');
+        modal.style.cssText = 'background: ' + modalTheme.background + '; border-radius: 14px; padding: 28px; max-width: 480px; '
+            + 'width: 90%; max-height: 80vh; overflow-y: auto; color: ' + modalTheme.text + '; '
+            + 'box-shadow: ' + modalTheme.overlayShadow + '; '
+            + 'border: ' + modalTheme.overlayBorder + ';';
+
+        function dismissModal() {
+            var config = getBusConfig();
+            if (!config || !config.lines || config.lines.length === 0) {
+                localStorage.setItem(BUS_ENABLED_KEY, 'false');
+                var toggle = document.querySelector('#bus-departures-toggle');
+                if (toggle) toggle.checked = false;
+            }
+            overlay.style.opacity = '0';
+            setTimeout(function() { overlay.remove(); }, 200);
+        }
+
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) dismissModal();
+        });
+
+        // ---- Manage View: show configured lines with delete, add button ----
+        function renderManageView() {
+            while (modal.firstChild) modal.removeChild(modal.firstChild);
+            var config = getBusConfig();
+
+            var titleEl = document.createElement('h2');
+            titleEl.style.cssText = 'margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: ' + modalTheme.heading + '; letter-spacing: -0.3px;';
+            titleEl.textContent = 'Bus Lines';
+            modal.appendChild(titleEl);
+
+            var subtitle = document.createElement('p');
+            subtitle.style.cssText = 'margin: 0 0 20px 0; font-size: 14px; color: ' + modalTheme.subtle + '; line-height: 1.4;';
+            subtitle.textContent = 'Manage your configured bus lines (max ' + MAX_LINES + ').';
+            modal.appendChild(subtitle);
+
+            var lineCount = (config && config.lines) ? config.lines.length : 0;
+
+            // Show each configured line as a card
+            if (config && config.lines) {
+                config.lines.forEach(function(lineCfg, idx) {
+                    var color = LINE_COLORS[lineCfg.line] || '#1565c0';
+                    var card = document.createElement('div');
+                    card.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 12px 14px; '
+                        + 'border: 1px solid ' + modalTheme.border + '; border-radius: 8px; margin-bottom: 8px;';
+
+                    var badge = document.createElement('span');
+                    badge.style.cssText = 'background-color: ' + color + '; color: #fff; padding: 4px 0; '
+                        + 'border-radius: 5px; font-weight: 800; font-size: 16px; min-width: 48px; text-align: center;';
+                    badge.textContent = lineCfg.line;
+
+                    var info = document.createElement('div');
+                    info.style.cssText = 'flex: 1; font-size: 13px; color: ' + modalTheme.subtle + '; overflow: hidden; text-overflow: ellipsis;';
+                    info.textContent = lineCfg.directions.join(', ');
+
+                    var delBtn = document.createElement('button');
+                    delBtn.style.cssText = 'background: transparent; border: 1px solid ' + modalTheme.softBorder + '; color: ' + modalTheme.muted + '; '
+                        + 'width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; '
+                        + 'display: flex; align-items: center; justify-content: center; transition: all 0.15s;';
+                    delBtn.textContent = '\u00D7';
+                    delBtn.addEventListener('mouseenter', function() { delBtn.style.borderColor = '#c62828'; delBtn.style.color = '#ef5350'; });
+                    delBtn.addEventListener('mouseleave', function() { delBtn.style.borderColor = modalTheme.softBorder; delBtn.style.color = modalTheme.muted; });
+                    (function(capturedIdx) {
+                        delBtn.addEventListener('click', function() {
+                            config.lines.splice(capturedIdx, 1);
+                            saveBusConfig(config);
+                            _lastBusFetch = 0;
+                            _cachedDepartures = [];
+                            updateBusDepartures();
+                            renderManageView();
+                        });
+                    })(idx);
+
+                    card.appendChild(badge);
+                    card.appendChild(info);
+                    card.appendChild(delBtn);
+                    modal.appendChild(card);
+                });
+            }
+
+            // Add Line button (only if under cap)
+            if (lineCount < MAX_LINES) {
+                var addBtn = document.createElement('button');
+                addBtn.style.cssText = 'background: transparent; color: #66b3ff; border: 1px dashed ' + modalTheme.softBorder + '; '
+                    + 'padding: 12px; border-radius: 8px; cursor: pointer; font-size: 14px; width: 100%; '
+                    + 'margin-top: 4px; transition: border-color 0.15s, color 0.15s;';
+                addBtn.textContent = '+ Add Bus Line';
+                addBtn.addEventListener('mouseenter', function() { addBtn.style.borderColor = '#66b3ff'; });
+                addBtn.addEventListener('mouseleave', function() { addBtn.style.borderColor = modalTheme.softBorder; });
+                addBtn.addEventListener('click', function() { renderAddLineView(); });
+                modal.appendChild(addBtn);
+            } else {
+                var capNote = document.createElement('div');
+                capNote.style.cssText = 'font-size: 12px; color: ' + modalTheme.muted + '; font-style: italic; margin-top: 8px; text-align: center;';
+                capNote.textContent = 'Maximum of ' + MAX_LINES + ' bus lines reached. Remove one to add another.';
+                modal.appendChild(capNote);
+            }
+
+            // Done button
+            var btnRow = document.createElement('div');
+            btnRow.style.cssText = 'display: flex; justify-content: flex-end; margin-top: 20px;';
+            var doneBtn = document.createElement('button');
+            doneBtn.style.cssText = 'background: #1565c0; color: #fff; border: none; padding: 8px 24px; '
+                + 'border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;';
+            doneBtn.textContent = 'Done';
+            doneBtn.addEventListener('click', function() {
+                overlay.style.opacity = '0';
+                setTimeout(function() { overlay.remove(); }, 200);
+            });
+            btnRow.appendChild(doneBtn);
+            modal.appendChild(btnRow);
+        }
+
+        // ---- Add Line View: pick one bus line to add ----
+        function renderAddLineView() {
+            while (modal.firstChild) modal.removeChild(modal.firstChild);
+            var config = getBusConfig() || { stopIds: DTU_AREA_STOP_IDS.slice(), lines: [] };
+            if (config.lines.length >= MAX_LINES) { renderManageView(); return; }
+            var configuredLineNames = config.lines.map(function(l) { return l.line; });
+
+            var titleEl = document.createElement('h2');
+            titleEl.style.cssText = 'margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: ' + modalTheme.heading + '; letter-spacing: -0.3px;';
+            titleEl.textContent = 'Add Bus Line';
+            modal.appendChild(titleEl);
+
+            var subtitle = document.createElement('p');
+            subtitle.style.cssText = 'margin: 0 0 20px 0; font-size: 14px; color: ' + modalTheme.subtle + '; line-height: 1.4;';
+            subtitle.textContent = 'Select a bus line to add:';
+            modal.appendChild(subtitle);
+
+            var grid = document.createElement('div');
+            grid.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 10px;';
+
+            var availableLines = DTU_BUS_LINES.filter(function(bus) { return configuredLineNames.indexOf(bus.line) === -1; });
+
+            availableLines.forEach(function(bus) {
+                var color = LINE_COLORS[bus.line] || '#1565c0';
+                var card = document.createElement('button');
+                card.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 14px 16px; '
+                    + 'cursor: pointer; border-radius: 8px; border: 2px solid ' + modalTheme.border + '; background: transparent; '
+                    + 'transition: border-color 0.15s, background 0.15s; text-align: left;';
+                card.addEventListener('mouseenter', function() { card.style.borderColor = color; card.style.backgroundColor = modalTheme.hoverAddCard; });
+                card.addEventListener('mouseleave', function() { card.style.borderColor = modalTheme.border; card.style.backgroundColor = 'transparent'; });
+
+                var badge = document.createElement('span');
+                badge.style.cssText = 'background-color: ' + color + '; color: #fff; padding: 6px 0; '
+                    + 'border-radius: 6px; font-weight: 800; font-size: 18px; min-width: 56px; text-align: center; '
+                    + 'letter-spacing: 0.5px;';
+                badge.textContent = bus.line;
+
+                var label = document.createElement('span');
+                label.style.cssText = 'font-size: 13px; color: ' + modalTheme.muted + ';';
+                label.textContent = bus.name;
+
+                card.appendChild(badge);
+                card.appendChild(label);
+                grid.appendChild(card);
+
+                card.addEventListener('click', function() { renderDirectionView(bus.line); });
+            });
+
+            modal.appendChild(grid);
+
+            // Back button
+            var btnRow = document.createElement('div');
+            btnRow.style.cssText = 'display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;';
+            var backBtn = document.createElement('button');
+            backBtn.style.cssText = 'background: transparent; color: ' + modalTheme.muted + '; border: 1px solid ' + modalTheme.softBorder + '; '
+                + 'padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 13px;';
+            backBtn.textContent = config.lines.length > 0 ? 'Back' : 'Cancel';
+            backBtn.addEventListener('click', function() {
+                var c = getBusConfig();
+                if (c && c.lines && c.lines.length > 0) { renderManageView(); }
+                else { dismissModal(); }
+            });
+            btnRow.appendChild(backBtn);
+            modal.appendChild(btnRow);
+        }
+
+        // ---- Direction View: pick directions for one line, then save ----
+        async function renderDirectionView(selectedLine) {
+            while (modal.firstChild) modal.removeChild(modal.firstChild);
+
+            var color = LINE_COLORS[selectedLine] || '#1565c0';
+
+            var titleEl = document.createElement('h2');
+            titleEl.style.cssText = 'margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: ' + modalTheme.heading + '; letter-spacing: -0.3px;';
+            titleEl.textContent = 'Pick Directions';
+            modal.appendChild(titleEl);
+
+            var subtitle = document.createElement('p');
+            subtitle.style.cssText = 'margin: 0 0 20px 0; font-size: 14px; color: ' + modalTheme.subtle + '; line-height: 1.4;';
+
+            var lineTag = document.createElement('span');
+            lineTag.style.cssText = 'background-color: ' + color + '; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 13px;';
+            lineTag.textContent = selectedLine;
+            subtitle.appendChild(document.createTextNode('Select directions for '));
+            subtitle.appendChild(lineTag);
+            subtitle.appendChild(document.createTextNode(':'));
+            modal.appendChild(subtitle);
+
+            // Loading
+            var statusEl = document.createElement('div');
+            statusEl.style.cssText = 'font-size: 13px; color: ' + modalTheme.muted + ';';
+            statusEl.textContent = 'Finding available directions...';
+            modal.appendChild(statusEl);
+
+            // Fetch departures to discover directions
+            var allDepartures = [];
+            for (var si = 0; si < DTU_AREA_STOP_IDS.length; si++) {
+                var deps = await getDepartures(DTU_AREA_STOP_IDS[si]);
+                for (var di = 0; di < deps.length; di++) allDepartures.push(deps[di]);
+            }
+
+            var dirSet = new Map();
+            allDepartures.forEach(function(d) {
+                if (d.line === selectedLine && d.direction && !dirSet.has(d.direction)) {
+                    dirSet.set(d.direction, d.direction);
+                }
+            });
+            var directions = Array.from(dirSet.values());
+
+            statusEl.remove();
+
+            if (directions.length === 0) {
+                var noDir = document.createElement('div');
+                noDir.style.cssText = 'font-size: 13px; color: ' + modalTheme.muted + '; font-style: italic; padding: 8px 0;';
+                noDir.textContent = 'No departures found for ' + selectedLine + ' right now. Try again later.';
+                modal.appendChild(noDir);
+            }
+
+            var dirCheckboxes = [];
+            directions.forEach(function(direction) {
+                var row = document.createElement('label');
+                row.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 8px 12px; '
+                    + 'cursor: pointer; border-radius: 6px; margin-bottom: 2px; transition: background 0.15s;';
+                row.addEventListener('mouseenter', function() { row.style.backgroundColor = modalTheme.hoverRow; });
+                row.addEventListener('mouseleave', function() { row.style.backgroundColor = 'transparent'; });
+
+                var cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = true;
+                cb.style.cssText = 'width: 16px; height: 16px; accent-color: #c62828; cursor: pointer;';
+
+                var arrow = document.createElement('span');
+                arrow.style.cssText = 'color: #66bb6a; font-size: 13px;';
+                arrow.textContent = '\u2192';
+
+                var dirText = document.createElement('span');
+                dirText.style.cssText = 'font-size: 14px; color: ' + modalTheme.text + ';';
+                dirText.textContent = direction;
+
+                row.appendChild(cb);
+                row.appendChild(arrow);
+                row.appendChild(dirText);
+                modal.appendChild(row);
+                dirCheckboxes.push({ direction: direction, cb: cb });
+            });
+
+            // Error area
+            var errorEl = document.createElement('div');
+            errorEl.style.cssText = 'font-size: 13px; color: #ef5350; margin-top: 8px; display: none;';
+            modal.appendChild(errorEl);
+
+            // Button row
+            var btnRow = document.createElement('div');
+            btnRow.style.cssText = 'display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;';
+
+            var backBtn = document.createElement('button');
+            backBtn.style.cssText = 'background: transparent; color: ' + modalTheme.muted + '; border: 1px solid ' + modalTheme.softBorder + '; '
+                + 'padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 13px;';
+            backBtn.textContent = 'Back';
+            backBtn.addEventListener('click', function() { renderAddLineView(); });
+
+            var saveBtn = document.createElement('button');
+            saveBtn.style.cssText = 'background: #1565c0; color: #fff; border: none; padding: 8px 20px; '
+                + 'border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;';
+            saveBtn.textContent = 'Add Line';
+
+            saveBtn.addEventListener('click', function() {
+                var selectedDirs = dirCheckboxes.filter(function(dc) { return dc.cb.checked; }).map(function(dc) { return dc.direction; });
+                if (selectedDirs.length === 0) {
+                    errorEl.textContent = 'Please select at least one direction.';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+
+                var config = getBusConfig() || { stopIds: DTU_AREA_STOP_IDS.slice(), lines: [] };
+                config.lines.push({ line: selectedLine, directions: selectedDirs });
+                if (!config.stopIds || config.stopIds.length === 0) {
+                    config.stopIds = DTU_AREA_STOP_IDS.slice();
+                }
+                saveBusConfig(config);
+                localStorage.setItem(BUS_ENABLED_KEY, 'true');
+                localStorage.setItem(BUS_SETUP_DONE_KEY, 'configured');
+                _lastBusFetch = 0;
+                _cachedDepartures = [];
+                updateBusDepartures();
+                renderManageView();
+            });
+
+            btnRow.appendChild(backBtn);
+            btnRow.appendChild(saveBtn);
+            modal.appendChild(btnRow);
+        }
+
+        // Decide which view to show initially
+        var config = getBusConfig();
+        if (config && config.lines && config.lines.length > 0) {
+            renderManageView();
+        } else {
+            renderAddLineView();
+        }
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+    }
+
+    // ===== BUS TOGGLE IN ADMIN TOOLS =====
+    function insertBusToggle() {
+        if (!IS_TOP_WINDOW) return;
+        if (!isDTULearnHomepage()) return;
+        if (document.querySelector('#bus-departures-toggle')) return;
+
+        const placeholder = document.querySelector('#AdminToolsPlaceholderId');
+        if (!placeholder) return;
+
+        const columns = placeholder.querySelectorAll('.d2l-admin-tools-column');
+        let targetList = null;
+        columns.forEach(col => {
+            const h2 = col.querySelector('h2');
+            if (h2 && h2.textContent === 'DTU After Dark') {
+                targetList = col.querySelector('ul.d2l-list');
+            }
+        });
+
+        if (!targetList) return;
+
+        const li = document.createElement('li');
+        li.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; padding: 4px 0; background-color: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; padding: 4px 0;';
+
+        const label = document.createElement('label');
+        label.style.cssText = darkModeEnabled
+            ? 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; '
+                + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
+            : 'display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;';
+
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.id = 'bus-departures-toggle';
+        toggle.checked = isBusEnabled();
+        toggle.style.cssText = 'width: 16px; height: 16px; cursor: pointer; accent-color: #c62828;';
+
+        toggle.addEventListener('change', () => {
+            if (toggle.checked && (isApiQuotaExhausted() || isDailyLimitReached())) {
+                toggle.checked = false;
+                showQuotaExhaustedMessage(isApiQuotaExhausted() ? 'monthly' : 'daily');
+                return;
+            }
+            localStorage.setItem(BUS_ENABLED_KEY, toggle.checked.toString());
+            if (toggle.checked) {
+                const config = getBusConfig();
+                if (!config || !config.lines || config.lines.length === 0) {
+                    showBusConfigModal();
+                } else {
+                    _lastBusFetch = 0;
+                    updateBusDepartures();
+                }
+            } else {
+                insertBusDisplay();
+            }
+        });
+
+        label.appendChild(toggle);
+        label.appendChild(document.createTextNode('Bus Departures'));
+        li.appendChild(label);
+
+        const config = getBusConfig();
+        if (config && config.lines && config.lines.length > 0) {
+            const editBtn = document.createElement('button');
+            editBtn.style.cssText = darkModeEnabled
+                ? 'background: transparent; color: #66b3ff; border: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 4px; text-decoration: underline;'
+                : 'background: transparent; border: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 4px; text-decoration: underline;';
+            editBtn.textContent = 'Edit';
+            editBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                showBusConfigModal();
+            });
+            li.appendChild(editBtn);
+        }
+
+        targetList.appendChild(li);
+    }
+
+    // Run initial bus functions
+    if (isDTULearnHomepage()) {
+        updateBusDepartures();
+    }
+
+    // ===== BOOK FINDER LINKS (DTU Learn course pages) =====
+    // Detect ISBN numbers and book titles on course pages and inject
+    // links to find/buy them at DTU Findit, Polyteknisk, DBA.dk, Facebook Marketplace.
+
+    function isDTULearnCoursePage() {
+        return window.location.hostname === 'learn.inside.dtu.dk'
+            && /^\/d2l\/(home|le)\/\d+/.test(window.location.pathname);
+    }
+
+    // ISBN regex: matches "ISBN: 978-...", "ISBN-13: ...", "ISBN:978...", etc.
+    const ISBN_REGEX = /\bISBN[-\s]?(?:1[03])?[\s:]*\s*([\dXx][\d\s-]{8,}[\dXx])\b/gi;
+    // Bare ISBN-13 starting with 978/979 without "ISBN" prefix
+    const BARE_ISBN13_REGEX = /\b(97[89][\d-]{10,})\b/g;
+    // Keywords that signal a book reference nearby (English + Danish)
+    const BOOK_KEYWORDS = /\b(textbook|text\s*book|course\s*book|required\s*reading|recommended\s*reading|suggested\s*reading|book|reading\s*list|literature|edition|ed\.|bog|l\u00e6rebog|kursus\s*bog|anbefalet\s*l\u00e6sning|litteratur|pensum)\b/i;
+    // Quoted Title Case strings (supports straight and curly quotes)
+    const QUOTED_TITLE_REGEX = /["\u201C\u201D]([A-Z][A-Za-z]*(?:\s+(?:[A-Z][A-Za-z]*|and|the|of|in|for|to|a|an|with|&)){2,})["\u201C\u201D]/g;
+
+    function normalizeISBN(raw) {
+        return raw.replace(/[\s-]/g, '').replace(/x$/i, 'X');
+    }
+
+    function isValidISBN13(digits) {
+        if (digits.length !== 13 || !/^\d{13}$/.test(digits)) return false;
+        var sum = 0;
+        for (var i = 0; i < 12; i++) {
+            sum += parseInt(digits[i]) * (i % 2 === 0 ? 1 : 3);
+        }
+        return (10 - (sum % 10)) % 10 === parseInt(digits[12]);
+    }
+
+    function isValidISBN10(digits) {
+        if (digits.length !== 10) return false;
+        var sum = 0;
+        for (var i = 0; i < 9; i++) {
+            if (!/\d/.test(digits[i])) return false;
+            sum += parseInt(digits[i]) * (10 - i);
+        }
+        var last = digits[9] === 'X' ? 10 : parseInt(digits[9]);
+        if (isNaN(last)) return false;
+        return (sum + last) % 11 === 0;
+    }
+
+    function isTitleCase(str) {
+        var words = str.trim().split(/\s+/);
+        if (words.length < 3) return false;
+        if (!/^[A-Z]/.test(words[0])) return false;
+        var minor = /^(a|an|the|and|but|or|for|nor|of|in|to|with|on|at|by|&)$/i;
+        var capitalizedCount = 0;
+        for (var w = 0; w < words.length; w++) {
+            if (/^[A-Z]/.test(words[w])) capitalizedCount++;
+            else if (!minor.test(words[w])) return false; // non-minor word not capitalized = not Title Case
+        }
+        return capitalizedCount >= Math.ceil(words.length / 2);
+    }
+
+    function createBookFinderBar(isbn, title) {
+        var bar = document.createElement('div');
+        bar.setAttribute('data-book-finder-bar', 'true');
+        bar.style.cssText = darkModeEnabled
+            ? 'display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; margin: 4px 0; '
+              + 'background-color: #2d2d2d !important; border: 1px solid #404040; border-radius: 4px; '
+              + 'font-size: 12px; line-height: 1.4; color: #e0e0e0;'
+            : 'display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; margin: 4px 0; '
+              + 'background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; '
+              + 'font-size: 12px; line-height: 1.4; color: #333;';
+
+        var label = document.createElement('span');
+        label.textContent = '\uD83D\uDCD6 ';
+        label.style.cssText = 'font-weight: bold; white-space: nowrap;';
+        bar.appendChild(label);
+
+        var linkColor = darkModeEnabled ? '#66b3ff' : '#1a73e8';
+        var sepColor = darkModeEnabled ? '#555' : '#ccc';
+        var searchQuery = title ? encodeURIComponent(title) : '';
+        var links = [];
+
+        // DTU Findit (library)
+        if (isbn) {
+            links.push({ text: 'DTU Library', url: 'https://findit.dtu.dk/en/catalog?q=isbn:' + isbn });
+        } else if (title) {
+            links.push({ text: 'DTU Library', url: 'https://findit.dtu.dk/en/catalog?q=' + searchQuery });
+        }
+
+        // Polyteknisk bookshop (ISBN only - direct product page)
+        if (isbn) {
+            links.push({ text: 'Polyteknisk', url: 'https://www.polyteknisk.dk/home/Detaljer/' + isbn });
+        }
+
+        // DBA.dk (used marketplace)
+        if (title) {
+            links.push({ text: 'DBA', url: 'https://www.dba.dk/soeg/?soeg=' + searchQuery });
+        } else if (isbn) {
+            links.push({ text: 'DBA', url: 'https://www.dba.dk/soeg/?soeg=' + isbn });
+        }
+
+        // Facebook Marketplace
+        if (title) {
+            links.push({ text: 'Marketplace', url: 'https://www.facebook.com/marketplace/search/?query=' + searchQuery });
+        } else if (isbn) {
+            links.push({ text: 'Marketplace', url: 'https://www.facebook.com/marketplace/search/?query=' + isbn });
+        }
+
+        for (var i = 0; i < links.length; i++) {
+            if (i > 0) {
+                var sep = document.createElement('span');
+                sep.textContent = '|';
+                sep.style.cssText = 'color: ' + sepColor + ';';
+                bar.appendChild(sep);
+            }
+            var a = document.createElement('a');
+            a.href = links[i].url;
+            a.textContent = links[i].text;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.style.cssText = 'color: ' + linkColor + ' !important; text-decoration: none; white-space: nowrap; '
+                + 'padding: 2px 6px; border-radius: 3px;';
+            bar.appendChild(a);
+        }
+
+        return bar;
+    }
+
+    function insertBookFinderLinks() {
+        if (!IS_TOP_WINDOW) return;
+        if (!isDTULearnCoursePage()) return;
+
+        var contentArea = document.querySelector('.d2l-page-main')
+            || document.querySelector('#ContentView')
+            || document.querySelector('.d2l-le-content')
+            || document.body;
+        if (!contentArea) return;
+
+        // --- Pass 1: ISBN detection via TreeWalker ---
+        var walker = document.createTreeWalker(contentArea, NodeFilter.SHOW_TEXT, null);
+        var isbnHits = [];
+        var textNode;
+        while ((textNode = walker.nextNode())) {
+            if (textNode.parentElement && textNode.parentElement.closest('[data-book-finder-injected]')) continue;
+            if (textNode.parentElement && /^(SCRIPT|STYLE|NOSCRIPT|INPUT|TEXTAREA)$/i.test(textNode.parentElement.tagName)) continue;
+
+            var text = textNode.textContent;
+            var match;
+
+            ISBN_REGEX.lastIndex = 0;
+            while ((match = ISBN_REGEX.exec(text)) !== null) {
+                var raw = normalizeISBN(match[1]);
+                if (isValidISBN13(raw) || isValidISBN10(raw)) {
+                    isbnHits.push({ node: textNode, isbn: raw, title: null });
+                }
+            }
+
+            BARE_ISBN13_REGEX.lastIndex = 0;
+            while ((match = BARE_ISBN13_REGEX.exec(text)) !== null) {
+                var rawBare = normalizeISBN(match[1]);
+                if (isValidISBN13(rawBare) && !isbnHits.some(function(h) { return h.isbn === rawBare; })) {
+                    isbnHits.push({ node: textNode, isbn: rawBare, title: null });
+                }
+            }
+        }
+
+        // --- Pass 2: Book title detection ---
+        var titleHits = [];
+        var containers = contentArea.querySelectorAll('p, li, div, td, span, dd, section');
+        for (var c = 0; c < containers.length; c++) {
+            var container = containers[c];
+            if (container.closest('[data-book-finder-injected]')) continue;
+            if (container.querySelector('[data-book-finder-bar]')) continue;
+            // Skip containers that are too large (likely wrapper divs)
+            if (container.children.length > 20) continue;
+
+            var cText = container.textContent;
+            if (!BOOK_KEYWORDS.test(cText)) continue;
+
+            // Check "Textbook:" / "Bog:" pattern â€” keyword with colon followed by book info
+            var keyColonMatch = cText.match(/\b(textbook|text\s*book|course\s*book|required\s*reading|recommended\s*reading|suggested\s*reading|bog|l\u00e6rebog|kursus\s*bog|anbefalet\s*l\u00e6sning|pensum|litteratur)s?\s*:\s*(.+)/i);
+            if (keyColonMatch) {
+                // Extract the text after the keyword, strip trailing noise
+                var bookInfo = keyColonMatch[2]
+                    .replace(/\.\s*See\s+(more|also)\b.*/i, '')       // English: "See more..."
+                    .replace(/\.\s*Se\s+(mere|ogs\u00e5)\b.*/i, '')   // Danish: "Se mere..."
+                    .replace(/\s*\((?:Kapitel|Chapter|kap\.).*/i, '')  // Parenthetical chapter refs
+                    .trim();
+                // Remove trailing period
+                bookInfo = bookInfo.replace(/\.\s*$/, '').trim();
+                if (bookInfo.length >= 10 && !titleHits.some(function(h) { return h.title === bookInfo; })) {
+                    titleHits.push({ element: container, title: bookInfo, isbn: null });
+                }
+            }
+
+            // Check quoted titles
+            if (!keyColonMatch) {
+                QUOTED_TITLE_REGEX.lastIndex = 0;
+                var qMatch;
+                while ((qMatch = QUOTED_TITLE_REGEX.exec(cText)) !== null) {
+                    var candidateTitle = qMatch[1].trim();
+                    if (isTitleCase(candidateTitle) && !titleHits.some(function(h) { return h.title === candidateTitle; })) {
+                        titleHits.push({ element: container, title: candidateTitle, isbn: null });
+                    }
+                }
+
+                // Check <em> and <i> tags
+                var emEls = container.querySelectorAll('em, i');
+                for (var e = 0; e < emEls.length; e++) {
+                    var emText = emEls[e].textContent.trim();
+                    if (isTitleCase(emText) && emText.split(/\s+/).length >= 3
+                        && !titleHits.some(function(h) { return h.title === emText; })) {
+                        titleHits.push({ element: container, title: emText, isbn: null });
+                    }
+                }
+            }
+        }
+
+        // --- Inject link bars for ISBN hits ---
+        for (var ib = 0; ib < isbnHits.length; ib++) {
+            var hit = isbnHits[ib];
+            var blockParent = hit.node.parentElement
+                ? hit.node.parentElement.closest('p, div, li, td, blockquote, dd, section')
+                : null;
+            if (!blockParent) blockParent = hit.node.parentElement;
+            if (!blockParent || blockParent.getAttribute('data-book-finder-injected')) continue;
+
+            // Try to extract a nearby title for DBA/Marketplace search
+            var nearbyTitle = null;
+            var parentText = blockParent.textContent;
+            QUOTED_TITLE_REGEX.lastIndex = 0;
+            var nearby = QUOTED_TITLE_REGEX.exec(parentText);
+            if (nearby && isTitleCase(nearby[1].trim())) nearbyTitle = nearby[1].trim();
+
+            blockParent.setAttribute('data-book-finder-injected', 'true');
+            var bar = createBookFinderBar(hit.isbn, nearbyTitle);
+            blockParent.parentNode.insertBefore(bar, blockParent.nextSibling);
+        }
+
+        // --- Inject link bars for title hits ---
+        for (var ti = 0; ti < titleHits.length; ti++) {
+            var tHit = titleHits[ti];
+            var tBlock = tHit.element.closest('p, div, li, td, blockquote, dd, section') || tHit.element;
+            if (tBlock.getAttribute('data-book-finder-injected')) continue;
+            // Skip if an ISBN bar was already injected in this container
+            if (tBlock.querySelector('[data-book-finder-bar]')) continue;
+
+            tBlock.setAttribute('data-book-finder-injected', 'true');
+            var tBar = createBookFinderBar(null, tHit.title);
+            tBlock.parentNode.insertBefore(tBar, tBlock.nextSibling);
+        }
+
+        // --- PDF scanning disabled for now (tabled) ---
+    }
+
+    // Run Book Finder initially
+    insertBookFinderLinks();
+
+    // ===== TEXTBOOK LINKER (kurser.dtu.dk Course literature) =====
+    var _kurserTextbookLinkerTimer = null;
+    var _finditAvailabilityCache = Object.create(null);
+
+    function isKurserLiteratureLabel(text) {
+        if (!text) return false;
+        var normalized = text.replace(/\s+/g, ' ').trim();
+        if (!normalized) return false;
+        if (normalized.length > 130) return false;
+
+        var lower = normalized.toLowerCase();
+        if (/^(course\s+literature|literature|kursuslitteratur|litteratur)\s*:?\s*$/.test(lower)) return true;
+
+        // Accept common variants, e.g. "Course literature and material".
+        if (/\b(literature|litteratur|kursuslitteratur)\b/.test(lower)) {
+            if (/\b(course|kursus|reading|pensum|material|materials|materiale)\b/.test(lower)) return true;
+            // Short standalone labels that still clearly indicate literature.
+            if (lower.split(' ').length <= 4) return true;
+        }
+        return false;
+    }
+
+    function isNotesOnlyLiterature(text) {
+        if (!text) return true;
+        var normalized = text.replace(/\s+/g, ' ').trim();
+        if (!normalized) return true;
+        if (/^(none|n\/a|-)\s*$/i.test(normalized)) return true;
+        if (/^notes?\s+provided\.?$/i.test(normalized)) return true;
+        if (/^lecture\s+notes?\s+provided\.?$/i.test(normalized)) return true;
+        if (/^notes?\s+will\s+be\s+provided\.?$/i.test(normalized)) return true;
+        return false;
+    }
+
+    function findKurserLiteratureContainers() {
+        var found = [];
+        var seen = new Set();
+        function addCandidate(el) {
+            if (!el || el.nodeType !== 1) return;
+            if (seen.has(el)) return;
+            var txt = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+            if (!txt) return;
+            if (txt.length > 7000) return;
+            seen.add(el);
+            found.push(el);
+        }
+
+        // Table layout: [label][content]
+        document.querySelectorAll('tr').forEach(function(tr) {
+            var cells = tr.querySelectorAll('th, td');
+            if (cells.length < 2) return;
+            var label = (cells[0].textContent || '').replace(/\s+/g, ' ').trim();
+            if (!isKurserLiteratureLabel(label)) return;
+            addCandidate(cells[cells.length - 1]);
+        });
+
+        // Definition list layout: <dt>label</dt><dd>content</dd>
+        document.querySelectorAll('dt').forEach(function(dt) {
+            if (!isKurserLiteratureLabel((dt.textContent || '').trim())) return;
+            var dd = dt.nextElementSibling;
+            while (dd && dd.tagName && dd.tagName.toLowerCase() !== 'dd') dd = dd.nextElementSibling;
+            addCandidate(dd);
+        });
+
+        // Generic heading/label layout.
+        document.querySelectorAll('h1, h2, h3, h4, strong, b, label, div, span, p').forEach(function(el) {
+            var label = (el.textContent || '').replace(/\s+/g, ' ').trim();
+            if (!isKurserLiteratureLabel(label)) return;
+            if (label.length > 50) return;
+
+            var candidate = null;
+            if (el.nextElementSibling) {
+                candidate = el.nextElementSibling;
+            } else if (el.parentElement) {
+                var siblings = Array.prototype.filter.call(el.parentElement.children, function(ch) {
+                    return ch !== el && ((ch.innerText || ch.textContent || '').replace(/\s+/g, ' ').trim().length > 0);
+                });
+                if (siblings.length === 1) {
+                    candidate = siblings[0];
+                } else if (siblings.length > 1) {
+                    candidate = siblings.reduce(function(best, cur) {
+                        var bestLen = (best.innerText || best.textContent || '').length;
+                        var curLen = (cur.innerText || cur.textContent || '').length;
+                        return curLen > bestLen ? cur : best;
+                    });
+                }
+            }
+            addCandidate(candidate);
+        });
+
+        // Inline layout: "Course literature: [1] ...".
+        document.querySelectorAll('p, div, td, dd, span, li').forEach(function(el) {
+            var txt = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+            if (!txt || txt.length < 20 || txt.length > 3000) return;
+            if (!/\b(course\s+literature|literature|kursuslitteratur|litteratur)\b\s*:/i.test(txt)) return;
+            addCandidate(el);
+        });
+
+        return found;
+    }
+
+    function getKurserBarSectionData(barEl) {
+        if (!barEl) return { text: '', lines: [], insertBeforeNode: null };
+        var raw = '';
+        var collected = [];
+        var current = '';
+        var node = barEl.nextSibling;
+        var insertBeforeNode = null;
+
+        function normalizeFragment(text) {
+            return (text || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+        function appendFragment(text) {
+            var t = normalizeFragment(text);
+            if (!t) return;
+            current = current ? (current + ' ' + t) : t;
+        }
+        function flushCurrent() {
+            var t = normalizeFragment(current);
+            if (t) collected.push(t);
+            current = '';
+        }
+
+        while (node) {
+            if (node.nodeType === 1 && node.classList && node.classList.contains('bar')) {
+                insertBeforeNode = node;
+                break;
+            }
+            if (node.nodeType === 3) {
+                var txtNodeText = node.textContent || '';
+                raw += txtNodeText;
+                appendFragment(txtNodeText);
+            } else if (node.nodeType === 1) {
+                if (node.tagName && node.tagName.toUpperCase() === 'BR') {
+                    raw += '\n';
+                    flushCurrent();
+                } else if (node.tagName && /^(UL|OL)$/i.test(node.tagName)) {
+                    flushCurrent();
+                    var listItems = node.querySelectorAll('li');
+                    listItems.forEach(function(li) {
+                        var liTxt = normalizeFragment(li.innerText || li.textContent || '');
+                        if (liTxt) collected.push(liTxt);
+                    });
+                } else {
+                    var elementText = node.innerText || node.textContent || '';
+                    raw += '\n' + elementText + '\n';
+                    if (node.tagName && /^(P|DIV|SECTION|TABLE|TR)$/i.test(node.tagName)) {
+                        flushCurrent();
+                        appendFragment(elementText);
+                        flushCurrent();
+                    } else {
+                        appendFragment(elementText);
+                    }
+                }
+            }
+            node = node.nextSibling;
+        }
+        flushCurrent();
+
+        var lines = [];
+        collected.forEach(function(line) {
+            splitKurserLiteratureText(line).forEach(function(part) {
+                var txt = (part || '').trim();
+                if (!txt) return;
+                if (/^recommended\s*:?\s*$/i.test(txt)) return;
+                if (/^required\s*:?\s*$/i.test(txt)) return;
+                lines.push(txt);
+            });
+        });
+
+        return {
+            text: raw,
+            lines: lines,
+            insertBeforeNode: insertBeforeNode
+        };
+    }
+
+    function shouldMergeWrappedLiteratureLine(prev, next) {
+        if (!prev || !next) return false;
+        if (/^\s*(?:\[\s*\d+\s*\]|\d+\s*[.)])/.test(next)) return false;
+        if (/^\s*(recommended|required|remarks|last\s+updated)\b/i.test(next)) return false;
+        if (/^\s*[A-Z][A-Za-z'.\-]{1,30},\s*[A-Z]/.test(next) && /[.!?]\s*$/.test(prev)) return false;
+        if (/\b(?:and|or|of|for|to|in|on|the|a|an|isbn:?|edition|ed\.)\s*$/i.test(prev)) return true;
+        if (/[,:\-]\s*$/.test(prev)) return true;
+        if (!/[.!?;]\s*$/.test(prev)) return true;
+        if (next.length <= 35) return true;
+        return false;
+    }
+
+    function splitKurserLiteratureText(raw) {
+        var txt = (raw || '').replace(/\u00a0/g, ' ').trim();
+        if (!txt) return [];
+
+        // Normalize multiple spaces but keep line boundaries for merge heuristics.
+        txt = txt.replace(/[ \t]{2,}/g, ' ');
+        var lines = txt.split(/\r?\n+/).map(function(s) { return s.trim(); }).filter(Boolean);
+        if (lines.length > 1) {
+            var merged = [];
+            lines.forEach(function(line) {
+                if (!merged.length) {
+                    merged.push(line);
+                    return;
+                }
+                var prev = merged[merged.length - 1];
+                if (shouldMergeWrappedLiteratureLine(prev, line)) {
+                    merged[merged.length - 1] = (prev + ' ' + line).replace(/\s+/g, ' ').trim();
+                } else {
+                    merged.push(line);
+                }
+            });
+
+            var expanded = [];
+            merged.forEach(function(line) {
+                var bracketParts = line.split(/(?=\[\s*\d+\s*\])/g).map(function(s) { return s.trim(); }).filter(Boolean);
+                if (bracketParts.length > 1) {
+                    bracketParts.forEach(function(p) { expanded.push(p); });
+                    return;
+                }
+                expanded.push(line);
+            });
+            return expanded;
+        }
+
+        // Single-line fallbacks: split on citation markers.
+        var one = txt.replace(/\s+/g, ' ').trim();
+        var splitByBracket = one.split(/(?=\[\s*\d+\s*\])/g).map(function(s) { return s.trim(); }).filter(Boolean);
+        if (splitByBracket.length > 1) return splitByBracket;
+
+        var splitByNumber = one.split(/(?=\b\d+\s*[.)]\s*[A-Z])/g).map(function(s) { return s.trim(); }).filter(Boolean);
+        if (splitByNumber.length > 1) return splitByNumber;
+
+        var splitBySemicolon = one.split(/\s*;\s*/g).map(function(s) { return s.trim(); }).filter(Boolean);
+        if (splitBySemicolon.length > 1) return splitBySemicolon;
+
+        return [one];
+    }
+
+    function extractISBNFromCitationLine(line) {
+        if (!line) return null;
+        var m = line.match(/\bISBN[-\s]?(?:1[03])?[\s:]*\s*([\dXx][\d\s-]{8,}[\dXx])\b/i);
+        if (m && m[1]) {
+            var isbn = normalizeISBN(m[1]);
+            if (isValidISBN13(isbn) || isValidISBN10(isbn)) return isbn;
+        }
+
+        var b = line.match(/\b(97[89][\d-]{10,})\b/);
+        if (b && b[1]) {
+            var isbn13 = normalizeISBN(b[1]);
+            if (isValidISBN13(isbn13)) return isbn13;
+        }
+        return null;
+    }
+
+    function countCapitalizedWords(line) {
+        if (!line) return 0;
+        return (line.match(/\b[A-Z][A-Za-z'`\-]{1,}\b/g) || []).length;
+    }
+
+    function countInitials(line) {
+        if (!line) return 0;
+        return (line.match(/\b[A-Z]\./g) || []).length;
+    }
+
+    function isLikelyBibliographicNameTitlePattern(line) {
+        if (!line) return false;
+        var txt = line.replace(/\s+/g, ' ').trim();
+        if (!txt) return false;
+        if (txt.split(/\s+/).length < 4 || txt.split(/\s+/).length > 65) return false;
+
+        var lower = txt.toLowerCase();
+        if (/^(the|this|that|in|it|course|other|recommended|required|notes?)\b/.test(lower)) return false;
+
+        var capitals = countCapitalizedWords(txt);
+        var initials = countInitials(txt);
+        var connectorCount = (txt.match(/\s(?:and|&)\s|,/gi) || []).length;
+        var punctuationCount = (txt.match(/[,.]/g) || []).length;
+
+        // User-observed pattern: many capitalized names/words separated by and/,&,.,,
+        if ((capitals + initials) < 5) return false;
+        if (connectorCount === 0 && punctuationCount < 2) return false;
+        return true;
+    }
+
+    function parseKurserCitationLine(rawLine) {
+        if (!rawLine) return null;
+        var line = rawLine.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+        if (!line) return null;
+        if (isNotesOnlyLiterature(line)) return null;
+        if (/https?:\/\//i.test(line)) return null;
+
+        var isbn = extractISBNFromCitationLine(line);
+        var leadingCitationPattern = /^\s*(?:\[\s*\d+\s*\]|\d+\s*[.)])\s*/;
+        var hasLeadingCitation = leadingCitationPattern.test(line);
+
+        // Remove leading citation markers like [1], 1), 1.
+        line = line.replace(leadingCitationPattern, '');
+        // Remove explicit ISBN fragments from title parsing.
+        line = line.replace(/\bISBN[-\s]?(?:1[03])?[\s:]*\s*[\dXx][\d\s-]{8,}[\dXx]\b/ig, '').trim();
+        line = line
+            .replace(/\(\s*all\s+editions?\s+are\s+ok\s*\)/ig, '')
+            .replace(/\ball\s+editions?\s+are\s+ok\b/ig, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+
+        var author = '';
+        var title = '';
+
+        // Typical pattern: "Author, Title."
+        var citationMatch = line.match(/^([^,]{2,140}),\s*([^.;][^.;]{2,220})/);
+        var hasAuthorTitle = !!citationMatch;
+        var publisherHint = /\b(press|wiley|springer|pearson|elsevier|cambridge|oxford|mcgraw|macmillan|routledge|cengage|crc)\b/i;
+        var editionHint = /\b(edition|ed\.|e-book|ebook)\b/i;
+        var genericNoise = /\b(in\s+addition|supplements?\s+will\s+be\s+provided|it\s+is\s+not\s+required|other\s+books?\s+on\s+the\s+same\s+topic|course\s+compendium|research\s+articles?|will\s+be\s+made\s+accessible|can\s+be\s+used\s+as\s+well|follow\s+the\s+course|notations?\s+in\s+the\s+course\s+material|freely\s+available)\b/i;
+        var hasNameTitlePattern = isLikelyBibliographicNameTitlePattern(line);
+
+        var hasStandaloneTitle = !hasAuthorTitle
+            && /^[A-Z0-9][A-Za-z0-9&'()\-:,.\s]{8,}$/.test(line)
+            && line.split(/\s+/).length >= 3
+            && (publisherHint.test(line) || editionHint.test(line) || hasNameTitlePattern);
+
+        // Confidence model for very mixed lecturer input formats.
+        var confidence = 0;
+        if (isbn) confidence += 4;
+        if (hasLeadingCitation) confidence += 2;
+        if (hasAuthorTitle) confidence += 2;
+        if (hasStandaloneTitle) confidence += 2;
+        if (hasNameTitlePattern) confidence += 2;
+        if (publisherHint.test(line)) confidence += 1;
+        if (editionHint.test(line)) confidence += 1;
+        if (genericNoise.test(line) && !publisherHint.test(line)) confidence -= 3;
+        if (/https?:\/\//i.test(line)) confidence -= 3;
+        if (line.length < 12) confidence -= 1;
+
+        if (confidence < 2) return null;
+
+        if (citationMatch) {
+            author = citationMatch[1].trim();
+            title = citationMatch[2].trim();
+        } else {
+            // Fallback: treat remaining line as title.
+            title = line;
+        }
+
+        title = title
+            .replace(/\s*\((?:eds?|ed\.|chapter|kapitel)[^)]+\)\s*/ig, ' ')
+            .replace(/[;,.:\-]\s*$/, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+
+        if (!title && !isbn) return null;
+        if (title && title.length < 3 && !isbn) return null;
+
+        var queryText = line
+            .replace(/\bpp?\.?\s*\d+\s*(?:[-–]\s*\d+)?\b/ig, '')
+            .replace(/\bpages?\s*\d+\s*(?:[-–]\s*\d+)?\b/ig, '')
+            .replace(/\b,?\s*pp?\s*[-:]?\s*\d+\s*(?:[-–]\s*\d+)?\b/ig, '')
+            .replace(/[;,.]\s*$/, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+        if (!isbn && (!queryText || queryText.length < 4)) return null;
+
+        return {
+            raw: rawLine,
+            author: author,
+            title: title,
+            isbn: isbn,
+            queryText: queryText
+        };
+    }
+
+    function cleanKurserCitationQuery(query) {
+        return (query || '')
+            .replace(/\bpp?\.?\s*\d+\s*(?:[-–]\s*\d+)?\b/ig, '')
+            .replace(/\bpages?\s*\d+\s*(?:[-–]\s*\d+)?\b/ig, '')
+            .replace(/\b,?\s*pp?\s*[-:]?\s*\d+\s*(?:[-–]\s*\d+)?\b/ig, '')
+            .replace(/\s{2,}/g, ' ')
+            .replace(/[;,.]\s*$/, '')
+            .trim();
+    }
+
+    function buildKurserFinditUrl(citation) {
+        if (!citation) return null;
+        var query = '';
+        if (citation.isbn) {
+            query = 'isbn:' + citation.isbn;
+        } else if (citation.queryText) {
+            query = cleanKurserCitationQuery(citation.queryText);
+        } else {
+            var parts = [];
+            if (citation.title) parts.push(citation.title);
+            if (citation.author) parts.push(citation.author);
+            query = parts.join(' - ');
+        }
+        if (!query) return null;
+        return 'https://findit.dtu.dk/en/catalog?utf8=%E2%9C%93&type=book&q=' + encodeURIComponent(query);
+    }
+
+    function buildKurserGoogleBooksUrl(citation) {
+        if (!citation) return null;
+        var query = '';
+        if (citation.isbn) {
+            query = 'isbn:' + citation.isbn;
+        } else if (citation.queryText) {
+            query = cleanKurserCitationQuery(citation.queryText);
+        } else {
+            var parts = [];
+            if (citation.title) parts.push(citation.title);
+            if (citation.author) parts.push(citation.author);
+            query = parts.join(' - ');
+        }
+        if (!query) return null;
+        return 'https://books.google.com/books?q=' + encodeURIComponent(query);
+    }
+
+    function checkFinditOnlineAccess(url, cb) {
+        if (!url) {
+            cb(false);
+            return;
+        }
+        if (_finditAvailabilityCache[url] && _finditAvailabilityCache[url].done) {
+            cb(!!_finditAvailabilityCache[url].onlineAccess);
+            return;
+        }
+        if (_finditAvailabilityCache[url] && _finditAvailabilityCache[url].pending) {
+            _finditAvailabilityCache[url].callbacks.push(cb);
+            return;
+        }
+
+        _finditAvailabilityCache[url] = { pending: true, callbacks: [cb] };
+        sendRuntimeMessage({ type: 'dtu-findit-availability', url: url }, function(response) {
+            var onlineAccess = !!(response && response.ok && response.onlineAccess);
+            var pending = _finditAvailabilityCache[url];
+            _finditAvailabilityCache[url] = { done: true, onlineAccess: onlineAccess };
+            if (pending && Array.isArray(pending.callbacks)) {
+                pending.callbacks.forEach(function(fn) {
+                    try { fn(onlineAccess); } catch (e) {}
+                });
+            }
+        });
+    }
+
+    function styleLibraryBadgeAsOnline(badge) {
+        if (!badge || !badge.style) return;
+        badge.textContent = 'Free PDF ✅';
+        badge.style.setProperty('background-color', '#2e7d32', 'important');
+        badge.style.setProperty('border-color', '#43a047', 'important');
+        badge.style.setProperty('color', '#ffffff', 'important');
+    }
+
+    function createKurserLibraryBadge(url) {
+        var badge = document.createElement('a');
+        markExt(badge);
+        badge.setAttribute('data-dtu-textbook-linker', '1');
+        badge.setAttribute('data-dtu-textbook-linker-kind', 'library');
+        badge.href = url;
+        badge.target = '_blank';
+        badge.rel = 'noopener noreferrer';
+        badge.textContent = 'Check Library';
+        badge.style.cssText = darkModeEnabled
+            ? 'display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; '
+              + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
+              + 'background: rgba(102,179,255,0.14); color: #7cc0ff; border: 1px solid rgba(102,179,255,0.55);'
+            : 'display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; '
+              + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
+              + 'background: #eef6ff; color: #1a73e8; border: 1px solid #9dc7ff;';
+        return badge;
+    }
+
+    function createKurserGoogleBooksBadge(url) {
+        var badge = document.createElement('a');
+        markExt(badge);
+        badge.setAttribute('data-dtu-textbook-linker', '1');
+        badge.setAttribute('data-dtu-textbook-linker-kind', 'google-books');
+        badge.href = url;
+        badge.target = '_blank';
+        badge.rel = 'noopener noreferrer';
+        badge.textContent = 'Google Books';
+        badge.style.cssText = darkModeEnabled
+            ? 'display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; '
+              + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
+              + 'background: rgba(255,183,77,0.14); color: #ffcc80; border: 1px solid rgba(255,183,77,0.55);'
+            : 'display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; '
+              + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
+              + 'background: #fff6e8; color: #8a4b00; border: 1px solid #f0c07a;';
+        return badge;
+    }
+
+    function extractLiteratureLineTargets(container) {
+        var items = [];
+        var blockCandidates = container.querySelectorAll('li, p');
+
+        if (blockCandidates.length) {
+            blockCandidates.forEach(function(node) {
+                var raw = (node.innerText || node.textContent || '');
+                splitKurserLiteratureText(raw).forEach(function(txt) {
+                    if (!txt) return;
+                    items.push({ text: txt, anchor: node });
+                });
+            });
+        } else {
+            var raw = (container.innerText || container.textContent || '');
+            splitKurserLiteratureText(raw).forEach(function(txt) {
+                items.push({ text: txt, anchor: container });
+            });
+        }
+
+        var seen = Object.create(null);
+        return items.filter(function(item) {
+            if (!item.text || seen[item.text]) return false;
+            seen[item.text] = true;
+            return true;
+        });
+    }
+
+    function injectKurserTextbookBadges(container, lines) {
+        var fallback = null;
+        var injected = 0;
+        var seenKeys = Object.create(null);
+
+        lines.forEach(function(item) {
+            var parsed = parseKurserCitationLine(item.text);
+            if (!parsed) return;
+            var libraryUrl = buildKurserFinditUrl(parsed);
+            var googleBooksUrl = buildKurserGoogleBooksUrl(parsed);
+            if (!libraryUrl && !googleBooksUrl) return;
+
+            var key = (parsed.isbn || cleanKurserCitationQuery(parsed.queryText || parsed.title || '')).toLowerCase();
+            if (!key) key = libraryUrl || googleBooksUrl;
+            if (seenKeys[key]) return;
+            seenKeys[key] = true;
+
+            var libraryBadge = null;
+            var googleBadge = null;
+            if (libraryUrl) {
+                libraryBadge = createKurserLibraryBadge(libraryUrl);
+                checkFinditOnlineAccess(libraryUrl, function(hasOnlineAccess) {
+                    if (hasOnlineAccess) styleLibraryBadgeAsOnline(libraryBadge);
+                });
+            }
+            if (googleBooksUrl) {
+                googleBadge = createKurserGoogleBooksBadge(googleBooksUrl);
+            }
+
+            if (item.anchor !== container) {
+                if (item.anchor.querySelector('[data-dtu-textbook-linker]')) return;
+                if (libraryBadge) {
+                    item.anchor.appendChild(document.createTextNode(' '));
+                    item.anchor.appendChild(libraryBadge);
+                }
+                if (googleBadge) {
+                    item.anchor.appendChild(document.createTextNode(' '));
+                    item.anchor.appendChild(googleBadge);
+                }
+                injected++;
+                return;
+            }
+
+            // Fallback when the literature block is plain text lines in one container.
+            if (!fallback) {
+                fallback = document.createElement('div');
+                markExt(fallback);
+                fallback.setAttribute('data-dtu-textbook-linker-fallback', '1');
+                fallback.style.cssText = 'margin-top: 8px; display: flex; flex-direction: column; gap: 4px;';
+                container.appendChild(fallback);
+            }
+            var row = document.createElement('div');
+            markExt(row);
+            row.style.cssText = 'display: flex; align-items: center; flex-wrap: wrap; gap: 6px;';
+            var excerpt = document.createElement('span');
+            markExt(excerpt);
+            excerpt.style.cssText = 'font-size: 12px; opacity: 0.85;';
+            var clean = item.text.replace(/\s+/g, ' ').trim();
+            excerpt.textContent = clean.length > 90 ? (clean.slice(0, 87) + '...') : clean;
+            row.appendChild(excerpt);
+            if (libraryBadge) row.appendChild(libraryBadge);
+            if (googleBadge) row.appendChild(googleBadge);
+            fallback.appendChild(row);
+            injected++;
+        });
+
+        return injected;
+    }
+
+    function processKurserLiteratureBarSections() {
+        var bars = document.querySelectorAll('.bar');
+        if (!bars.length) return;
+
+        bars.forEach(function(bar) {
+            var label = (bar.textContent || '').replace(/\s+/g, ' ').trim();
+            if (!isKurserLiteratureLabel(label)) return;
+            if (bar.getAttribute('data-dtu-textbook-linker-scanned') === '1') return;
+
+            var attempts = parseInt(bar.getAttribute('data-dtu-textbook-linker-attempts') || '0', 10);
+            if (attempts >= 5) return;
+            bar.setAttribute('data-dtu-textbook-linker-attempts', String(attempts + 1));
+
+            var section = getKurserBarSectionData(bar);
+            if (!section || !section.lines.length) return;
+            if (isNotesOnlyLiterature((section.text || '').replace(/\s+/g, ' ').trim())) {
+                bar.setAttribute('data-dtu-textbook-linker-scanned', '1');
+                return;
+            }
+
+            var host = bar.parentElement
+                ? bar.parentElement.querySelector('[data-dtu-textbook-linker-bar-host-for="' + label.toLowerCase() + '"]')
+                : null;
+            if (!host) {
+                host = document.createElement('div');
+                markExt(host);
+                host.setAttribute('data-dtu-textbook-linker-bar-host', '1');
+                host.setAttribute('data-dtu-textbook-linker-bar-host-for', label.toLowerCase());
+                host.style.cssText = 'margin: 6px 0 10px;';
+                if (bar.parentNode) {
+                    if (section.insertBeforeNode) {
+                        bar.parentNode.insertBefore(host, section.insertBeforeNode);
+                    } else {
+                        bar.parentNode.appendChild(host);
+                    }
+                }
+            }
+            if (!host || host.querySelector('[data-dtu-textbook-linker]')) {
+                bar.setAttribute('data-dtu-textbook-linker-scanned', '1');
+                return;
+            }
+
+            var items = section.lines.map(function(line) {
+                return { text: line, anchor: host };
+            });
+            var injected = injectKurserTextbookBadges(host, items);
+            if (injected > 0 || attempts >= 4) {
+                bar.setAttribute('data-dtu-textbook-linker-scanned', '1');
+            }
+        });
+    }
+
+    function insertKurserTextbookLinks() {
+        if (!IS_TOP_WINDOW) return;
+        if (!isKurserCoursePage()) return;
+
+        // First handle the common kurser.dtu.dk "single .box with .bar sections" layout.
+        processKurserLiteratureBarSections();
+
+        var containers = findKurserLiteratureContainers();
+        if (!containers.length) return;
+
+        containers.forEach(function(container) {
+            if (!container || container.getAttribute('data-dtu-textbook-linker-scanned') === '1') return;
+            var attempts = parseInt(container.getAttribute('data-dtu-textbook-linker-attempts') || '0', 10);
+            if (attempts >= 5) return;
+            container.setAttribute('data-dtu-textbook-linker-attempts', String(attempts + 1));
+
+            if (container.querySelector('[data-dtu-textbook-linker]')) {
+                container.setAttribute('data-dtu-textbook-linker-scanned', '1');
+                return;
+            }
+
+            var fullText = (container.innerText || container.textContent || '').replace(/\s+/g, ' ').trim();
+            if (isNotesOnlyLiterature(fullText)) {
+                container.setAttribute('data-dtu-textbook-linker-scanned', '1');
+                return;
+            }
+
+            var lines = extractLiteratureLineTargets(container);
+            if (!lines.length) {
+                return;
+            }
+
+            var injected = injectKurserTextbookBadges(container, lines);
+            if (injected > 0) {
+                container.setAttribute('data-dtu-textbook-linker-scanned', '1');
+            }
+        });
+    }
+
+    function scheduleKurserTextbookLinker(delayMs) {
+        if (!IS_TOP_WINDOW) return;
+        if (window.location.hostname !== 'kurser.dtu.dk') return;
+        if (_kurserTextbookLinkerTimer) return;
+        _kurserTextbookLinkerTimer = setTimeout(function() {
+            _kurserTextbookLinkerTimer = null;
+            insertKurserTextbookLinks();
+        }, delayMs || 550);
+    }
+
+    // ===== COURSE GRADE STATISTICS (kurser.dtu.dk) =====
+    var _gradeStatsRequested = false;
+    var _gradeStatsCourseCode = null;
+
+    function isKurserCoursePage() {
+        return window.location.hostname === 'kurser.dtu.dk'
+            && /\/course\/(?:\d{4}-\d{4}\/)?[A-Za-z0-9]+/i.test(window.location.pathname);
+    }
+
+    function getKurserCourseCode() {
+        var match = window.location.pathname.match(/\/course\/(?:\d{4}-\d{4}\/)?([A-Za-z0-9]+)/i);
+        if (!match || !match[1]) return null;
+        return match[1].toUpperCase();
+    }
+
+    function findKurserCourseTitleElement(courseCode) {
+        var headings = Array.prototype.slice.call(document.querySelectorAll('h1, h2'));
+        if (!headings.length) return null;
+        var normalizedCode = (courseCode || '').toUpperCase();
+
+        for (var i = 0; i < headings.length; i++) {
+            var txt = (headings[i].textContent || '').trim().toUpperCase();
+            if (normalizedCode && txt.indexOf(normalizedCode) === 0) return headings[i];
+        }
+
+        // DTU course pages commonly use an h2 title.
+        var styledH2 = document.querySelector('h2[style*="font-family:verdana"]');
+        if (styledH2) return styledH2;
+
+        return document.querySelector('h1') || document.querySelector('h2');
+    }
+
+    function findKurserGradeStatsInsertAnchor(titleEl) {
+        if (!titleEl) return null;
+        var titleCol = titleEl.closest('.col-sm-9, .col-md-9, .col-lg-9, [class*="col-"]');
+        if (titleCol && titleCol.parentElement) {
+            var row = titleCol.parentElement;
+            var cls = row.className || '';
+            if (/\brow\b/.test(cls)) return row;
+        }
+        return titleEl;
+    }
+
+    function buildGradeStatsSemesters() {
+        var now = new Date();
+        var year = now.getFullYear();
+        var month = now.getMonth(); // 0-11
+        var startYear = (month <= 5) ? (year - 1) : year;
+        var semesters = [];
+        for (var y = startYear; y >= startYear - 6; y--) {
+            semesters.push('Winter-' + y);
+            semesters.push('Summer-' + y);
+        }
+        return semesters;
+    }
+
+    function sendRuntimeMessage(msg, cb) {
+        try {
+            if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.sendMessage) {
+                var p = browser.runtime.sendMessage(msg);
+                if (p && typeof p.then === 'function') {
+                    p.then(cb).catch(function() { cb(null); });
+                    return;
+                }
+                cb(p);
+                return;
+            }
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                chrome.runtime.sendMessage(msg, cb);
+                return;
+            }
+        } catch (e) {
+            // ignore
+        }
+        if (cb) cb(null);
+    }
+
+    function markExt(el) {
+        if (el && el.setAttribute) el.setAttribute('data-dtu-ext', '1');
+    }
+
+    function insertKurserGradeStats() {
+        if (!IS_TOP_WINDOW) return;
+        if (!isKurserCoursePage()) return;
+        if (document.querySelector('[data-dtu-grade-stats]')) return;
+
+        var courseCode = getKurserCourseCode();
+        if (!courseCode) return;
+        var titleEl = findKurserCourseTitleElement(courseCode);
+        if (!titleEl) return;
+        var insertAnchor = findKurserGradeStatsInsertAnchor(titleEl);
+        if (!insertAnchor || !insertAnchor.parentNode) return;
+
+        var container = document.createElement('div');
+        container.setAttribute('data-dtu-grade-stats', '1');
+        markExt(container);
+        container.style.cssText = darkModeEnabled
+            ? 'margin: 10px 0 12px 0; padding: 12px 14px; border-radius: 6px; width: 100%; max-width: none; box-sizing: border-box; '
+              + 'background-color: #2d2d2d; border: 1px solid #404040; color: #e0e0e0; font-family: inherit;'
+            : 'margin: 10px 0 12px 0; padding: 12px 14px; border-radius: 6px; width: 100%; max-width: none; box-sizing: border-box; '
+              + 'background-color: #ffffff; border: 1px solid #e0e0e0; color: #222; font-family: inherit;';
+
+        var title = document.createElement('div');
+        markExt(title);
+        title.textContent = 'Grade Statistics';
+        title.style.cssText = 'font-weight: 700; font-size: 14px; margin-bottom: 6px;';
+        container.appendChild(title);
+
+        var status = document.createElement('div');
+        markExt(status);
+        status.textContent = 'Loading grade stats...';
+        status.style.cssText = 'font-size: 13px; opacity: 0.9;';
+        container.appendChild(status);
+
+        insertAnchor.insertAdjacentElement('afterend', container);
+
+        if (_gradeStatsRequested && _gradeStatsCourseCode === courseCode) return;
+        _gradeStatsRequested = true;
+        _gradeStatsCourseCode = courseCode;
+
+        sendRuntimeMessage({
+            type: 'dtu-grade-stats',
+            courseCode: courseCode,
+            semesters: buildGradeStatsSemesters()
+        }, function(response) {
+            var iterations = [];
+            if (response && response.ok && Array.isArray(response.iterations) && response.iterations.length) {
+                iterations = response.iterations;
+            } else if (response && response.ok && response.data) {
+                iterations = [{ semester: response.semester || '', data: response.data }];
+            }
+            if (!iterations.length) {
+                status.textContent = 'No Data Available';
+                return;
+            }
+
+            var latest = iterations[0];
+            var data = latest.data || {};
+            var semester = latest.semester || '';
+            var grades = ['12', '10', '7', '4', '02', '00', '-3'];
+            var total = data.total || 0;
+
+            status.textContent = '';
+
+            var passPct = (data.passRate || 0);
+            var passColor = passPct > 85 ? '#4caf50' : (passPct > 70 ? '#ffb300' : '#ef5350');
+            var softSurface = darkModeEnabled ? '#252525' : '#f6f8fb';
+            var softBorder = darkModeEnabled ? '#3b3b3b' : '#dce2ea';
+            var mutedText = darkModeEnabled ? '#bababa' : '#5e6976';
+
+            var layout = document.createElement('div');
+            markExt(layout);
+            layout.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); '
+                + 'gap: 14px; margin-top: 8px; align-items: stretch;';
+            container.appendChild(layout);
+
+            var infoCol = document.createElement('div');
+            markExt(infoCol);
+            infoCol.style.cssText = 'display: flex; flex-direction: column; gap: 10px;';
+            layout.appendChild(infoCol);
+
+            var summary = document.createElement('div');
+            markExt(summary);
+            summary.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); '
+                + 'gap: 10px; padding: 10px 12px; border-radius: 6px; '
+                + 'border: 1px solid ' + softBorder + '; background: ' + softSurface + ';';
+            infoCol.appendChild(summary);
+
+            var passWrap = document.createElement('div');
+            markExt(passWrap);
+            var passLabel = document.createElement('div');
+            markExt(passLabel);
+            passLabel.textContent = 'Pass Rate';
+            passLabel.style.cssText = 'font-size: 11px; letter-spacing: 0.02em; opacity: 0.85;';
+            passWrap.appendChild(passLabel);
+            var passRate = document.createElement('div');
+            markExt(passRate);
+            passRate.textContent = passPct.toFixed(1) + '%';
+            passRate.style.cssText = 'font-size: 26px; line-height: 1.15; font-weight: 700;';
+            passRate.style.setProperty('color', passColor, 'important');
+            passWrap.appendChild(passRate);
+            summary.appendChild(passWrap);
+
+            var avgWrap = document.createElement('div');
+            markExt(avgWrap);
+            var avgLabel = document.createElement('div');
+            markExt(avgLabel);
+            avgLabel.textContent = 'Average Grade';
+            avgLabel.style.cssText = 'font-size: 11px; letter-spacing: 0.02em; opacity: 0.85;';
+            avgWrap.appendChild(avgLabel);
+            var avg = document.createElement('div');
+            markExt(avg);
+            avg.textContent = (data.average || 0).toFixed(2);
+            avg.style.cssText = 'font-size: 21px; line-height: 1.15; font-weight: 650;';
+            avgWrap.appendChild(avg);
+            summary.appendChild(avgWrap);
+
+            if (semester) {
+                var semWrap = document.createElement('div');
+                markExt(semWrap);
+                var semLabel = document.createElement('div');
+                markExt(semLabel);
+                semLabel.textContent = 'Latest Offering';
+                semLabel.style.cssText = 'font-size: 11px; letter-spacing: 0.02em; opacity: 0.85;';
+                semWrap.appendChild(semLabel);
+
+                var sem = document.createElement('div');
+                markExt(sem);
+                sem.textContent = semester;
+                sem.style.cssText = 'font-size: 15px; line-height: 1.15; color: ' + mutedText + ';';
+                semWrap.appendChild(sem);
+                summary.appendChild(semWrap);
+            }
+
+            if (iterations.length > 1) {
+                var historyCard = document.createElement('div');
+                markExt(historyCard);
+                historyCard.style.cssText = 'padding: 10px 12px; border-radius: 6px; '
+                    + 'border: 1px solid ' + softBorder + '; background: ' + softSurface + ';';
+                infoCol.appendChild(historyCard);
+
+                var historyTitle = document.createElement('div');
+                markExt(historyTitle);
+                historyTitle.textContent = 'Last 3 offerings';
+                historyTitle.style.cssText = 'font-size: 12px; font-weight: 600; margin-bottom: 5px;';
+                historyCard.appendChild(historyTitle);
+
+                iterations.slice(0, 3).forEach(function(iter, idx) {
+                    if (!iter || !iter.data) return;
+                    var iterRow = document.createElement('div');
+                    markExt(iterRow);
+                    iterRow.style.cssText = 'display: grid; grid-template-columns: minmax(80px, 1fr) auto auto; '
+                        + 'gap: 10px; align-items: baseline; padding: 4px 0;'
+                        + (idx > 0 ? (' border-top: 1px solid ' + softBorder + ';') : '');
+
+                    var iterSem = document.createElement('span');
+                    markExt(iterSem);
+                    iterSem.textContent = iter.semester || '';
+                    iterSem.style.cssText = 'font-size: 12px; color: ' + mutedText + ';';
+                    iterRow.appendChild(iterSem);
+
+                    var iterPassPct = (iter.data.passRate || 0);
+                    var iterPass = document.createElement('span');
+                    markExt(iterPass);
+                    var iterPassColor = iterPassPct > 85 ? '#4caf50' : (iterPassPct > 70 ? '#ffb300' : '#ef5350');
+                    iterPass.textContent = 'Pass: ' + iterPassPct.toFixed(1) + '%';
+                    iterPass.style.cssText = 'font-size: 12px; font-weight: 700;';
+                    iterPass.style.setProperty('color', iterPassColor, 'important');
+                    iterRow.appendChild(iterPass);
+
+                    var iterAvg = document.createElement('span');
+                    markExt(iterAvg);
+                    iterAvg.textContent = 'Avg: ' + (iter.data.average || 0).toFixed(2);
+                    iterAvg.style.cssText = 'font-size: 12px; color: ' + mutedText + ';';
+                    iterRow.appendChild(iterAvg);
+
+                    historyCard.appendChild(iterRow);
+                });
+            }
+
+            var chartCard = document.createElement('div');
+            markExt(chartCard);
+            chartCard.style.cssText = 'display: flex; flex-direction: column; '
+                + 'padding: 10px 12px; border-radius: 6px; border: 1px solid ' + softBorder + '; '
+                + 'background: ' + softSurface + ';';
+            layout.appendChild(chartCard);
+
+            var chartHeader = document.createElement('div');
+            markExt(chartHeader);
+            chartHeader.style.cssText = 'display: flex; justify-content: space-between; gap: 8px; align-items: baseline;';
+            chartCard.appendChild(chartHeader);
+
+            var chartTitle = document.createElement('div');
+            markExt(chartTitle);
+            chartTitle.textContent = 'Grade Distribution';
+            chartTitle.style.cssText = 'font-size: 12px; font-weight: 600;';
+            chartHeader.appendChild(chartTitle);
+
+            var chartMetaWrap = document.createElement('div');
+            markExt(chartMetaWrap);
+            chartMetaWrap.style.cssText = 'display: flex; flex-direction: column; align-items: flex-end; text-align: right;';
+            chartMetaWrap.title = 'This count is for the latest offering only, not summed across multiple offerings.';
+
+            var chartMeta = document.createElement('div');
+            markExt(chartMeta);
+            chartMeta.textContent = total + ' students';
+            chartMeta.style.cssText = 'font-size: 11px; color: ' + mutedText + ';';
+            chartMetaWrap.appendChild(chartMeta);
+
+            var chartMetaScope = document.createElement('div');
+            markExt(chartMetaScope);
+            chartMetaScope.textContent = semester ? (semester + ' only (not summed)') : 'Latest offering only (not summed)';
+            chartMetaScope.style.cssText = 'font-size: 10px; color: ' + mutedText + '; opacity: 0.9;';
+            chartMetaWrap.appendChild(chartMetaScope);
+
+            chartHeader.appendChild(chartMetaWrap);
+
+            var chart = document.createElement('div');
+            markExt(chart);
+            chart.style.cssText = 'display: flex; align-items: flex-end; gap: 10px; height: 128px; margin-top: 8px;';
+
+            var maxCount = 0;
+            grades.forEach(function(g) {
+                var c = data.counts && data.counts[g] ? data.counts[g] : 0;
+                if (c > maxCount) maxCount = c;
+            });
+
+            grades.forEach(function(g) {
+                var count = data.counts && data.counts[g] ? data.counts[g] : 0;
+                var height = maxCount ? Math.round((count / maxCount) * 88) : 0;
+                if (count > 0 && height < 4) height = 4;
+
+                var wrap = document.createElement('div');
+                markExt(wrap);
+                wrap.style.cssText = 'display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1 1 0; min-width: 30px;';
+
+                var countLabel = document.createElement('div');
+                markExt(countLabel);
+                countLabel.textContent = String(count);
+                countLabel.style.cssText = 'font-size: 11px; color: ' + mutedText + '; min-height: 14px;';
+                wrap.appendChild(countLabel);
+
+                var barTrack = document.createElement('div');
+                markExt(barTrack);
+                barTrack.style.cssText = 'height: 90px; width: 100%; display: flex; align-items: flex-end;';
+
+                var bar = document.createElement('div');
+                markExt(bar);
+                var isPass = (g === '02' || g === '4' || g === '7' || g === '10' || g === '12');
+                var barColor = isPass ? '#66b3ff' : '#ef5350';
+                bar.style.cssText = 'width: 100%; height: ' + height + 'px; border-radius: 4px;';
+                bar.style.setProperty('background', barColor, 'important');
+                bar.style.setProperty('background-color', barColor, 'important');
+                if (height === 0) {
+                    bar.style.setProperty('background', 'transparent', 'important');
+                    bar.style.setProperty('background-color', 'transparent', 'important');
+                    bar.style.border = darkModeEnabled ? '1px solid #555' : '1px solid #c4c9cf';
+                }
+                bar.title = g + ': ' + count + ' students';
+
+                barTrack.appendChild(bar);
+                wrap.appendChild(barTrack);
+
+                var label = document.createElement('div');
+                markExt(label);
+                label.textContent = g;
+                label.style.cssText = 'font-size: 11px; opacity: 0.9;';
+
+                wrap.appendChild(label);
+                chart.appendChild(wrap);
+            });
+
+            chartCard.appendChild(chart);
+        });
+    }
+
+    function fixEvalueringResultCharts() {
+        if (!IS_TOP_WINDOW) return;
+        if (window.location.hostname !== 'evaluering.dtu.dk') return;
+
+        // Keep the "text answers" toolbar row compact and transparent.
+        document.querySelectorAll('.mx-s.hide-on-print, .mx-s.hide-on-print .flex.flex--content-between').forEach(function(row) {
+            row.style.setProperty('background', 'transparent', 'important');
+            row.style.setProperty('background-color', 'transparent', 'important');
+            row.style.setProperty('height', 'auto', 'important');
+            row.style.setProperty('min-height', '0', 'important');
+        });
+
+        // Chart scripts wait until legend headers are not pure black before drawing.
+        document.querySelectorAll('.comparison__legend > .legend__header').forEach(function(header) {
+            var bg = '';
+            try {
+                bg = window.getComputedStyle(header).backgroundColor || '';
+            } catch (e) {}
+            if (bg === 'rgb(0, 0, 0)') {
+                header.style.setProperty('background', '#990000', 'important');
+                header.style.setProperty('background-color', '#990000', 'important');
+                header.style.setProperty('color', '#ffffff', 'important');
+            }
+        });
+
+        // Keep chart canvases and wrappers transparent to avoid giant dark blocks.
+        document.querySelectorAll('canvas[id^="CanvasQuestion_"]').forEach(function(canvas) {
+            canvas.style.setProperty('background', 'transparent', 'important');
+            canvas.style.setProperty('background-color', 'transparent', 'important');
+
+            var wrap = canvas.parentElement;
+            if (wrap && wrap.style) {
+                wrap.style.setProperty('background', 'transparent', 'important');
+                wrap.style.setProperty('background-color', 'transparent', 'important');
+            }
+
+            var content = canvas.closest('.question__content');
+            if (content && content.style) {
+                content.style.setProperty('background', 'transparent', 'important');
+                content.style.setProperty('background-color', 'transparent', 'important');
+            }
+        });
+    }
+
+    function fixCampusnetHeaderStyling() {
+        if (!IS_TOP_WINDOW) return;
+        if (window.location.hostname !== 'campusnet.dtu.dk') return;
+
+        var breadcrumb = document.querySelector('nav#breadcrumb.actualbreadcrumb');
+        if (breadcrumb && breadcrumb.style) {
+            breadcrumb.style.setProperty('background', '#2d2d2d', 'important');
+            breadcrumb.style.setProperty('background-color', '#2d2d2d', 'important');
+            breadcrumb.style.setProperty('color', '#e0e0e0', 'important');
+        }
+
+        document.querySelectorAll('nav#breadcrumb.actualbreadcrumb a, nav#breadcrumb.actualbreadcrumb a.last').forEach(function(link) {
+            if (!link || !link.style) return;
+            link.style.setProperty('background', '#2d2d2d', 'important');
+            link.style.setProperty('background-color', '#2d2d2d', 'important');
+            link.style.setProperty('color', '#e0e0e0', 'important');
+        });
+
+        var searchInput = document.querySelector('article.header__search #searchTextfield, .header__search #searchTextfield');
+        if (searchInput && searchInput.style) {
+            searchInput.style.setProperty('background', '#1a1a1a', 'important');
+            searchInput.style.setProperty('background-color', '#1a1a1a', 'important');
+            searchInput.style.setProperty('color', '#e0e0e0', 'important');
+            searchInput.style.setProperty('border-color', '#505050', 'important');
+        }
+
+        // Grades page main container should be dark 1.
+        // Apply inline to beat site CSS and broad form rules.
+        var path = (window.location.pathname || '').toLowerCase();
+        var onGradesPage = path.indexOf('/cnnet/grades/grades.aspx') !== -1
+            || !!document.querySelector('#ctl00_ContentBox.main__content--box > .gradesPage');
+        if (onGradesPage) {
+            // Prevent dark-2 bleed on the large lower area of the grades page layout.
+            document.querySelectorAll(
+                'main.main.arc-row, '
+                + 'main.main.arc-row > section.main__content#koContainer, '
+                + 'main.main.arc-row > section.main__content#koContainer > #ctl00_ContentBox.main__content--box'
+            ).forEach(function(el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background', '#1a1a1a', 'important');
+                el.style.setProperty('background-color', '#1a1a1a', 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+            });
+
+            document.querySelectorAll(
+                '#ctl00_ContentBox.main__content--box, '
+                + '#ctl00_ContentBox.main__content--box > .gradesPage, '
+                + '#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm, '
+                + '#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm > div'
+            ).forEach(function(el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background', '#1a1a1a', 'important');
+                el.style.setProperty('background-color', '#1a1a1a', 'important');
+            });
+
+            // Grade page section headers should be dark 1 (not the default dark 2 bars).
+            document.querySelectorAll(
+                '.gradesPoints > h2, '
+                + '.gradesPublicationTitle, '
+                + '.gradesPdfTitle, '
+                + '.gradesDtuPaperTitle, '
+                + '.gradesPublishedResultsTitle'
+            ).forEach(function(el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background', '#1a1a1a', 'important');
+                el.style.setProperty('background-color', '#1a1a1a', 'important');
+                el.style.setProperty('color', '#e0e0e0', 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+            });
+
+            // Keep "Total points for this education" table stable across postbacks.
+            document.querySelectorAll(
+                '.gradesPoints > table:not(.gradesList), '
+                + '.gradesPoints > table:not(.gradesList) tr, '
+                + '.gradesPoints > table:not(.gradesList) td'
+            ).forEach(function(el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background', '#1a1a1a', 'important');
+                el.style.setProperty('background-color', '#1a1a1a', 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+                el.style.setProperty('border-color', '#404040', 'important');
+                var inlineStyle = (el.getAttribute && el.getAttribute('style')) || '';
+                if (!/color\s*:/i.test(inlineStyle)) {
+                    el.style.setProperty('color', '#e0e0e0', 'important');
+                }
+            });
+        }
+
+        // Message truncation bars sometimes keep a site gradient despite stylesheet overrides.
+        // Set inline styles so CampusNet cannot repaint it back to light.
+        document.querySelectorAll('.messageText').forEach(function(el) {
+            if (!el || !el.style) return;
+            el.style.setProperty('background', '#1a1a1a', 'important');
+            el.style.setProperty('background-color', '#1a1a1a', 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+        });
+
+        document.querySelectorAll('.messageText .postTeaser').forEach(function(el) {
+            if (!el || !el.style) return;
+            el.style.setProperty('background', '#1a1a1a', 'important');
+            el.style.setProperty('background-color', '#1a1a1a', 'important');
+            el.style.setProperty('color', '#e0e0e0', 'important');
+        });
+
+        document.querySelectorAll('.messageText .messageTruncatebar, .messageTruncatebar').forEach(function(el) {
+            if (!el || !el.style) return;
+            var darkFade = 'linear-gradient(to bottom, rgba(26,26,26,0), rgba(26,26,26,0.95) 65%, #1a1a1a 100%)';
+            el.style.setProperty('background', darkFade, 'important');
+            el.style.setProperty('background-image', darkFade, 'important');
+            el.style.setProperty('background-color', '#1a1a1a', 'important');
+            el.style.setProperty('color', '#e0e0e0', 'important');
+            el.style.setProperty('border-top-color', '#404040', 'important');
+            el.style.setProperty('filter', 'none', 'important');
+            el.style.setProperty('mix-blend-mode', 'normal', 'important');
+        });
+    }
+
+    function styleStudyPlannerTabLink(anchor) {
+        if (!anchor || !anchor.style) return;
+        anchor.style.setProperty('background-color', '#990000', 'important');
+        anchor.style.setProperty('background', '#990000', 'important');
+        anchor.style.setProperty('color', '#ffffff', 'important');
+        anchor.style.setProperty('border-color', '#990000', 'important');
+    }
+
+    function styleStudyPlannerTabs() {
+        if (!IS_TOP_WINDOW) return;
+        var host = window.location.hostname;
+        if (host !== 'studieplan.dtu.dk' && host !== 'kurser.dtu.dk') return;
+
+        if (host === 'kurser.dtu.dk') {
+            document.querySelectorAll('li[role="presentation"] > a[href="/search"], li[role="presentation"] > a[href$="/search"]').forEach(function(a) {
+                styleStudyPlannerTabLink(a);
+            });
+
+            document.querySelectorAll('li[role="presentation"] > a[href="/course/gotoStudyplanner"], li[role="presentation"] > a[href$="/course/gotoStudyplanner"]').forEach(function(a) {
+                styleStudyPlannerTabLink(a);
+            });
+        }
+
+        document.querySelectorAll('li[role="presentation"] > a[href="#"]').forEach(function(a) {
+            var txt = (a.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            if (txt === 'studieplanlÃ¦ggeren' || txt === 'study planner' || txt === 'course search') {
+                styleStudyPlannerTabLink(a);
+            }
+        });
+    }
 
     // ===== UNIFIED SCHEDULING =====
     // Replaces 8 separate setIntervals and 6 MutationObservers with
@@ -1750,69 +5850,137 @@
         }
     }
 
-    // Run immediately
-    enforcePageBackground();
+    // Run immediately (dark mode only)
+    if (darkModeEnabled) enforcePageBackground();
 
-    // Master function that runs all periodic checks
-    function runAllPeriodicChecks() {
+    function runDarkModeChecks(rootNode) {
+        if (!darkModeEnabled) return;
+
+        if (rootNode && rootNode.nodeType === 1) {
+            processElement(rootNode);
+            sweepForLateShadowRoots(rootNode);
+            replaceLogoImage(rootNode);
+            styleQuizSubmissionHistogram(rootNode);
+            return;
+        }
+
         enforcePageBackground();
         pollForHtmlBlocks();
         pollForMultiselects();
         pollOverrideDynamicStyles();
         if (document.body) processElement(document.body);
+        sweepForLateShadowRoots();
         replaceLogoImage();
-        insertMojanglesText();
-        insertMojanglesToggle();
+        styleQuizSubmissionHistogram();
         preserveTypeboxColors();
-        insertGPARow();
     }
 
-    // Single safety-net interval at 2000ms (MutationObserver handles real-time)
-    setInterval(runAllPeriodicChecks, 2000);
+    let _bookFinderTimer = null;
 
-    // Unified MutationObserver — handles style re-overrides immediately,
+    function scheduleBookFinderScan(delayMs) {
+        if (!IS_TOP_WINDOW || !isDTULearnCoursePage()) return;
+        if (_bookFinderTimer) return;
+        _bookFinderTimer = setTimeout(function() {
+            _bookFinderTimer = null;
+            insertBookFinderLinks();
+        }, delayMs || 800);
+    }
+
+    function runTopWindowFeatureChecks(rootNode, refreshBus) {
+        if (!IS_TOP_WINDOW) return;
+
+        var host = window.location.hostname;
+        if (ENABLE_CONTEXT_CAPTURE_DEV_TOOL) {
+            setupContextCaptureHotkey();
+            insertContextCaptureHelper();
+        }
+        styleStudyPlannerTabs();
+        fixEvalueringResultCharts();
+        fixCampusnetHeaderStyling();
+
+        if (host === 'learn.inside.dtu.dk') {
+            insertMojanglesText();
+            insertMojanglesToggle();
+            insertDarkModeToggle();
+            insertContentButtons(rootNode);
+            insertBusToggle();
+            if (refreshBus && isDTULearnHomepage()) {
+                updateBusDepartures();
+            }
+            scheduleBookFinderScan(refreshBus ? 300 : 900);
+        }
+        if (host === 'campusnet.dtu.dk') {
+            insertGPARow();
+            insertECTSProgressBar();
+            insertGPASimulator();
+        }
+        if (host === 'kurser.dtu.dk') {
+            insertKurserGradeStats();
+            scheduleKurserTextbookLinker(refreshBus ? 240 : 620);
+        }
+    }
+
+    // Unified MutationObserver â€” handles style re-overrides immediately,
     // and debounces heavier processing (shadow roots, logos, etc.)
     let _heavyWorkTimer = null;
+    let _pendingMutationRoots = [];
+    var _suppressHeavyWork = false; // Set true during our own DOM changes to avoid UI freezes
 
     function handleMutations(mutations) {
+        if (_suppressHeavyWork) return;
         let needsHeavyWork = false;
 
         for (const mutation of mutations) {
-            // Style / class attribute changes — apply dark overrides immediately
-            if (mutation.type === 'attributes') {
-                const el = mutation.target;
-                if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
-                    if (el.matches) {
-                        // Lighter dark selectors take priority
-                        if (el.matches(LIGHTER_DARK_SELECTORS)) {
-                            applyLighterDarkStyle(el);
-                        } else if (el.matches(DARK_SELECTORS)) {
-                            applyDarkStyle(el);
-                        }
-                    }
-                    // Preserve typebox custom colors
-                    if (el.classList && el.classList.contains('typebox')) {
-                        const inlineStyle = el.getAttribute('style');
-                        if (inlineStyle) {
-                            const match = inlineStyle.match(/background-color:\s*([^;]+)/i);
-                            if (match && match[1]) {
-                                el.style.setProperty('background-color', match[1].trim(), 'important');
+            if (darkModeEnabled) {
+                // Style / class attribute changes â€” apply dark overrides immediately
+                if (mutation.type === 'attributes') {
+                    const el = mutation.target;
+                    if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
+                        if (el.matches) {
+                            if (el.matches(LIGHTER_DARK_SELECTORS)) {
+                                applyLighterDarkStyle(el);
+                            } else if (el.matches(DARK_SELECTORS)) {
+                                applyDarkStyle(el);
                             }
                         }
+                        if (el.matches && el.matches('.dturedbackground')) {
+                            forceDtuRedBackgroundDark2(el);
+                        }
+                        if (el.classList && el.classList.contains('typebox')) {
+                            const inlineStyle = el.getAttribute('style');
+                            if (inlineStyle) {
+                                const match = inlineStyle.match(/background-color:\s*([^;]+)/i);
+                                if (match && match[1]) {
+                                    el.style.setProperty('background-color', match[1].trim(), 'important');
+                                }
+                            }
+                        }
+                    }
+                    if (mutation.attributeName === 'src' && el.matches
+                        && el.matches('d2l-labs-navigation-link-image.d2l-navigation-s-logo, d2l-labs-navigation-link-image[text="My Home"]')) {
+                        replaceLogoImage(el);
                     }
                 }
             }
 
-            // New nodes added — apply dark styles immediately, schedule heavy work
+            // New nodes added â€” schedule feature checks (and dark styles if enabled)
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(node => {
                     if (node.nodeType === 1) {
-                        // Immediate: apply dark/lighter styles to new nodes
-                        if (node.matches && node.matches(DARK_SELECTORS)) applyDarkStyle(node);
-                        if (node.matches && node.matches(LIGHTER_DARK_SELECTORS)) applyLighterDarkStyle(node);
-                        if (node.querySelectorAll) {
-                            node.querySelectorAll(DARK_SELECTORS).forEach(applyDarkStyle);
-                            node.querySelectorAll(LIGHTER_DARK_SELECTORS).forEach(applyLighterDarkStyle);
+                        _pendingMutationRoots.push(node);
+                        if (darkModeEnabled) {
+                            if (node.matches && node.matches(DARK_SELECTORS)) applyDarkStyle(node);
+                            if (node.matches && node.matches(LIGHTER_DARK_SELECTORS)) applyLighterDarkStyle(node);
+                            if (node.matches && node.matches('.dturedbackground')) {
+                                forceDtuRedBackgroundDark2(node);
+                            }
+                            if (node.querySelectorAll) {
+                                node.querySelectorAll(DARK_SELECTORS).forEach(applyDarkStyle);
+                                node.querySelectorAll(LIGHTER_DARK_SELECTORS).forEach(applyLighterDarkStyle);
+                                if (node.querySelector('.dturedbackground')) {
+                                    node.querySelectorAll('.dturedbackground').forEach(forceDtuRedBackgroundDark2);
+                                }
+                            }
                         }
                         needsHeavyWork = true;
                     }
@@ -1820,15 +5988,21 @@
             }
         }
 
-        // Debounce heavy operations (shadow root processing, logo, mojangles, etc.)
+        // Debounce heavy operations (features always, dark-mode styling conditionally)
         if (needsHeavyWork && !_heavyWorkTimer) {
             _heavyWorkTimer = setTimeout(() => {
                 _heavyWorkTimer = null;
-                if (document.body) processElement(document.body);
-                replaceLogoImage();
-                insertMojanglesText();
-                insertMojanglesToggle();
-                preserveTypeboxColors();
+
+                var roots = _pendingMutationRoots.filter(function(root) {
+                    return root && root.nodeType === 1 && root.isConnected;
+                });
+                _pendingMutationRoots = [];
+                if (roots.length === 0) return;
+
+                roots.forEach(root => {
+                    runDarkModeChecks(root);
+                });
+                runTopWindowFeatureChecks(roots[roots.length - 1], false);
             }, 200);
         }
     }
@@ -1844,7 +6018,7 @@
     }
 
     // Start observer immediately on documentElement (exists at document_start)
-    // so elements get dark-styled as the parser adds them to the DOM
+    // Handles both dark-mode styling (when enabled) and feature insertion (always)
     if (document.documentElement) {
         startUnifiedObserver();
     } else {
@@ -1854,16 +6028,31 @@
     // Page load: run all checks a few times to catch late-loading elements
     window.addEventListener('load', async () => {
         await waitForCustomElements();
-        runAllPeriodicChecks();
-        setTimeout(runAllPeriodicChecks, 500);
-        setTimeout(runAllPeriodicChecks, 1500);
+        runDarkModeChecks();
+        runTopWindowFeatureChecks(null, true);
+        startContentButtonBootstrap();
+        setTimeout(function() { runDarkModeChecks(); runTopWindowFeatureChecks(null, true); }, 500);
+        setTimeout(function() { runDarkModeChecks(); runTopWindowFeatureChecks(null, true); }, 1500);
         setTimeout(showOnboardingHint, 2000);
+        setTimeout(showBusSetupPrompt, 2500);
     });
 
     // Re-process when tab becomes visible again
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
-            setTimeout(runAllPeriodicChecks, 100);
+            setTimeout(function() {
+                runDarkModeChecks();
+                runTopWindowFeatureChecks(null, true);
+                startContentButtonBootstrap();
+            }, 100);
         }
     });
+
+    // Lightweight safety-net for late-created Brightspace shadow roots.
+    if (darkModeEnabled) {
+        setInterval(function() {
+            sweepForLateShadowRoots();
+        }, 10000);
+    }
 })();
+

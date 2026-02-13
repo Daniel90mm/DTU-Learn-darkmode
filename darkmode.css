@@ -1,4 +1,4 @@
-/* DTU Dark Mode - Making your courses easier on the eyes! */
+/* DTU After Dark - Making your courses easier on the eyes! */
 
 /* Main body and background */
 html,
@@ -1111,10 +1111,90 @@ button.d2l-hpg-opener {
   color: #e0e0e0 !important;
 }
 
-/* Floating buttons container */
+/* Tooltips */
+.tooltip[role="tooltip"],
+.tooltip.in[role="tooltip"],
+[role="tooltip"].tooltip,
+[role="tooltip"] {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #404040 !important;
+}
+
+.tooltip[role="tooltip"] .tooltip-inner,
+.tooltip.in[role="tooltip"] .tooltip-inner,
+[role="tooltip"] .tooltip-inner {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.tooltip.top .tooltip-arrow,
+.tooltip.in.top .tooltip-arrow {
+  border-top-color: #1a1a1a !important;
+}
+
+.tooltip.right .tooltip-arrow,
+.tooltip.in.right .tooltip-arrow {
+  border-right-color: #1a1a1a !important;
+}
+
+.tooltip.bottom .tooltip-arrow,
+.tooltip.in.bottom .tooltip-arrow {
+  border-bottom-color: #1a1a1a !important;
+}
+
+.tooltip.left .tooltip-arrow,
+.tooltip.in.left .tooltip-arrow {
+  border-left-color: #1a1a1a !important;
+}
+
+/* Bootstrap 4/5 arrow pseudo-elements */
+.tooltip .tooltip-arrow::before,
+.tooltip .tooltip-arrow::after,
+[role="tooltip"] .tooltip-arrow::before,
+[role="tooltip"] .tooltip-arrow::after {
+  border-color: #1a1a1a !important;
+}
+
+/* Floating buttons container - dark 1 */
+d2l-floating-buttons,
 .d2l-floating-buttons-container,
 .d2l-floating-buttons,
 .d2l-floating-buttons-inner-container {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+/* Action menu trigger and list container - dark 1 */
+button[aria-haspopup="true"][aria-label^="Actions for"],
+div[role="list"]:not(.d2l-navigation-s-main-wrapper) {
+  background: #1a1a1a !important;
+  background-color: #1a1a1a !important;
+  background-image: none !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+/* Breadcrumb role=list container can carry a gradient background */
+nav[aria-label="Breadcrumb"],
+nav[aria-label="Breadcrumb"] div[role="list"],
+nav[aria-label="Breadcrumb"] [role="list"] {
+  background: #1a1a1a !important;
+  background-color: #1a1a1a !important;
+  background-image: none !important;
+  color: #e0e0e0 !important;
+}
+
+/* Keep specific action buttons on dark 2 */
+button[aria-haspopup="true"][aria-label="Actions for Work To Do"],
+button[aria-label^="Actions for Work To Do"],
+button[aria-haspopup="true"][aria-label="Actions for Study Announcements"],
+button[aria-label^="Actions for Study Announcements"],
+button[aria-haspopup="true"][aria-label="Actions for Calendar"],
+button[aria-label^="Actions for Calendar"],
+button[aria-haspopup="true"][aria-label="Actions for Lecture 01, Quiz 1"],
+button[aria-label^="Actions for Lecture 01, Quiz 1"] {
   background-color: #2d2d2d !important;
   color: #e0e0e0 !important;
   border-color: #404040 !important;
@@ -1373,6 +1453,31 @@ form[action*="/Answer/SaveAnswers/"],
   background-color: #4d4d4d !important;
 }
 
+/* Evaluering result toolbar row (above charts): prevent giant dark block */
+.mx-s.hide-on-print,
+.mx-s.hide-on-print .flex.flex--content-between {
+  background-color: transparent !important;
+  background: transparent !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.mx-s.hide-on-print .flex.flex--content-between {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.mx-s.hide-on-print .flex.flex--content-between > div {
+  background-color: transparent !important;
+  background: transparent !important;
+  min-height: 0 !important;
+}
+
+.mx-s.hide-on-print .flex.flex--content-between > div:first-child {
+  flex: 0 0 auto !important;
+}
+
 /* Help text */
 .text--help,
 .text--help--noopacity,
@@ -1547,6 +1652,21 @@ d2l-icon[icon="tier1:chevron-up"] {
   background-image: none !important;
 }
 
+button[aria-haspopup="true"][aria-label^="Actions for"] d2l-icon[icon="tier1:chevron-down"] {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  background-image: none !important;
+}
+
+button[aria-label^="Actions for Work To Do"] d2l-icon[icon="tier1:chevron-down"],
+button[aria-label^="Actions for Study Announcements"] d2l-icon[icon="tier1:chevron-down"],
+button[aria-label^="Actions for Calendar"] d2l-icon[icon="tier1:chevron-down"],
+button[aria-label^="Actions for Lecture 01, Quiz 1"] d2l-icon[icon="tier1:chevron-down"] {
+  background-color: #2d2d2d !important;
+  background: #2d2d2d !important;
+  background-image: none !important;
+}
+
 /* Message bucket buttons - dark 2 */
 .d2l-messagebucket-button-container,
 .d2l-messagebucket-button-container *,
@@ -1561,7 +1681,8 @@ d2l-icon[icon="tier1:chevron-up"] {
 /* ===== DTU Studieplanlægger (studieplaner.dtu.dk) ===== */
 /* Main body and backgrounds */
 .dturedbackground {
-  background-color: #990000 !important;
+  background-color: #2d2d2d !important;
+  background: #2d2d2d !important;
 }
 
 .dtugreybackground {
@@ -2605,17 +2726,46 @@ ul.container_12.topmenuitems {
 }
 
 /* ===== CampusNet Grades (campusnet.dtu.dk) ===== */
+/* Grades page root container (explicit path from capture) - dark 1 */
+#ctl00_ContentBox.main__content--box,
+#ctl00_ContentBox.main__content--box > .gradesPage,
+#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Grades page main containers - dark 1 */
+.gradesEducation,
+.gradesPoints {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.gradesEducation * {
+  color: #e0e0e0 !important;
+}
+
+.gradesEducation select {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #505050 !important;
+}
+
 /* GPA summary row */
 .gpa-row {
-  background-color: #1a1a1a !important;
-  border-bottom: 2px solid #c62828 !important;
+  background-color: #2d2d2d !important;
+  border-top: 3px solid #c62828 !important;
+  border-bottom: none !important;
 }
 
 .gpa-row td {
-  background-color: #1a1a1a !important;
+  background-color: #2d2d2d !important;
   color: #ffffff !important;
   font-weight: bold !important;
-  padding: 8px 5px !important;
+  font-size: 14px !important;
+  padding: 10px 5px !important;
 }
 
 /* Grades list table */
@@ -2654,6 +2804,124 @@ table.gradesList td[style*="color : green"] {
   color: #4caf50 !important;
 }
 
+/* ECTS progress bar */
+.ects-progress-container {
+  background: #2d2d2d !important;
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+.ects-progress-container span {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+.ects-bar-bg {
+  background: #1a1a1a !important;
+  background-color: #1a1a1a !important;
+}
+.ects-bar-fill[data-bar-color="#4caf50"] {
+  background: #4caf50 !important;
+  background-color: #4caf50 !important;
+}
+.ects-bar-fill[data-bar-color="#66b3ff"] {
+  background: #66b3ff !important;
+  background-color: #66b3ff !important;
+}
+.ects-bar-fill[data-bar-color="#ffa726"] {
+  background: #ffa726 !important;
+  background-color: #ffa726 !important;
+}
+.ects-bar-fill[data-bar-color="#ef5350"] {
+  background: #ef5350 !important;
+  background-color: #ef5350 !important;
+}
+.ects-bar-pct {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
+/* GPA Simulator rows */
+.gpa-sim-row {
+  background-color: #202124 !important;
+  border-left: 2px solid rgba(102, 179, 255, 0.55) !important;
+}
+.gpa-sim-row td {
+  background-color: #202124 !important;
+  color: #e0e0e0 !important;
+  padding: 6px 8px !important;
+}
+.gpa-sim-input,
+.gpa-sim-select {
+  background-color: #1f1f1f !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #4a4a4a !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  min-height: 34px !important;
+  box-sizing: border-box !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+}
+.gpa-sim-input::placeholder {
+  color: #8f9aae !important;
+  opacity: 1 !important;
+}
+.gpa-sim-input:focus,
+.gpa-sim-select:focus {
+  border-color: #66b3ff !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(102, 179, 255, 0.2) !important;
+  background-color: #232323 !important;
+}
+.gpa-sim-delete-btn {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #ef5350 !important;
+  border: 1px solid transparent !important;
+  cursor: pointer !important;
+  font-size: 24px !important;
+  line-height: 1 !important;
+  width: 40px !important;
+  height: 30px !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+}
+.gpa-sim-delete-btn:hover {
+  background-color: rgba(239, 83, 80, 0.18) !important;
+  border-color: rgba(239, 83, 80, 0.3) !important;
+}
+.gpa-sim-add-row {
+  background-color: #1a1a1a !important;
+}
+.gpa-sim-add-row td {
+  background-color: #1a1a1a !important;
+}
+.gpa-sim-add-btn {
+  background-color: rgba(102, 179, 255, 0.1) !important;
+  color: #7cc0ff !important;
+  border: 1px solid rgba(102, 179, 255, 0.55) !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  padding: 6px 14px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+}
+.gpa-sim-add-btn:hover {
+  background-color: rgba(102, 179, 255, 0.2) !important;
+  border-color: rgba(124, 192, 255, 0.8) !important;
+  color: #a8d7ff !important;
+}
+.gpa-projected-row {
+  background-color: #202533 !important;
+  border-top: 1px dashed rgba(102, 179, 255, 0.7) !important;
+}
+.gpa-projected-row td {
+  background-color: #202533 !important;
+  color: #7cc0ff !important;
+}
+
 /* CampusNet header - dark 2 */
 article.header__top,
 .header__top {
@@ -2681,6 +2949,29 @@ article.header__top * {
 /* Header nav icons */
 .header__sub-nav {
   background-color: #2d2d2d !important;
+}
+
+/* CampusNet breadcrumb (Front page) - dark 2 */
+nav#breadcrumb.actualbreadcrumb,
+nav#breadcrumb.actualbreadcrumb a,
+nav#breadcrumb.actualbreadcrumb a.last {
+  background-color: #2d2d2d !important;
+  background: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* CampusNet header search field - dark 1 */
+article.header__search #searchTextfield,
+.header__search #searchTextfield {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+  border-color: #505050 !important;
+}
+
+article.header__search #searchTextfield::placeholder,
+.header__search #searchTextfield::placeholder {
+  color: #9a9a9a !important;
 }
 
 .nav__icon .fa-circle {
@@ -2917,7 +3208,16 @@ ul.menu__items {
 }
 
 .item__title {
-  color: #e0e0e0 !important;
+  color: #ffffff !important;
+}
+
+/* Nav dropdown non-link text (toggleChildren "+", list items, etc.) */
+.nav__dropdown,
+.nav__dropdown li,
+.nav__dropdown div,
+.nav__dropdown span,
+.nav__dropdown .toggleChildren {
+  color: #ffffff !important;
 }
 
 .item__icon {
@@ -2970,11 +3270,19 @@ h4.category__title a {
   background-color: transparent !important;
 }
 
-/* DTU red background bar - dark 2 */
+/* DTU red background bar - dark 2 (override all red margins/borders/gaps) */
 .dturedbackground {
   background-color: #2d2d2d !important;
   background: #2d2d2d !important;
   color: #e0e0e0 !important;
+  border-color: #2d2d2d !important;
+  margin: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+.dturedbackground + *,
+.dturedbackground ~ * {
+  border-top-color: #2d2d2d !important;
 }
 
 .dturedbackground a,
@@ -3015,11 +3323,34 @@ h4.category__title a {
 /* Pull-right (language selector, login) - dark 2 containers */
 .dturedbackground .pull-right,
 .dturedbackground .pull-right span,
+.dturedbackground .pull-right span a,
 .dturedbackground .container,
 .dturedbackground .row,
 .dturedbackground .col-md-12 {
   background-color: #2d2d2d !important;
   background: #2d2d2d !important;
+}
+
+/* Support footer - dark 1 */
+.text-center.span-seperation,
+.text-center.span-seperation div,
+.text-center.span-seperation a,
+.text-center.span-seperation span {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+.text-center.span-seperation a {
+  color: #66b3ff !important;
+}
+
+/* Kursussøgning tab - DTU red */
+.nav-tabs > li[role="presentation"] > a[href*="kurser.dtu.dk"] {
+  background-color: #990000 !important;
+  color: #ffffff !important;
+}
+.nav-tabs > li[role="presentation"] > a[href*="kurser.dtu.dk"]:hover {
+  background-color: #b30000 !important;
 }
 
 /* Search form container - dark 1 */
@@ -3108,4 +3439,92 @@ form.form-horizontal .form-control {
 
 .deadline__type {
   color: #b0b0b0 !important;
+}
+
+/* Quiz submissions histogram (Class Statistics / Grade Distribution) */
+/* Histogram styles intentionally left to default (light) */
+
+/* CampusNet Grades page wrapper (final override) - dark 1 */
+#ctl00_ContentBox.main__content--box > .gradesPage,
+#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm,
+#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm > div {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+}
+
+/* CampusNet Grades total-points block - dark 1 */
+.gradesPoints > table:not(.gradesList),
+.gradesPoints > table:not(.gradesList) tr,
+.gradesPoints > table:not(.gradesList) td {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+}
+
+/* CampusNet grade-page section titles - dark 1 */
+.gradesPoints > h2,
+.gradesPdfTitle,
+.gradesDtuPaperTitle {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.gradesPoints > h2 {
+  color: #e0e0e0 !important;
+}
+
+.gradesPoints > table:not(.gradesList) {
+  border: 1px solid #404040 !important;
+  border-collapse: collapse !important;
+}
+
+/* CampusNet message truncation fade - darken light gradient */
+.messageText {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  background-image: none !important;
+}
+
+.messageText .postTeaser {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.messageText .messageTruncatebar {
+  background: linear-gradient(to bottom, rgba(26, 26, 26, 0), rgba(26, 26, 26, 0.95) 65%, #1a1a1a 100%) !important;
+  background-color: #1a1a1a !important;
+  background-image: linear-gradient(to bottom, rgba(26, 26, 26, 0), rgba(26, 26, 26, 0.95) 65%, #1a1a1a 100%) !important;
+  color: #e0e0e0 !important;
+  border-top: 1px solid #404040 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.messageTruncatebar {
+  background: linear-gradient(to bottom, rgba(26, 26, 26, 0), rgba(26, 26, 26, 0.95) 65%, #1a1a1a 100%) !important;
+  background-color: #1a1a1a !important;
+  background-image: linear-gradient(to bottom, rgba(26, 26, 26, 0), rgba(26, 26, 26, 0.95) 65%, #1a1a1a 100%) !important;
+  color: #e0e0e0 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.messageText::before,
+.messageText::after,
+.messageText .messageTruncatebar::before,
+.messageText .messageTruncatebar::after,
+.messageTruncatebar::before,
+.messageTruncatebar::after {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* CampusNet main content row - dark 1 */
+main.main.arc-row,
+main.main.arc-row > #ctl00_LeftMenuContainer.main__aside,
+main.main.arc-row > section.main__content {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
 }

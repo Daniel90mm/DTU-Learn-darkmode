@@ -1,19 +1,20 @@
-# Privacy Policy - DTU Dark Mode
+# Privacy Policy - DTU After Dark
 
-**Last updated:** February 2025
+**Last updated:** February 2026
 
 ## Data Collection
 
-DTU Dark Mode does **not** collect, store, or transmit any user data. The extension operates entirely locally in your browser.
+DTU After Dark does **not** collect, store, or transmit any personal user data. The extension operates entirely locally in your browser.
 
 ## What the Extension Does
 
-- Injects CSS styles and JavaScript into DTU-related web pages to apply a dark color theme.
-- All processing happens locally in your browser. No data leaves your device.
+- Injects CSS styles and JavaScript into DTU-related web pages to apply a dark color theme and additional features.
+- All user preferences (dark mode toggle, bus configuration, GPA simulator data) are stored locally in your browser using localStorage and browser.storage.
+- No data leaves your device except as described under Third-Party Services below.
 
 ## Permissions
 
-The extension requires access to the following domains solely to apply dark mode styling:
+The extension requires access to the following domains to apply styling and features:
 
 - `learn.inside.dtu.dk` - DTU Learn (Brightspace LMS)
 - `s.brightspace.com` - Brightspace static assets (iframes)
@@ -25,11 +26,11 @@ The extension requires access to the following domains solely to apply dark mode
 - `sites.dtu.dk` - DTU department sites
 - `campusnet.dtu.dk` - CampusNet grades
 
-No data from these sites is read, stored, or transmitted. The extension only modifies the visual appearance of the pages.
+No personal data from these sites is read, stored, or transmitted.
 
 ## Third-Party Services
 
-This extension does not communicate with any third-party services or APIs.
+The extension communicates with the **Rejseplanen API** (`www.rejseplanen.dk`) to fetch public transit departure times for DTU-area bus stops. These requests contain only stop IDs — no user-identifying information is sent.
 
 ## Contact
 
