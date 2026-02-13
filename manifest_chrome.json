@@ -1,19 +1,35 @@
 {
   "manifest_version": 3,
   "name": "DTU After Dark",
-  "version": "2.4",
+  "version": "4.0",
   "description": "Dark mode, live bus departures, and GPA tools for DTU Learn, CampusNet, and other DTU sites.",
+  "permissions": ["storage"],
   "icons": {
-    "48": "icon_48.png",
-    "128": "icon_128.png"
+    "48": "images/icon_48.png",
+    "128": "images/icon_128.png"
   },
-  "host_permissions": ["https://www.rejseplanen.dk/*", "https://karakterer.dtu.dk/*", "https://findit.dtu.dk/*"],
+  "host_permissions": [
+    "https://www.rejseplanen.dk/*",
+    "https://karakterer.dtu.dk/*",
+    "https://findit.dtu.dk/*",
+    "https://evaluering.dtu.dk/*",
+    "https://student.dtu.dk/*",
+    "https://www.dtu.dk/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
   "web_accessible_resources": [
     {
-      "resources": ["dtuaften.jpg", "logo_dark.png", "Corp_White_Transparent.png", "Mojangles text.png"],
+      "resources": [
+        "images/dtuaften.jpg",
+        "images/logo_dark.png",
+        "images/Corp_White_Transparent.png",
+        "images/mojangles_text.png",
+        "images/mojangles_text_darkmode_off.png",
+        "darkmode.css",
+        "data/rooms_spring_2026.json"
+      ],
       "matches": [
         "*://learn.inside.dtu.dk/*",
         "*://s.brightspace.com/*",
@@ -30,66 +46,57 @@
   "content_scripts": [
     {
       "matches": ["*://learn.inside.dtu.dk/*"],
-      "css": ["darkmode.css"],
-      "js": ["darkmode.js"],
+      "js": ["config.js", "darkmode.js"],
       "run_at": "document_start",
       "all_frames": true,
       "match_about_blank": true
     },
     {
       "matches": ["*://s.brightspace.com/*"],
-      "css": ["darkmode.css"],
-      "js": ["darkmode.js"],
+      "js": ["config.js", "darkmode.js"],
       "run_at": "document_start",
       "all_frames": true,
       "match_about_blank": true
     },
     {
       "matches": ["*://sts.ait.dtu.dk/*"],
-      "css": ["darkmode.css"],
-      "js": ["darkmode.js"],
+      "js": ["config.js", "darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
     },
     {
       "matches": ["*://evaluering.dtu.dk/*"],
-      "css": ["darkmode.css"],
-      "js": ["darkmode.js"],
+      "js": ["config.js", "darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
     },
     {
       "matches": ["*://studieplan.dtu.dk/*"],
-      "css": ["darkmode.css"],
-      "js": ["darkmode.js"],
+      "js": ["config.js", "darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
     },
     {
       "matches": ["*://kurser.dtu.dk/*"],
-      "css": ["darkmode.css"],
-      "js": ["darkmode.js"],
+      "js": ["config.js", "darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
     },
     {
       "matches": ["*://karakterer.dtu.dk/*"],
-      "css": ["darkmode.css"],
-      "js": ["darkmode.js"],
+      "js": ["config.js", "darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
     },
     {
       "matches": ["*://sites.dtu.dk/*"],
-      "css": ["darkmode.css"],
-      "js": ["darkmode.js"],
+      "js": ["config.js", "darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
     },
     {
       "matches": ["*://campusnet.dtu.dk/*"],
-      "css": ["darkmode.css"],
-      "js": ["darkmode.js"],
+      "js": ["config.js", "darkmode.js"],
       "run_at": "document_start",
       "all_frames": true
     }

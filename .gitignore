@@ -1,10 +1,5 @@
-# Agent instructions
-CLAUDE.md
-AGENTS.md
-DEV_REJSEPLANEN_COMMANDS.md
-
-# Chrome Web Store build
-manifest_chrome.json
+# Build outputs
+dist/
 *.zip
 
 # API keys
@@ -14,5 +9,8 @@ config.js
 Thumbs.db
 .DS_Store
 
-# Local release/store submission notes
-release_notes/
+# Local dev artifacts
+chrome-unpacked-temp/
+dtu_recon_output/
+.claude/
+*.log

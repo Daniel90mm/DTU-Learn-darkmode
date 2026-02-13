@@ -804,8 +804,7 @@ div.navigation-item .accent,
   background-color: #3d3d3d !important;
 }
 
-.unit-box .fadeout,
-.fadeout {
+.unit-box .fadeout {
   background: transparent !important;
   display: none !important;
 }
@@ -1026,7 +1025,7 @@ div#header {
 /* Replace DTU login illustration with custom image */
 #branding.illustrationClass,
 .illustrationClass {
-  background-image: url(dtuaften.jpg) !important;
+  background-image: url(images/dtuaften.jpg) !important;
   background-size: cover !important;
   background-position: center !important;
 }
@@ -1034,7 +1033,7 @@ div#header {
 /* Replace DTU login logo with custom logo */
 img#companyLogo,
 img.logoImage {
-  content: url(logo_dark.png) !important;
+  content: url(images/logo_dark.png) !important;
 }
 
 /* Assignment info table */
@@ -3179,12 +3178,21 @@ article.archived-element:hover {
 
 /* Nav dropdown - white link text */
 .nav__dropdown a,
-article.nav__dropdown a {
-  color: #ffffff !important;
+article.nav__dropdown a,
+article.nav__dropdown--group a,
+.nav__dropdown--group .group-menu__item a,
+.nav__dropdown--group .group-menu__item-burger a,
+.nav__dropdown--group li a,
+.nav__dropdown--group li div a,
+article.nav__dropdown--group li div a {
+  color: #e0e0e0 !important;
 }
 
 .nav__dropdown a:hover,
-article.nav__dropdown a:hover {
+article.nav__dropdown a:hover,
+article.nav__dropdown--group a:hover,
+.nav__dropdown--group li a:hover,
+.nav__dropdown--group li div a:hover {
   color: #ffffff !important;
 }
 
@@ -3329,6 +3337,20 @@ h4.category__title a {
 .dturedbackground .col-md-12 {
   background-color: #2d2d2d !important;
   background: #2d2d2d !important;
+  background-image: none !important;
+  border-color: #2d2d2d !important;
+}
+
+.dturedbackground::before,
+.dturedbackground::after,
+.dturedbackground .container::before,
+.dturedbackground .container::after,
+.dturedbackground .row::before,
+.dturedbackground .row::after {
+  background-color: #2d2d2d !important;
+  background: #2d2d2d !important;
+  background-image: none !important;
+  border-color: #2d2d2d !important;
 }
 
 /* Support footer - dark 1 */
