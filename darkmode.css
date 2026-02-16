@@ -1,5 +1,71 @@
 /* DTU After Dark - Making your courses easier on the eyes! */
 
+/* Theme variables (can be overridden at runtime via darkmode.js) */
+:root {
+  --dtu-ad-accent: #990000;
+  --dtu-ad-accent-hover: #b30000;
+  --dtu-ad-accent-rgb: 153,0,0;
+
+  /* "DTU red" (used for nav bars/tabs) */
+  --dtu-ad-accent-deep: #7d0000;
+  --dtu-ad-accent-deep-hover: #990000;
+  --dtu-ad-accent-deep-rgb: 125,0,0;
+
+  /* Lighter accent suitable for text on dark backgrounds */
+  --dtu-ad-accent-soft: #ff6b6b;
+
+  /* Button border variant used on legacy DTU login pages */
+  --dtu-ad-accent-border: #7d0000;
+
+  /* Semantic status colors (DTU design guide palette) */
+  --dtu-ad-status-info: #2f3eea;
+  --dtu-ad-status-info-rgb: 47,62,234;
+  --dtu-ad-status-success: #008835;
+  --dtu-ad-status-success-rgb: 0,136,53;
+  --dtu-ad-status-warning: #f6d04d;
+  --dtu-ad-status-warning-rgb: 246,208,77;
+  --dtu-ad-status-warning-strong: #fc7634;
+  --dtu-ad-status-warning-strong-rgb: 252,118,52;
+  --dtu-ad-status-danger: #e83f48;
+  --dtu-ad-status-danger-rgb: 232,63,72;
+}
+
+/* ===== Brightspace / DTU Learn accent elements ===== */
+d2l-labs-navigation-band {
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
+  color: #ffffff !important;
+}
+
+d2l-labs-navigation-band a:hover {
+  background-color: var(--dtu-ad-accent-deep-hover) !important;
+  background: var(--dtu-ad-accent-deep-hover) !important;
+}
+
+.d2l-w2d-count,
+.d2l-w2d-heading-3-count,
+.d2l-count-badge-number {
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
+  color: #ffffff !important;
+}
+
+.d2l-w2d-count,
+.d2l-w2d-heading-3-count {
+  border-radius: 999px !important;
+  padding: 0 7px !important;
+  min-width: 18px !important;
+  text-align: center !important;
+}
+
+.d2l-count-badge-number {
+  border-color: #ffffff !important;
+}
+
+.uw-text {
+  color: var(--dtu-ad-accent-soft) !important;
+}
+
 /* Main body and background */
 html,
 html[data-he-context],
@@ -155,12 +221,12 @@ button:hover,
 .d2l-button-primary,
 button[primary],
 .d2l-button[primary] {
-  background-color: #c62828 !important;
+  background-color: var(--dtu-ad-accent) !important;
   color: #ffffff !important;
 }
 
 .d2l-button-primary:hover {
-  background-color: #d32f2f !important;
+  background-color: var(--dtu-ad-accent-hover) !important;
 }
 
 /* Input fields and forms */
@@ -218,7 +284,7 @@ tr:hover,
 .d2l-tab-selected,
 [role="tab"][aria-selected="true"] {
   color: #ffffff !important;
-  border-bottom-color: #c62828 !important;
+  border-bottom-color: var(--dtu-ad-accent) !important;
 }
 
 /* Tab panel content - dark 1 */
@@ -246,7 +312,7 @@ d2l-tab-panel h2.dhdg_1 {
 /* Badges and notifications */
 .d2l-badge,
 .d2l-notification-count {
-  background-color: #c62828 !important;
+  background-color: var(--dtu-ad-accent) !important;
   color: #ffffff !important;
 }
 
@@ -701,15 +767,15 @@ d2l-menu-item-link,
 .d2l-action-buttons .d2l-button,
 .d2l-action-buttons-item .d2l-button,
 button.d2l-button[primary] {
-  background-color: #4a90d9 !important;
+  background-color: var(--dtu-ad-accent) !important;
   color: #ffffff !important;
-  border-color: #3a7fc9 !important;
+  border-color: var(--dtu-ad-accent-border) !important;
 }
 
 .d2l-action-buttons .d2l-button:hover,
 .d2l-action-buttons-item .d2l-button:hover,
 button.d2l-button[primary]:hover {
-  background-color: #5aa0e9 !important;
+  background-color: var(--dtu-ad-accent-hover) !important;
 }
 
 /* d2l-input-search shadow DOM override */
@@ -758,17 +824,17 @@ input.d2l-input::placeholder {
 [data-objectid],
 div[data-objectid],
 div.navigation-item[data-objectid] {
-  background-color: #2d2d2d !important;
+  background-color: #1a1a1a !important;
   color: #e0e0e0 !important;
   border-color: #404040 !important;
 }
 
-/* Force all divs inside navigation-item to be dark */
+/* Force all descendants inside navigation-item to dark 1 */
 div.navigation-item *,
 [data-objectid] *,
 [role="tree"] *,
 [role="tree"] div {
-  background-color: #2d2d2d !important;
+  background-color: #1a1a1a !important;
   color: #e0e0e0 !important;
 }
 
@@ -791,6 +857,75 @@ div.navigation-item .accent,
 .overflow-detector,
 .fadeout-spacer {
   background-color: transparent !important;
+  color: #e0e0e0 !important;
+}
+
+/* Lessons module title row should stay dark 1 (not dark 2) */
+.unit-box .co-content.has-triangle,
+.unit-box .co-content,
+.lesson-box .co-content,
+.unit-box .title-container,
+.lesson-box .title-container,
+.unit-box .title-container .title,
+.lesson-box .title-container .title,
+.unit-box .title-container .title > div,
+.lesson-box .title-container .title > div,
+.unit-box .title-text,
+.lesson-box .title-text,
+.unit-box .title-text span,
+.lesson-box .title-text span,
+.unit-box .overflow-detector,
+.unit-box .overflow-detector span {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* DTU Learn TOC: keep title/text rail surfaces dark 1, including pseudo layers */
+.navigation-container .navigation-tree .unit-box .co-content,
+.navigation-container .navigation-tree .lesson-box .co-content,
+.navigation-container .navigation-tree .unit-box .title-container,
+.navigation-container .navigation-tree .lesson-box .title-container,
+.navigation-container .navigation-tree .unit-box .title,
+.navigation-container .navigation-tree .lesson-box .title,
+.navigation-container .navigation-tree .unit-box .title > div,
+.navigation-container .navigation-tree .lesson-box .title > div,
+.navigation-container .navigation-tree .unit-box .title-text,
+.navigation-container .navigation-tree .lesson-box .title-text,
+.navigation-container .navigation-tree .unit-box .title-text span,
+.navigation-container .navigation-tree .lesson-box .title-text span,
+.navigation-container .navigation-tree .unit-box .overflow-detector,
+.navigation-container .navigation-tree .lesson-box .overflow-detector,
+.navigation-container .navigation-tree .unit-box .overflow-detector span,
+.navigation-container .navigation-tree .lesson-box .overflow-detector span,
+.navigation-container .navigation-tree .unit-box .text-wrapper,
+.navigation-container .navigation-tree .lesson-box .text-wrapper,
+.navigation-container .navigation-tree .unit-box .date-container,
+.navigation-container .navigation-tree .lesson-box .date-container,
+.navigation-container .navigation-tree .unit-box .due-date-container,
+.navigation-container .navigation-tree .lesson-box .due-date-container,
+.navigation-container .navigation-tree .unit-box .title::before,
+.navigation-container .navigation-tree .lesson-box .title::before,
+.navigation-container .navigation-tree .unit-box .title::after,
+.navigation-container .navigation-tree .lesson-box .title::after {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Module collapse/expand triangle icon background should be dark 1 */
+.unit-box d2l-icon.module-triangle,
+.unit-box d2l-icon.module-triangle * {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* DTU Learn TOC: keep drag/upload icon backgrounds in the same dark 1 rail */
+.navigation-container .drag-handle d2l-icon,
+.navigation-container .upload-icon-container d2l-icon {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
   color: #e0e0e0 !important;
 }
 
@@ -991,14 +1126,14 @@ div#header {
 
 #submitButton,
 .submit {
-  background-color: #c62828 !important;
+  background-color: var(--dtu-ad-accent) !important;
   color: #ffffff !important;
-  border-color: #a62020 !important;
+  border-color: var(--dtu-ad-accent-border) !important;
 }
 
 #submitButton:hover,
 .submit:hover {
-  background-color: #d32f2f !important;
+  background-color: var(--dtu-ad-accent-hover) !important;
 }
 
 #footer,
@@ -1443,7 +1578,7 @@ form[action*="/Answer/SaveAnswers/"],
 }
 
 .button--primary {
-  background-color: #c62828 !important;
+  background-color: var(--dtu-ad-accent) !important;
   color: #ffffff !important;
 }
 
@@ -1677,11 +1812,30 @@ button[aria-label^="Actions for Lecture 01, Quiz 1"] d2l-icon[icon="tier1:chevro
   color: #e0e0e0 !important;
 }
 
-/* ===== DTU Studieplanlægger (studieplaner.dtu.dk) ===== */
+/* ===== DTU StudieplanlÃ¦gger (studieplaner.dtu.dk) ===== */
 /* Main body and backgrounds */
 .dturedbackground {
-  background-color: #2d2d2d !important;
-  background: #2d2d2d !important;
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
+}
+
+/* Register/Withdraw button - accent color */
+.btn-dtured {
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
+  color: #ffffff !important;
+  border-color: var(--dtu-ad-accent-deep) !important;
+}
+.btn-dtured:hover {
+  background-color: var(--dtu-ad-accent-deep-hover) !important;
+  background: var(--dtu-ad-accent-deep-hover) !important;
+}
+.btn-dtured.disabled,
+.btn-dtured[disabled] {
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
+  opacity: 0.6 !important;
+  color: #ffffff !important;
 }
 
 .dtugreybackground {
@@ -1769,21 +1923,27 @@ h2[data-bind*="EndDate"] {
   border-bottom: 1px solid #2d2d2d !important;
 }
 
-/* Semester headings - dark 2 border */
+/* Semester headings - accent border */
 .inverse h3,
 h3[data-bind*="SemesterNumber"] {
-  border-color: #2d2d2d !important;
-  border-bottom: 1px solid #2d2d2d !important;
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
+  border-color: var(--dtu-ad-accent-deep) !important;
+  border-bottom: 2px solid var(--dtu-ad-accent-deep) !important;
+  border-bottom-width: 2px !important;
+  border-bottom-style: solid !important;
+  border-bottom-color: var(--dtu-ad-accent-deep) !important;
+  color: #ffffff !important;
 }
 
-/* Course codes and links */
+/* Course codes and links - accent color */
 a.coursecode {
-  color: #66b3ff !important;
+  color: var(--dtu-ad-accent) !important;
   background-color: transparent !important;
 }
 
 a.coursecode:hover {
-  color: #99ccff !important;
+  color: var(--dtu-ad-accent-hover) !important;
 }
 
 /* Type boxes - keep their original colors for course type indicators */
@@ -1829,7 +1989,7 @@ a.coursecode:hover {
 
 /* Red dropdown (DTU header) */
 .dropdown-menu.red {
-  background-color: #990000 !important;
+  background-color: var(--dtu-ad-accent-deep) !important;
 }
 
 .dropdown-menu.red li a {
@@ -1837,7 +1997,7 @@ a.coursecode:hover {
 }
 
 .dropdown-menu.red li a:hover {
-  background-color: #770000 !important;
+  background-color: var(--dtu-ad-accent-deep-hover) !important;
 }
 
 /* Buttons */
@@ -2167,6 +2327,14 @@ em {
   background-color: transparent !important;
 }
 
+/* Mofoclass nav tabs - accent color */
+.mofoclass .nav-tabs > li > a {
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
+  color: #ffffff !important;
+  border-color: var(--dtu-ad-accent-deep) !important;
+}
+
 /* Course information bar - dark 2 with white text */
 .bar,
 div.bar {
@@ -2351,11 +2519,16 @@ a.d2l-link[title*="unread"] strong {
 }
 
 /* ===== D2L Admin Tools Column - dark 2 ===== */
-.d2l-admin-tools-column,
-div.d2l-admin-tools-column,
-.d2l-admin-tools-column .d2l-list,
-.d2l-admin-tools-column li,
-.d2l-admin-tools-column label {
+/* Skip elements with data-dtu-ext (our settings panel controls its own colors) */
+.d2l-admin-tools-column:not([data-dtu-ext]),
+div.d2l-admin-tools-column:not([data-dtu-ext]) {
+  background-color: #2d2d2d !important;
+  background: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+.d2l-admin-tools-column .d2l-list:not([data-dtu-ext]),
+.d2l-admin-tools-column li:not([data-dtu-ext]),
+.d2l-admin-tools-column label:not([data-dtu-ext]) {
   background-color: #2d2d2d !important;
   background: #2d2d2d !important;
   color: #e0e0e0 !important;
@@ -2369,8 +2542,8 @@ h2.d2l-heading.d2l-heading-none {
   color: #e0e0e0 !important;
 }
 
-.d2l-admin-tools-column ul.d2l-list,
-.d2l-admin-tools-column ul.d2l-list li {
+.d2l-admin-tools-column ul.d2l-list:not([data-dtu-ext]),
+.d2l-admin-tools-column ul.d2l-list li:not([data-dtu-ext]) {
   background-color: #2d2d2d !important;
   color: #e0e0e0 !important;
 }
@@ -2755,7 +2928,7 @@ ul.container_12.topmenuitems {
 /* GPA summary row */
 .gpa-row {
   background-color: #2d2d2d !important;
-  border-top: 3px solid #c62828 !important;
+  border-top: 3px solid var(--dtu-ad-accent) !important;
   border-bottom: none !important;
 }
 
@@ -2817,22 +2990,6 @@ table.gradesList td[style*="color : green"] {
   background: #1a1a1a !important;
   background-color: #1a1a1a !important;
 }
-.ects-bar-fill[data-bar-color="#4caf50"] {
-  background: #4caf50 !important;
-  background-color: #4caf50 !important;
-}
-.ects-bar-fill[data-bar-color="#66b3ff"] {
-  background: #66b3ff !important;
-  background-color: #66b3ff !important;
-}
-.ects-bar-fill[data-bar-color="#ffa726"] {
-  background: #ffa726 !important;
-  background-color: #ffa726 !important;
-}
-.ects-bar-fill[data-bar-color="#ef5350"] {
-  background: #ef5350 !important;
-  background-color: #ef5350 !important;
-}
 .ects-bar-pct {
   background: transparent !important;
   background-color: transparent !important;
@@ -2842,7 +2999,7 @@ table.gradesList td[style*="color : green"] {
 /* GPA Simulator rows */
 .gpa-sim-row {
   background-color: #202124 !important;
-  border-left: 2px solid rgba(102, 179, 255, 0.55) !important;
+  border-left: 2px solid rgba(var(--dtu-ad-accent-rgb), 0.55) !important;
 }
 .gpa-sim-row td {
   background-color: #202124 !important;
@@ -2868,9 +3025,9 @@ table.gradesList td[style*="color : green"] {
 }
 .gpa-sim-input:focus,
 .gpa-sim-select:focus {
-  border-color: #66b3ff !important;
+  border-color: var(--dtu-ad-accent) !important;
   outline: none !important;
-  box-shadow: 0 0 0 2px rgba(102, 179, 255, 0.2) !important;
+  box-shadow: 0 0 0 2px rgba(var(--dtu-ad-accent-rgb), 0.2) !important;
   background-color: #232323 !important;
 }
 .gpa-sim-delete-btn {
@@ -2897,9 +3054,9 @@ table.gradesList td[style*="color : green"] {
   background-color: #1a1a1a !important;
 }
 .gpa-sim-add-btn {
-  background-color: rgba(102, 179, 255, 0.1) !important;
-  color: #7cc0ff !important;
-  border: 1px solid rgba(102, 179, 255, 0.55) !important;
+  background-color: rgba(var(--dtu-ad-accent-rgb), 0.12) !important;
+  color: var(--dtu-ad-accent-soft) !important;
+  border: 1px solid rgba(var(--dtu-ad-accent-rgb), 0.55) !important;
   border-radius: 8px !important;
   cursor: pointer !important;
   padding: 6px 14px !important;
@@ -2908,17 +3065,24 @@ table.gradesList td[style*="color : green"] {
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
 }
 .gpa-sim-add-btn:hover {
-  background-color: rgba(102, 179, 255, 0.2) !important;
-  border-color: rgba(124, 192, 255, 0.8) !important;
-  color: #a8d7ff !important;
+  background-color: rgba(var(--dtu-ad-accent-rgb), 0.2) !important;
+  border-color: rgba(var(--dtu-ad-accent-rgb), 0.8) !important;
+  color: #ffffff !important;
 }
 .gpa-projected-row {
-  background-color: #202533 !important;
-  border-top: 1px dashed rgba(102, 179, 255, 0.7) !important;
+  background-color: rgba(var(--dtu-ad-accent-rgb), 0.12) !important;
+  border-top: 1px dashed rgba(var(--dtu-ad-accent-rgb), 0.7) !important;
 }
 .gpa-projected-row td {
-  background-color: #202533 !important;
-  color: #7cc0ff !important;
+  background-color: rgba(var(--dtu-ad-accent-rgb), 0.12) !important;
+  color: inherit !important;
+}
+
+/* Keep "Weighted GPA" and "Projected GPA" labels horizontally aligned */
+.gpa-row td[colspan="2"],
+.gpa-projected-row td[colspan="2"] {
+  padding-left: 5px !important;
+  padding-right: 0 !important;
 }
 
 /* CampusNet header - dark 2 */
@@ -3045,6 +3209,105 @@ h2.widget__title {
 }
 
 /* Icons keep original site colors (excluded from * override above) */
+/* CampusNet service/item icons: tint the inner red icon layer (icon__content) with accent. */
+.service-icon,
+.item__icon {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  border-color: transparent !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+.service-icon .icon__base,
+.item__icon .icon__base {
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  opacity: 0 !important; /* hide native red base layer that can bleed at the bottom */
+}
+.service-icon .icon__content,
+.item__icon .icon__content {
+  background-color: var(--dtu-ad-accent) !important;
+  background: var(--dtu-ad-accent) !important;
+  border-color: var(--dtu-ad-accent) !important;
+  border-radius: 999px !important;
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+}
+.service-icon:hover .icon__content,
+.item__icon:hover .icon__content,
+.service-icon:focus .icon__content,
+.item__icon:focus .icon__content {
+  /* Keep same accent on hover; avoid switching to native red/white hover states. */
+  background-color: var(--dtu-ad-accent) !important;
+  background: var(--dtu-ad-accent) !important;
+  border-color: var(--dtu-ad-accent) !important;
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+}
+/* Keep glyph/logo layers transparent so their image/small-logo details remain intact. */
+.service-icon .icon__identifier,
+.item__icon .icon__identifier {
+  background-color: transparent !important;
+  background: transparent !important;
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+}
+.service-icon:hover .icon__identifier,
+.item__icon:hover .icon__identifier,
+.service-icon:focus .icon__identifier,
+.item__icon:focus .icon__identifier {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* CampusNet group/course page header */
+.box.mainContentPageTemplate > .boxHeader,
+.box.mainContentPageTemplate .boxHeader {
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
+  border-bottom: 2px solid var(--dtu-ad-accent-deep-hover) !important;
+}
+.box.mainContentPageTemplate .boxHeader h2 {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
+/* CampusNet Reporting widget accent support */
+#afrapporteringWidget > .boxHeader,
+#afrapporteringWidget .boxHeader {
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
+  border-bottom: 2px solid var(--dtu-ad-accent-deep-hover) !important;
+}
+#afrapporteringWidget .boxHeader h2 {
+  color: #ffffff !important;
+}
+#afrapporteringWidget .lessonplan__progressbar .progressbar__percentage {
+  background-color: var(--dtu-ad-accent) !important;
+  background: var(--dtu-ad-accent) !important;
+}
+
+/* CampusNet sidebar/info widgets (e.g. Settings) */
+.box.widget > .boxHeader,
+.box.widget .boxHeader {
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
+  border-bottom: 2px solid var(--dtu-ad-accent-deep-hover) !important;
+}
+.box.widget .boxHeader h2 {
+  color: #ffffff !important;
+}
 
 /* CampusNet element links - light blue */
 a[href*="/cnnet/element/"] {
@@ -3114,6 +3377,56 @@ article.arc-toolbar {
   background-color: #3d3d3d !important;
   color: #e0e0e0 !important;
   border-color: #505050 !important;
+}
+
+/* CampusNet participants toolbar (mb-l): keep this whole control strip dark 1. */
+.arc-toolbar.mb-l,
+article.arc-toolbar.mb-l,
+.arc-toolbar.mb-l .flex,
+.arc-toolbar.mb-l .filter-participants,
+.arc-toolbar.mb-l .arc-buttongroup--multi,
+.arc-toolbar.mb-l .arc-dropdown,
+.arc-toolbar.mb-l .arc-dropdown__text {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.arc-toolbar.mb-l #query,
+.arc-toolbar.mb-l input[type="text"] {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+.arc-toolbar.mb-l .arc-button,
+.arc-toolbar.mb-l .arc-button--hollow-default,
+.arc-toolbar.mb-l .arc-button--medium {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+.arc-toolbar.mb-l .arc-button:hover,
+.arc-toolbar.mb-l .arc-button--hollow-default:hover,
+.arc-toolbar.mb-l .arc-button--medium:hover {
+  background-color: #2d2d2d !important;
+  background: #2d2d2d !important;
+}
+
+.arc-toolbar.mb-l .arc-dropdown__list,
+.arc-toolbar.mb-l .arc-dropdown__list-item {
+  background-color: #1a1a1a !important;
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
+.arc-toolbar.mb-l .arc-dropdown__list-item:hover {
+  background-color: #2d2d2d !important;
+  background: #2d2d2d !important;
 }
 
 /* Archived elements list */
@@ -3235,7 +3548,18 @@ ul.menu__items {
 /* Category title */
 h4.category__title,
 h4.category__title a {
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
   color: #ffffff !important;
+}
+h4.category__title .arc-menu-burger-expander,
+h4.category__title .toggle-category {
+  color: #ffffff !important;
+}
+h4.category__title:hover,
+h4.category__title:focus-within {
+  background-color: var(--dtu-ad-accent-deep-hover) !important;
+  background: var(--dtu-ad-accent-deep-hover) !important;
 }
 
 /* Participants list */
@@ -3260,13 +3584,24 @@ h4.category__title a {
   color: #e0e0e0 !important;
 }
 
+.ui-participant-informationbox,
+.ui-participant-informationbox.participant-active,
+.ui-participant-placeholder,
+.ui-participants-infolist {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-color: #404040 !important;
+}
+
 .ui-participant-infobox {
   background-color: #2d2d2d !important;
   border-color: #404040 !important;
   color: #e0e0e0 !important;
 }
 
-.info-header {
+.ui-participant-infobox .info-header,
+.ui-participant-informationbox .info-header {
+  background-color: #2d2d2d !important;
   color: #e0e0e0 !important;
 }
 
@@ -3278,67 +3613,73 @@ h4.category__title a {
   background-color: transparent !important;
 }
 
-/* DTU red background bar - dark 2 (override all red margins/borders/gaps) */
+/* DTU red background bar - accent color */
 .dturedbackground {
-  background-color: #2d2d2d !important;
-  background: #2d2d2d !important;
-  color: #e0e0e0 !important;
-  border-color: #2d2d2d !important;
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
+  color: #ffffff !important;
+  border-color: var(--dtu-ad-accent-deep) !important;
   margin: 0 !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
 .dturedbackground + *,
 .dturedbackground ~ * {
-  border-top-color: #2d2d2d !important;
+  border-top-color: var(--dtu-ad-accent-deep) !important;
 }
 
 .dturedbackground a,
 .dturedbackground .pull-right a,
 .dturedbackground .pull-right span a {
-  color: #b3d9ff !important;
+  color: #ffffff !important;
 }
 
 .dturedbackground a:hover,
 .dturedbackground .pull-right a:hover,
 .dturedbackground .pull-right span a:hover {
-  color: #cce5ff !important;
+  color: #ffffff !important;
+  background-color: var(--dtu-ad-accent-deep-hover) !important;
 }
 
 .dturedbackground .seperator {
-  color: #888888 !important;
+  color: rgba(255,255,255,0.6) !important;
+}
+
+.dturedbackground .caret,
+.dturedbackground b.caret {
+  border-top-color: #ffffff !important;
 }
 
 .dturedbackground .dropdown-toggle.red {
-  background-color: #2d2d2d !important;
-  background: #2d2d2d !important;
-  color: #e0e0e0 !important;
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
+  color: #ffffff !important;
 }
 
 .dturedbackground .dropdown-menu.red {
-  background-color: #2d2d2d !important;
-  border-color: #404040 !important;
+  background-color: var(--dtu-ad-accent-deep) !important;
+  border-color: var(--dtu-ad-accent-deep-hover) !important;
 }
 
 .dturedbackground .dropdown-menu.red li a {
-  color: #e0e0e0 !important;
+  color: #ffffff !important;
 }
 
 .dturedbackground .dropdown-menu.red li a:hover {
-  background-color: #3d3d3d !important;
+  background-color: var(--dtu-ad-accent-deep-hover) !important;
 }
 
-/* Pull-right (language selector, login) - dark 2 containers */
+/* Pull-right (language selector, login) - accent containers */
 .dturedbackground .pull-right,
 .dturedbackground .pull-right span,
 .dturedbackground .pull-right span a,
 .dturedbackground .container,
 .dturedbackground .row,
 .dturedbackground .col-md-12 {
-  background-color: #2d2d2d !important;
-  background: #2d2d2d !important;
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
   background-image: none !important;
-  border-color: #2d2d2d !important;
+  border-color: var(--dtu-ad-accent-deep) !important;
 }
 
 .dturedbackground::before,
@@ -3347,10 +3688,10 @@ h4.category__title a {
 .dturedbackground .container::after,
 .dturedbackground .row::before,
 .dturedbackground .row::after {
-  background-color: #2d2d2d !important;
-  background: #2d2d2d !important;
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
   background-image: none !important;
-  border-color: #2d2d2d !important;
+  border-color: var(--dtu-ad-accent-deep) !important;
 }
 
 /* Support footer - dark 1 */
@@ -3366,13 +3707,13 @@ h4.category__title a {
   color: #66b3ff !important;
 }
 
-/* Kursussøgning tab - DTU red */
+/* KursussÃ¸gning tab - DTU red */
 .nav-tabs > li[role="presentation"] > a[href*="kurser.dtu.dk"] {
-  background-color: #990000 !important;
+  background-color: var(--dtu-ad-accent-deep) !important;
   color: #ffffff !important;
 }
 .nav-tabs > li[role="presentation"] > a[href*="kurser.dtu.dk"]:hover {
-  background-color: #b30000 !important;
+  background-color: var(--dtu-ad-accent-deep-hover) !important;
 }
 
 /* Search form container - dark 1 */
@@ -3550,3 +3891,7 @@ main.main.arc-row > section.main__content {
   background-color: #1a1a1a !important;
   background: #1a1a1a !important;
 }
+
+
+/* Library dropdown panel styles are injected at runtime from `darkmode.js`
+   (`ensureLibraryRuntimeStyles`) so the UI stays consistent in both dark mode ON/OFF. */

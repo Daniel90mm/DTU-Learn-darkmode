@@ -1,0 +1,289 @@
+/* ===== Library Dropdown UI ===== */
+@media screen {
+
+    /* Glassmorphism Panel */
+    .dtu-library-panel {
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        animation: dtuLibFadeIn 0.2s ease-out !important;
+        display: flex !important;
+        flex-direction: column !important;
+        width: 380px !important;
+        max-height: 80vh !important;
+        background: rgba(30, 30, 30, 0.96) !important;
+        border: 1px solid #404040 !important;
+        padding-bottom: 0 !important;
+    }
+
+    @keyframes dtuLibFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Header */
+    .dtu-library-header {
+        padding: 16px 20px 12px 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        flex-shrink: 0 !important;
+    }
+
+    .dtu-library-title {
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.2px !important;
+        color: #fff !important;
+    }
+
+    .dtu-library-close {
+        background: transparent !important;
+        border: none !important;
+        color: #aaa !important;
+        font-size: 18px !important;
+        cursor: pointer !important;
+        padding: 4px !important;
+        line-height: 1 !important;
+        border-radius: 4px !important;
+        transition: all 0.2s !important;
+    }
+
+    .dtu-library-close:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: #fff !important;
+    }
+
+    /* Main Content Area */
+    .dtu-library-content {
+        padding: 16px 20px !important;
+        overflow-y: auto !important;
+        background: transparent !important;
+        flex: 1 !important;
+    }
+
+    /* Section Styling */
+    .dtu-library-section {
+        margin-bottom: 20px !important;
+        background: transparent !important;
+        border: none !important;
+    }
+
+    .dtu-library-section:last-child {
+        margin-bottom: 0 !important;
+    }
+
+    .dtu-library-section-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        margin-bottom: 10px !important;
+        background: transparent !important;
+    }
+
+    .dtu-library-section-title {
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.8px !important;
+        color: #888 !important;
+        background: transparent !important;
+    }
+
+    .dtu-library-actions {
+        display: flex !important;
+        gap: 12px !important;
+        background: transparent !important;
+    }
+
+    .dtu-library-action-btn {
+        background: transparent !important;
+        border: none !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        color: var(--dtu-ad-accent-soft) !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+        transition: color 0.2s !important;
+    }
+
+    .dtu-library-action-btn:hover {
+        color: var(--dtu-ad-accent-hover) !important;
+        text-decoration: underline !important;
+    }
+
+    /* Quick Links Grid */
+    .dtu-library-link-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        background: transparent !important;
+    }
+
+    .dtu-library-link-item {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 10px 12px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 8px !important;
+        color: #ddd !important;
+        text-decoration: none !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        text-align: center !important;
+        transition: all 0.2s !important;
+    }
+
+    .dtu-library-link-item:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+        color: #fff !important;
+        transform: translateY(-1px) !important;
+        /* Use accent border on hover */
+        border-color: var(--dtu-ad-accent) !important;
+    }
+
+    /* Feed Items (Events & News) */
+    .dtu-library-feed-list {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        background: transparent !important;
+    }
+
+    .dtu-library-feed-item {
+        display: flex !important;
+        gap: 12px !important;
+        padding: 10px !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border-radius: 8px !important;
+        border: 1px solid transparent !important;
+        text-decoration: none !important;
+        transition: all 0.2s !important;
+        align-items: flex-start !important;
+    }
+
+    .dtu-library-feed-item:hover {
+        background: rgba(255, 255, 255, 0.06) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        /* Subtle accent border on hover */
+        border-left: 2px solid var(--dtu-ad-accent) !important;
+    }
+
+    /* Date Badge */
+    .dtu-library-date-badge {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-width: 44px !important;
+        height: 48px !important;
+        background: #252525 !important;
+        border-radius: 8px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        flex-shrink: 0 !important;
+        overflow: hidden !important;
+    }
+
+    /* Use accent color for the top part of the date badge */
+    .dtu-library-date-badge::before {
+        content: '';
+        display: block;
+        width: 100%;
+        height: 3px;
+        background: var(--dtu-ad-accent);
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    .dtu-library-date-badge {
+        position: relative !important;
+        /* For the accent bar */
+    }
+
+    .dtu-library-date-day {
+        font-size: 17px !important;
+        font-weight: 800 !important;
+        line-height: 1 !important;
+        color: #fff !important;
+        margin-bottom: 2px !important;
+        margin-top: 4px !important;
+    }
+
+    .dtu-library-date-month {
+        font-size: 9px !important;
+        text-transform: uppercase !important;
+        font-weight: 700 !important;
+        color: var(--dtu-ad-accent-soft) !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    /* News Badge */
+    .dtu-library-news-badge {
+        display: inline-block !important;
+        padding: 3px 6px !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: #aaa !important;
+        font-size: 9px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        border-radius: 4px !important;
+        margin-bottom: 4px !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    /* Item Content */
+    .dtu-library-item-content {
+        flex: 1 !important;
+        min-width: 0 !important;
+        background: transparent !important;
+    }
+
+    .dtu-library-item-title {
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        line-height: 1.4 !important;
+        color: #eee !important;
+        margin-bottom: 4px !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+
+    .dtu-library-item-meta {
+        font-size: 11px !important;
+        color: #888 !important;
+        display: block !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    /* Loading & Empty States */
+    .dtu-library-state-msg {
+        padding: 20px !important;
+        text-align: center !important;
+        color: #666 !important;
+        font-style: italic !important;
+        font-size: 12px !important;
+        background: rgba(255, 255, 255, 0.02) !important;
+        border-radius: 8px !important;
+    }
+
+}

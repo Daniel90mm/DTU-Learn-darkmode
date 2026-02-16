@@ -7,6 +7,7 @@
     const GRADE_VALUES = { '12': 12, '10': 10, '7': 7, '4': 4, '02': 2, '00': 0, '-3': -3 };
     const EXAM_CALENDAR_CACHE_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
     const STUDENT_DEADLINES_CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
+    const MYLINE_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
     const STUDENT_COURSE_REG_DEADLINES_URL = 'https://student.dtu.dk/en/courses-and-teaching/course-registration/course-registration-deadlines';
     const STUDENT_EXAM_REG_DEADLINES_URL = 'https://student.dtu.dk/en/exam/exam-registration/-deadlines-for-exams';
     const EXAM_CALENDAR_URLS = [
@@ -30,6 +31,10 @@
     const CACHE_PREFIX_GRADE  = 'cache_grade_';
     const CACHE_PREFIX_EVAL   = 'cache_eval_';
     const CACHE_PREFIX_FINDIT = 'cache_findit_';
+    const CACHE_PREFIX_MYLINE = 'cache_myline_';
+    const CACHE_PREFIX_LIB_EVENTS = 'cache_lib_events_';
+    const CACHE_PREFIX_LIB_NEWS   = 'cache_lib_news_';
+    const LIB_CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6 hours
 
     function storageGet(key) {
         return new Promise(resolve => {
@@ -57,6 +62,200 @@
     function storageCacheSet(prefix, id, data) {
         const key = prefix + id;
         storageSet(key, { ts: Date.now(), data });
+    }
+
+    function stripTags(html) {
+        return String(html || '').replace(/<[^>]+>/g, ' ');
+    }
+
+    function decodeHtmlBasic(text) {
+        // Minimal decode: enough for headings and badge labels.
+        return String(text || '')
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/&amp;/gi, '&')
+            .replace(/&lt;/gi, '<')
+            .replace(/&gt;/gi, '>')
+            .replace(/&#(\d+);/g, (_, n) => {
+                const code = parseInt(n, 10);
+                if (!isFinite(code) || code <= 0) return '';
+                try { return String.fromCharCode(code); } catch (e) { return ''; }
+            })
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function normalizeCourseCode(code) {
+        const c = String(code || '').trim().toUpperCase();
+        if (/^\d{5}$/.test(c)) return c;
+        if (/^KU\d{3}$/.test(c)) return c;
+        return '';
+    }
+
+    function putCourseKind(map, code, kind, source) {
+        if (!map || !code || !kind) return;
+        const priority = {
+            mandatory: 100,
+            core: 80,
+            project: 70,
+            elective_pool: 60,
+            approved_elective: 40
+        }[kind] || 10;
+        const existing = map[code];
+        if (!existing || (existing.priority || 0) < priority) {
+            map[code] = { kind, priority, source: source || '' };
+        }
+    }
+
+    function extractCodesFromFragment(fragment, onCode) {
+        if (!fragment) return;
+        const re = /kurser\.dtu\.dk\/course\/[^"'<>]*?\/([0-9]{5}|KU[0-9]{3})\b/ig;
+        let m;
+        while ((m = re.exec(fragment)) !== null) {
+            const code = normalizeCourseCode(m[1]);
+            if (code) onCode(code);
+        }
+    }
+
+    function parseMyLineHtml(html) {
+        const out = {
+            ok: true,
+            programTitle: '',
+            updatedLabel: '',
+            kinds: {},
+            ts: Date.now()
+        };
+
+        const text = String(html || '');
+        const h1 = text.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+        if (h1 && h1[1]) out.programTitle = decodeHtmlBasic(stripTags(h1[1]));
+
+        // Try to capture a useful "revision" label if present ("senest revideret ...").
+        const rev = text.match(/senest\s+revideret\s+den\s+([^.<]+)[.<]/i);
+        if (rev && rev[1]) out.updatedLabel = decodeHtmlBasic(rev[1]);
+
+        // Prefer the "Studieplan" block; fall back to whole document if we can't find anchors.
+        let studyplanStart = -1;
+        let studyplanEnd = -1;
+        const mStudieplan = text.match(/<h2[^>]+id="Studieplan"[^>]*>/i);
+        if (mStudieplan && mStudieplan.index != null) studyplanStart = mStudieplan.index;
+        const mPrev = text.match(/<h2[^>]+id="Kurser,_tidligere_årgange"[^>]*>/i);
+        if (mPrev && mPrev.index != null) studyplanEnd = mPrev.index;
+        if (studyplanStart >= 0 && studyplanEnd > studyplanStart) {
+            // ok
+        } else {
+            studyplanStart = 0;
+            studyplanEnd = text.length;
+        }
+        const plan = text.slice(studyplanStart, studyplanEnd);
+
+        function sliceBetween(idStart, idEnd) {
+            const reStart = new RegExp(`<h2[^>]+id="${idStart}"[^>]*>`, 'i');
+            const reEnd = new RegExp(`<h2[^>]+id="${idEnd}"[^>]*>`, 'i');
+            const ms = plan.match(reStart);
+            if (!ms || ms.index == null) return '';
+            const start = ms.index;
+            const me = plan.slice(start).match(reEnd);
+            if (!me || me.index == null) return plan.slice(start);
+            const end = start + me.index;
+            return plan.slice(start, end);
+        }
+
+        const coreFrag = sliceBetween('Det_polytekniske_grundlag', 'Retningsspecifikke_kurser');
+        extractCodesFromFragment(coreFrag, code => putCourseKind(out.kinds, code, 'core', 'core'));
+
+        // Retningsspecifikke kurser: classify by current "pulje" label.
+        const lineFrag = sliceBetween('Retningsspecifikke_kurser', 'Projekter');
+        if (lineFrag) {
+            let bucket = 'mandatory';
+            const re = /<p[^>]*>[\s\S]*?Pulje[\s\S]*?<\/p>|kurser\.dtu\.dk\/course\/[^"'<>]*?\/([0-9]{5}|KU[0-9]{3})\b/ig;
+            let m;
+            while ((m = re.exec(lineFrag)) !== null) {
+                if (m[1]) {
+                    const code = normalizeCourseCode(m[1]);
+                    if (code) {
+                        putCourseKind(out.kinds, code, bucket, 'line');
+                    }
+                    continue;
+                }
+                const seg = String(m[0] || '');
+                const segText = decodeHtmlBasic(stripTags(seg));
+                if (/semi-?obligatorisk|valgbare|valgbar/i.test(segText)) {
+                    bucket = 'elective_pool';
+                } else if (/obligatorisk/i.test(segText)) {
+                    bucket = 'mandatory';
+                }
+            }
+        }
+
+        const projFrag = sliceBetween('Projekter', 'Valgfrie_kurser');
+        extractCodesFromFragment(projFrag, code => putCourseKind(out.kinds, code, 'project', 'project'));
+
+        // Approved electives: the "Forhåndsgodkendte kandidatkurser" table is useful.
+        const electivesFrag = sliceBetween('Forhåndsgodkendte_kandidatkurser', 'Kurser,_tidligere_årgange');
+        extractCodesFromFragment(electivesFrag, code => putCourseKind(out.kinds, code, 'approved_elective', 'approved'));
+
+        return out;
+    }
+
+    async function fetchMyLine(forceRefresh) {
+        const cacheId = 'me';
+        if (!forceRefresh) {
+            const cached = await storageCacheGet(CACHE_PREFIX_MYLINE, cacheId, MYLINE_CACHE_TTL_MS);
+            if (cached && cached.ok && cached.kinds) {
+                cached.cached = true;
+                return cached;
+            }
+        }
+
+        let resp = null;
+        try {
+            resp = await fetch('https://sdb.dtu.dk/myline', {
+                credentials: 'include',
+                redirect: 'follow'
+            });
+        } catch (e) {
+            return { ok: false, error: 'fetch_error' };
+        }
+
+        if (!resp || !resp.ok) {
+            return { ok: false, error: 'http', status: resp ? resp.status : 0 };
+        }
+
+        // If we got redirected into STS/login, we are not authenticated for SDB.
+        try {
+            const finalUrl = String(resp.url || '');
+            if (/sts\.ait\.dtu\.dk/i.test(finalUrl) || /login/i.test(finalUrl)) {
+                return { ok: false, error: 'not_logged_in', url: finalUrl };
+            }
+        } catch (eUrl) {}
+
+        let html = '';
+        try {
+            html = await resp.text();
+        } catch (e2) {
+            return { ok: false, error: 'parse_empty' };
+        }
+        if (!html || html.length < 200) return { ok: false, error: 'parse_empty' };
+
+        // If we got a login page, we can't parse anything useful.
+        if (/sts\.ait\.dtu\.dk|login|mitid/i.test(html) && !/Det\s+polytekniske\s+grundlag|Retningsspecifikke\s+kurser/i.test(html)) {
+            return { ok: false, error: 'not_logged_in' };
+        }
+
+        let parsed = null;
+        try {
+            parsed = parseMyLineHtml(html);
+        } catch (e3) {
+            parsed = null;
+        }
+
+        if (!parsed || !parsed.ok || !parsed.kinds || !Object.keys(parsed.kinds).length) {
+            return { ok: false, error: 'parse_empty' };
+        }
+
+        storageCacheSet(CACHE_PREFIX_MYLINE, cacheId, parsed);
+        parsed.cached = false;
+        return parsed;
     }
 
     function getCourseCodeVariants(courseCode) {
@@ -996,9 +1195,319 @@
         }
     }
 
+    // =========================
+    // MazeMap resolver (DTU)
+    // =========================
+
+    const MAZEMAP_CAMPUS_ID = 89; // DTU Lyngby
+
+    function stripHtml(s) {
+        return String(s || '').replace(/<[^>]*>/g, '');
+    }
+
+    function normToken(s) {
+        return String(s || '').trim().toUpperCase();
+    }
+
+    function roomCompareToken(room) {
+        const r = normToken(room);
+        if (/^\d+$/.test(r)) {
+            const n = parseInt(r, 10);
+            if (Number.isFinite(n)) return String(n);
+        }
+        return r;
+    }
+
+    function bldMatchesItem(item, building) {
+        if (!item || !building) return false;
+        const b = normToken(building);
+        const list = Array.isArray(item.dispBldNames) ? item.dispBldNames : [];
+        for (let i = 0; i < list.length; i++) {
+            if (normToken(list[i]) === b) return true;
+        }
+        const ident = normToken(stripHtml(item.identifier || ''));
+        if (ident && ident.includes(b)) return true;
+        return false;
+    }
+
+    function roomMatchesItem(item, room) {
+        if (!item || !room) return false;
+        const want = normToken(room);
+        const wantCmp = roomCompareToken(want);
+
+        const candidates = [];
+        if (Array.isArray(item.poiNames)) candidates.push(...item.poiNames);
+        if (Array.isArray(item.dispPoiNames)) candidates.push(...item.dispPoiNames);
+        if (item.title) candidates.push(item.title);
+        if (item.dispTitle) candidates.push(item.dispTitle);
+
+        for (let i = 0; i < candidates.length; i++) {
+            const raw = stripHtml(candidates[i] || '');
+            const cand = normToken(raw);
+            if (!cand) continue;
+            if (cand === want) return true;
+            if (roomCompareToken(cand) === wantCmp) return true;
+        }
+        return false;
+    }
+
+    function pickBestRoomResult(results, building, room) {
+        if (!Array.isArray(results) || !results.length) return null;
+        let best = null;
+        for (let i = 0; i < results.length; i++) {
+            const item = results[i];
+            if (!item || typeof item.poiId !== 'number') continue;
+            if (!bldMatchesItem(item, building)) continue;
+            if (!roomMatchesItem(item, room)) continue;
+            if (!best) { best = item; continue; }
+            const a = typeof item.score === 'number' ? item.score : 0;
+            const b = typeof best.score === 'number' ? best.score : 0;
+            if (a > b) best = item;
+        }
+        return best;
+    }
+
+    function pickBestBuildingResult(results, building) {
+        if (!Array.isArray(results) || !results.length) return null;
+        let best = null;
+        for (let i = 0; i < results.length; i++) {
+            const item = results[i];
+            if (!item || typeof item.poiId !== 'number') continue;
+            if (!bldMatchesItem(item, building)) continue;
+            if (!best) { best = item; continue; }
+            const a = typeof item.score === 'number' ? item.score : 0;
+            const b = typeof best.score === 'number' ? best.score : 0;
+            if (a > b) best = item;
+        }
+        return best;
+    }
+
+    async function fetchMazemapEquery(q) {
+        if (!q || typeof q !== 'string') {
+            return { ok: false, error: 'invalid_query' };
+        }
+        const url = `https://api.mazemap.com/search/equery/?q=${encodeURIComponent(q)}&campusid=${MAZEMAP_CAMPUS_ID}`;
+        try {
+            const res = await fetch(url, { cache: 'no-store', credentials: 'omit' });
+            if (!res || !res.ok) {
+                return { ok: false, error: 'http', status: res ? res.status : 0 };
+            }
+            const json = await res.json();
+            const results = (json && Array.isArray(json.result)) ? json.result : [];
+            return { ok: true, results };
+        } catch (e) {
+            return { ok: false, error: 'fetch_error', message: String(e && e.message || e) };
+        }
+    }
+
+    function zeroPadRoom(room, width) {
+        const r = String(room || '').trim();
+        if (!/^\d+$/.test(r)) return r;
+        const w = Math.max(1, parseInt(width || 3, 10) || 3);
+        if (r.length >= w) return r;
+        return r.padStart(w, '0');
+    }
+
+    async function resolveMazemapPoi(building, room) {
+        const bld = normToken(building);
+        const rm = String(room || '').trim();
+        if (!/^\d{3}[A-Za-z]?$/.test(bld)) {
+            return { ok: false, error: 'invalid_building' };
+        }
+        // Allow building-only resolution (room omitted).
+        if (!rm) {
+            const buildingQueries = [`Bygning ${bld}`, `Building ${bld}`];
+            for (const qb of buildingQueries) {
+                const respB = await fetchMazemapEquery(qb);
+                if (!respB || !respB.ok) continue;
+                const bestB = pickBestBuildingResult(respB.results, bld);
+                if (bestB) {
+                    return {
+                        ok: true,
+                        kind: 'building',
+                        poiId: bestB.poiId,
+                        identifier: bestB.identifier || '',
+                        queryUsed: qb
+                    };
+                }
+            }
+            return { ok: false, error: 'not_found' };
+        }
+        if (rm.length > 12) {
+            return { ok: false, error: 'invalid_room' };
+        }
+
+        const roomVariants = [];
+        roomVariants.push(rm);
+        const padded = zeroPadRoom(rm, 3);
+        if (padded && padded !== rm) roomVariants.push(padded);
+
+        const queryVariants = [];
+        for (const rv of roomVariants) {
+            queryVariants.push(`${bld}-${rv}`);
+            queryVariants.push(`${bld}.${rv}`);
+        }
+
+        for (const q of queryVariants) {
+            const resp = await fetchMazemapEquery(q);
+            if (!resp || !resp.ok) continue;
+            const best = pickBestRoomResult(resp.results, bld, rm) || pickBestRoomResult(resp.results, bld, padded);
+            if (best) {
+                return {
+                    ok: true,
+                    kind: 'room',
+                    poiId: best.poiId,
+                    identifier: best.identifier || '',
+                    queryUsed: q
+                };
+            }
+        }
+
+        // Fallback: building-level navigation (still helpful when room lookup fails).
+        const buildingQueries = [`Bygning ${bld}`, `Building ${bld}`];
+        for (const qb of buildingQueries) {
+            const respB = await fetchMazemapEquery(qb);
+            if (!respB || !respB.ok) continue;
+            const bestB = pickBestBuildingResult(respB.results, bld);
+            if (bestB) {
+                return {
+                    ok: true,
+                    kind: 'building',
+                    poiId: bestB.poiId,
+                    identifier: bestB.identifier || '',
+                    queryUsed: qb
+                };
+            }
+        }
+
+        return { ok: false, error: 'not_found' };
+    }
+
+    // --- Library events & news (bibliotek.dtu.dk) ---
+    // The API expects the inner Request fields directly (not wrapped in {Request:{...}}).
+    // It returns JSON: { Results: [ { Id, Title, Url, Date, ToDate, FormatedDate, Text, Location, ... } ] }
+
+    // bibliotek.dtu.dk API: same endpoints used by the public website's own JS.
+    // Note: Pagination.Size does NOT accept "Three" (it returns HTTP 500). Use "Ten" and
+    // slice client-side (we only render a few items in the UI anyway).
+    // Cache for 6h to minimise load.
+    async function fetchLibraryEvents() {
+        const body = {
+            Pagination: { Number: 1, Size: 'Ten' },
+            ListItemId: '539fc99a-6da8-4cc3-825d-34bfa6e34193',
+            Language: 'en',
+            Database: 'web',
+            Subjects: [],
+            DateRange: null,
+            SearchText: '',
+            ShowHistoricalEvents: false
+        };
+        try {
+            // Note: Do NOT set a `Referer` header here. It's a forbidden header name in fetch and can
+            // cause the request to fail entirely in some extension contexts.
+            const resp = await fetch('https://www.bibliotek.dtu.dk/api/v1/calendar/calendareventlist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'omit',
+                body: JSON.stringify(body)
+            });
+            if (!resp.ok) return { ok: false, error: 'http', status: resp.status };
+            const json = await resp.json();
+            const results = (json && (json.Results || json.results)) ? (json.Results || json.results) : [];
+            const events = results.map(r => {
+                const d = r.Date ? new Date(r.Date) : null;
+                return {
+                    url: r.Url || '',
+                    title: decodeHtmlBasic(r.Title || ''),
+                    excerpt: r.FormatedDate
+                        ? decodeHtmlBasic(r.FormatedDate) + (r.Location ? ' | ' + decodeHtmlBasic(r.Location) : '')
+                        : decodeHtmlBasic(r.Text || '').slice(0, 120),
+                    day: d ? String(d.getDate()) : '',
+                    month: d ? d.toLocaleString('en', { month: 'short' }) : ''
+                };
+            });
+            return { ok: true, events };
+        } catch (e) {
+            return { ok: false, error: 'fetch_error', message: String(e && e.message || e) };
+        }
+    }
+
+    async function fetchLibraryNews() {
+        const body = {
+            Pagination: { Number: 1, Size: 'Ten' },
+            ListItemId: '72d6b860-3c16-4256-9b49-35b2840dadf8',
+            Language: 'en',
+            Database: 'web',
+            Subjects: [],
+            DateRange: null,
+            SearchText: ''
+        };
+        try {
+            // Note: Do NOT set a `Referer` header here. It's a forbidden header name in fetch and can
+            // cause the request to fail entirely in some extension contexts.
+            const resp = await fetch('https://www.bibliotek.dtu.dk/api/v1/news/newslist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'omit',
+                body: JSON.stringify(body)
+            });
+            if (!resp.ok) return { ok: false, error: 'http', status: resp.status };
+            const json = await resp.json();
+            const results = (json && (json.Results || json.results)) ? (json.Results || json.results) : [];
+            const news = results.map(r => {
+                const d = r.Date ? new Date(r.Date) : null;
+                return {
+                    url: r.Url || '',
+                    title: decodeHtmlBasic(r.Title || ''),
+                    excerpt: decodeHtmlBasic(r.Summary || '').slice(0, 120),
+                    badge: r.Badge && r.Badge.Title ? decodeHtmlBasic(r.Badge.Title) : '',
+                    date: d ? d.toLocaleDateString('en', { day: '2-digit', month: 'long', year: 'numeric' }) : ''
+                };
+            });
+            return { ok: true, news };
+        } catch (e) {
+            return { ok: false, error: 'fetch_error', message: String(e && e.message || e) };
+        }
+    }
+
     if (runtime && runtime.runtime && runtime.runtime.onMessage) {
+        // Allowed origins: only accept messages from our own content scripts
+        const ALLOWED_SENDER_HOSTS = [
+            'learn.inside.dtu.dk',
+            's.brightspace.com',
+            'sts.ait.dtu.dk',
+            'evaluering.dtu.dk',
+            'studieplan.dtu.dk',
+            'kurser.dtu.dk',
+            'karakterer.dtu.dk',
+            'sites.dtu.dk',
+            'campusnet.dtu.dk'
+        ];
+
+        function isAllowedSender(sender) {
+            // Messages from the extension itself (popup, background, etc.) are always OK
+            if (!sender || !sender.url) return true;
+            try {
+                const url = new URL(sender.url);
+                // Extension pages (moz-extension://, chrome-extension://)
+                if (url.protocol === 'moz-extension:' || url.protocol === 'chrome-extension:') return true;
+                // Content scripts on allowed DTU domains
+                if (url.protocol === 'https:' && ALLOWED_SENDER_HOSTS.includes(url.hostname)) return true;
+            } catch (e) { /* invalid URL, reject */ }
+            return false;
+        }
+
         runtime.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (!message || !message.type) return;
+            if (!isAllowedSender(sender)) return;
 
             if (message.type === 'dtu-grade-stats') {
                 const courseCode = String(message.courseCode || '').trim();
@@ -1074,6 +1583,59 @@
                             sendResponse(result);
                         })
                         .catch(() => sendResponse({ ok: false, error: 'fetch_failed' }));
+                });
+                return true;
+            }
+
+            if (message.type === 'dtu-mazemap-resolve') {
+                const building = String(message.building || '').trim();
+                const room = String(message.room || '').trim();
+                resolveMazemapPoi(building, room)
+                    .then(sendResponse)
+                    .catch(e => sendResponse({ ok: false, error: 'fetch_error', message: String(e && e.message || e) }));
+                return true;
+            }
+
+            if (message.type === 'dtu-sdb-myline') {
+                const forceRefresh = !!message.forceRefresh;
+                fetchMyLine(forceRefresh)
+                    .then(sendResponse)
+                    .catch(() => sendResponse({ ok: false, error: 'fetch_error' }));
+                return true;
+            }
+
+            if (message.type === 'dtu-library-events') {
+                const cacheId = 'lyngby';
+                storageCacheGet(CACHE_PREFIX_LIB_EVENTS, cacheId, LIB_CACHE_TTL_MS).then(cached => {
+                    if (cached && !message.forceRefresh) {
+                        cached.cached = true;
+                        sendResponse(cached);
+                        return;
+                    }
+                    fetchLibraryEvents()
+                        .then(result => {
+                            if (result && result.ok) storageCacheSet(CACHE_PREFIX_LIB_EVENTS, cacheId, result);
+                            sendResponse(result);
+                        })
+                        .catch(() => sendResponse({ ok: false, error: 'fetch_error' }));
+                });
+                return true;
+            }
+
+            if (message.type === 'dtu-library-news') {
+                const cacheId = 'main';
+                storageCacheGet(CACHE_PREFIX_LIB_NEWS, cacheId, LIB_CACHE_TTL_MS).then(cached => {
+                    if (cached && !message.forceRefresh) {
+                        cached.cached = true;
+                        sendResponse(cached);
+                        return;
+                    }
+                    fetchLibraryNews()
+                        .then(result => {
+                            if (result && result.ok) storageCacheSet(CACHE_PREFIX_LIB_NEWS, cacheId, result);
+                            sendResponse(result);
+                        })
+                        .catch(() => sendResponse({ ok: false, error: 'fetch_error' }));
                 });
                 return true;
             }

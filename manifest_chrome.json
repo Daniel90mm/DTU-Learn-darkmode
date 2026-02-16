@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DTU After Dark",
-  "version": "4.0",
+  "version": "5.0",
   "description": "Dark mode, live bus departures, and GPA tools for DTU Learn, CampusNet, and other DTU sites.",
   "permissions": ["storage"],
   "icons": {
@@ -9,12 +9,16 @@
     "128": "images/icon_128.png"
   },
   "host_permissions": [
+    "https://api.mazemap.com/*",
     "https://www.rejseplanen.dk/*",
     "https://karakterer.dtu.dk/*",
     "https://findit.dtu.dk/*",
     "https://evaluering.dtu.dk/*",
+    "https://sdb.dtu.dk/*",
     "https://student.dtu.dk/*",
-    "https://www.dtu.dk/*"
+    "https://sts.ait.dtu.dk/*",
+    "https://www.dtu.dk/*",
+    "https://www.bibliotek.dtu.dk/*"
   ],
   "background": {
     "service_worker": "background.js"
