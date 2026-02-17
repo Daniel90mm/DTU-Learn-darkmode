@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "DTU After Dark",
-  "version": "5.1",
+  "version": "5.2",
   "description": "Dark mode, live bus departures, and GPA tools for DTU Learn, CampusNet, and other DTU sites.",
   "browser_specific_settings": {
     "gecko": {
@@ -36,7 +36,7 @@
   "web_accessible_resources": [
     "images/dtuaften.jpg",
     "images/logo_dark.png",
-    "images/Corp_White_Transparent.png",
+    "images/Corp_White_Transparent.svg",
     "images/mojangles_text.png",
     "images/mojangles_text_darkmode_off.png",
     "darkmode.css",

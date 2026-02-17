@@ -3108,16 +3108,41 @@
 
     // ===== LOGO REPLACEMENT =====
     // Replace the "My Home" logo with accent-colored DTU logos.
-    // Uses PNG alpha masking:
+    // Uses SVG template styling:
     // - Dark mode: accent fill
     // - Light mode: accent fill + black outline border
-    var _accentLogoPngImage = null;
-    var _accentLogoPngLoadPromise = null;
+    var _accentLogoSvgTemplate = null;
+    var _accentLogoSvgLoadPromise = null;
     var _accentLogoDataUrlCache = {};
 
     function getResolvedAccent() {
         var theme = getAccentThemeById(_accentThemeId);
         return (theme && theme.accent) || '#990000';
+    }
+
+    function buildAccentLogoDataUrl(svgText, accentHex, lightModeOutline) {
+        if (!svgText || !/<svg[\s>]/i.test(svgText)) return '';
+        var cleanSvg = String(svgText).replace(/<\?xml[^>]*>\s*/i, '');
+        var styleTag = '<style>path{fill:' + accentHex + ' !important;stroke:none !important;}</style>';
+        cleanSvg = cleanSvg.replace(/<\/svg>\s*$/i, styleTag + '</svg>');
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(cleanSvg);
+    }
+
+    function ensureAccentLogoSvgLoaded(svgUrl) {
+        if (_accentLogoSvgTemplate || _accentLogoSvgLoadPromise) return;
+        _accentLogoSvgLoadPromise = Promise.resolve()
+            .then(function () { return fetch(svgUrl); })
+            .then(function (resp) { return (resp && resp.ok) ? resp.text() : ''; })
+            .then(function (text) {
+                if (text && /<svg[\s>]/i.test(text)) {
+                    _accentLogoSvgTemplate = text;
+                }
+            })
+            .catch(function () { })
+            .finally(function () {
+                _accentLogoSvgLoadPromise = null;
+                try { replaceLogoImage(); } catch (e0) { }
+            });
     }
 
     function getAccentLogoSrc() {
@@ -3128,84 +3153,18 @@
             return _accentLogoDataUrlCache[cacheKey];
         }
 
-        var pngUrl = getExtensionUrl('images/Corp_White_Transparent.png');
-        if (_accentLogoPngImage && _accentLogoPngImage.naturalWidth > 0 && _accentLogoPngImage.naturalHeight > 0) {
-            try {
-                var rgbParts = (hexToRgbTriplet(accentHex, '153,0,0') || '153,0,0').split(',');
-                var r = parseInt(rgbParts[0], 10) || 153;
-                var g = parseInt(rgbParts[1], 10) || 0;
-                var b = parseInt(rgbParts[2], 10) || 0;
-
-                var w = _accentLogoPngImage.naturalWidth;
-                var h = _accentLogoPngImage.naturalHeight;
-                var canvas = document.createElement('canvas');
-                canvas.width = w;
-                canvas.height = h;
-                var ctx = canvas.getContext('2d');
-                if (!ctx) return pngUrl;
-
-                function makeMaskedSolid(rgbCss) {
-                    var c = document.createElement('canvas');
-                    c.width = w;
-                    c.height = h;
-                    var cctx = c.getContext('2d');
-                    if (!cctx) return c;
-                    cctx.clearRect(0, 0, w, h);
-                    cctx.fillStyle = rgbCss;
-                    cctx.fillRect(0, 0, w, h);
-                    cctx.globalCompositeOperation = 'destination-in';
-                    cctx.drawImage(_accentLogoPngImage, 0, 0, w, h);
-                    cctx.globalCompositeOperation = 'source-over';
-                    return c;
-                }
-
-                var accentMask = makeMaskedSolid('rgb(' + r + ',' + g + ',' + b + ')');
-                ctx.clearRect(0, 0, w, h);
-
-                if (!darkModeEnabled) {
-                    // Light mode: add a thin black outline around the logo for contrast.
-                    var outlineMask = makeMaskedSolid('#000000');
-                    var offsets = [
-                        [-1, 0], [1, 0], [0, -1], [0, 1],
-                        [-1, -1], [-1, 1], [1, -1], [1, 1]
-                    ];
-                    offsets.forEach(function (off) {
-                        ctx.drawImage(outlineMask, off[0], off[1], w, h);
-                    });
-                }
-
-                ctx.drawImage(accentMask, 0, 0, w, h);
-
-                var dataUrl = canvas.toDataURL('image/png');
+        var svgUrl = getExtensionUrl('images/Corp_White_Transparent.svg');
+        if (_accentLogoSvgTemplate) {
+            var dataUrl = buildAccentLogoDataUrl(_accentLogoSvgTemplate, accentHex, !darkModeEnabled);
+            if (dataUrl) {
                 _accentLogoDataUrlCache[cacheKey] = dataUrl;
                 return dataUrl;
-            } catch (e0) {
-                return pngUrl;
             }
         }
 
-        if (!_accentLogoPngLoadPromise) {
-            _accentLogoPngLoadPromise = new Promise(function (resolve) {
-                try {
-                    var img = new Image();
-                    img.onload = function () {
-                        _accentLogoPngImage = img;
-                        resolve();
-                    };
-                    img.onerror = function () { resolve(); };
-                    img.src = pngUrl;
-                } catch (eLoad) {
-                    resolve();
-                }
-            })
-                .finally(function () {
-                    _accentLogoPngLoadPromise = null;
-                    try { replaceLogoImage(); } catch (e0) { }
-                });
-        }
-
-        // Fallback while PNG is loading.
-        return pngUrl;
+        ensureAccentLogoSvgLoaded(svgUrl);
+        // Fallback while SVG template is loading.
+        return svgUrl;
     }
 
     function replaceLogoImage(rootNode) {
@@ -12023,9 +11982,14 @@
             + 'font-size:12px;font-weight:700;cursor:pointer}'
             + '.dtu-am-select:focus{outline:none;border-color:var(--dtu-am-accent) !important;'
             + 'box-shadow:0 0 0 3px var(--dtu-am-accent-ring) !important}'
-            + '.dtu-am-color{width:36px;height:30px;padding:0;border-radius:8px;cursor:pointer;'
+            + '.dtu-am-color{width:36px;height:30px;padding:0;margin:0;border-radius:8px;cursor:pointer;'
+            + 'appearance:none;-webkit-appearance:none;-moz-appearance:none;overflow:hidden;box-sizing:border-box;'
             + 'border:1px solid var(--dtu-am-border) !important;'
             + 'background:var(--dtu-am-input-bg) !important;background-color:var(--dtu-am-input-bg) !important}'
+            + '.dtu-am-color::-webkit-color-swatch-wrapper{padding:0}'
+            + '.dtu-am-color::-webkit-color-swatch{border:none;border-radius:7px}'
+            + '.dtu-am-color::-moz-color-swatch{border:none;border-radius:7px}'
+            + '.dtu-am-color::-moz-focus-inner{border:0;padding:0}'
             + '.dtu-tog{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0}'
             + '.dtu-tog input{opacity:0;width:0;height:0;position:absolute}'
             + '.dtu-tog-sl{position:absolute;cursor:pointer;inset:0;'
@@ -12534,9 +12498,14 @@
             + 'font-size:12px;font-weight:700;cursor:pointer}'
             + '.dtu-am-select:focus{outline:none;border-color:var(--dtu-am-accent) !important;'
             + 'box-shadow:0 0 0 3px var(--dtu-am-accent-ring) !important}'
-            + '.dtu-am-color{width:36px;height:30px;padding:0;border-radius:8px;cursor:pointer;'
+            + '.dtu-am-color{width:36px;height:30px;padding:0;margin:0;border-radius:8px;cursor:pointer;'
+            + 'appearance:none;-webkit-appearance:none;-moz-appearance:none;overflow:hidden;box-sizing:border-box;'
             + 'border:1px solid var(--dtu-am-border) !important;'
             + 'background:var(--dtu-am-input-bg) !important;background-color:var(--dtu-am-input-bg) !important}'
+            + '.dtu-am-color::-webkit-color-swatch-wrapper{padding:0}'
+            + '.dtu-am-color::-webkit-color-swatch{border:none;border-radius:7px}'
+            + '.dtu-am-color::-moz-color-swatch{border:none;border-radius:7px}'
+            + '.dtu-am-color::-moz-focus-inner{border:0;padding:0}'
             + '.dtu-tog{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0}'
             + '.dtu-tog input{opacity:0;width:0;height:0;position:absolute}'
             + '.dtu-tog-sl{position:absolute;cursor:pointer;inset:0;'
