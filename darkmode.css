@@ -4,12 +4,12 @@
 :root {
   --dtu-ad-accent: #990000;
   --dtu-ad-accent-hover: #b30000;
-  --dtu-ad-accent-rgb: 153,0,0;
+  --dtu-ad-accent-rgb: 153, 0, 0;
 
   /* "DTU red" (used for nav bars/tabs) */
   --dtu-ad-accent-deep: #7d0000;
   --dtu-ad-accent-deep-hover: #990000;
-  --dtu-ad-accent-deep-rgb: 125,0,0;
+  --dtu-ad-accent-deep-rgb: 125, 0, 0;
 
   /* Lighter accent suitable for text on dark backgrounds */
   --dtu-ad-accent-soft: #ff6b6b;
@@ -19,15 +19,15 @@
 
   /* Semantic status colors (DTU design guide palette) */
   --dtu-ad-status-info: #2f3eea;
-  --dtu-ad-status-info-rgb: 47,62,234;
+  --dtu-ad-status-info-rgb: 47, 62, 234;
   --dtu-ad-status-success: #008835;
-  --dtu-ad-status-success-rgb: 0,136,53;
+  --dtu-ad-status-success-rgb: 0, 136, 53;
   --dtu-ad-status-warning: #f6d04d;
-  --dtu-ad-status-warning-rgb: 246,208,77;
+  --dtu-ad-status-warning-rgb: 246, 208, 77;
   --dtu-ad-status-warning-strong: #fc7634;
-  --dtu-ad-status-warning-strong-rgb: 252,118,52;
+  --dtu-ad-status-warning-strong-rgb: 252, 118, 52;
   --dtu-ad-status-danger: #e83f48;
-  --dtu-ad-status-danger-rgb: 232,63,72;
+  --dtu-ad-status-danger-rgb: 232, 63, 72;
 }
 
 /* ===== Brightspace / DTU Learn accent elements ===== */
@@ -93,9 +93,9 @@ form,
 #__Page,
 .printFooter,
 .printFooter *,
-body > div,
-body > form,
-body > form > div,
+body>div,
+body>form,
+body>form>div,
 header,
 footer {
   background-color: #2d2d2d !important;
@@ -155,10 +155,17 @@ aside,
 }
 
 /* Text elements - preserve custom inline colors (red, green, etc.) */
-h1, h2, h3, h4, h5, h6,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
 .d2l-heading,
 .d2l-body-standard,
-p, div, label,
+p,
+div,
+label,
 span:not([style^="color"]):not([style*="; color"]):not([style*=";color"]),
 em:not([style^="color"]):not([style*="; color"]):not([style*=";color"]),
 strong:not([style^="color"]):not([style*="; color"]):not([style*=";color"]) {
@@ -166,15 +173,21 @@ strong:not([style^="color"]):not([style*="; color"]):not([style*=";color"]) {
 }
 
 /* Override black/near-black text specifically */
-span[style*="color: #000"], span[style*="color:#000"],
-span[style*="color: black"], span[style*="color:black"],
+span[style*="color: #000"],
+span[style*="color:#000"],
+span[style*="color: black"],
+span[style*="color:black"],
 span[style*="color: rgb(0, 0, 0"],
-span[style*="color: #202122"], span[style*="color:#202122"],
+span[style*="color: #202122"],
+span[style*="color:#202122"],
 span[style*="color: rgb(32, 33, 34"],
-em[style*="color: #000"], em[style*="color:#000"],
-em[style*="color: black"], em[style*="color:black"],
+em[style*="color: #000"],
+em[style*="color:#000"],
+em[style*="color: black"],
+em[style*="color:black"],
 em[style*="color: rgb(0, 0, 0"],
-em[style*="color: #202122"], em[style*="color:#202122"],
+em[style*="color: #202122"],
+em[style*="color:#202122"],
 em[style*="color: rgb(32, 33, 34"] {
   color: #e0e0e0 !important;
 }
@@ -249,7 +262,8 @@ textarea::placeholder {
 .d2l-dropdown,
 .d2l-menu,
 .d2l-dropdown-content,
-ul, ol {
+ul,
+ol {
   background-color: #2d2d2d !important;
   color: #e0e0e0 !important;
 }
@@ -534,13 +548,13 @@ span[style*="background"]:not(.typebox) {
 /* CRITICAL: Fix the top navigation bar (Calendar, Student Resources, etc.) */
 /* Using #2d2d2d (dark 2) for main header */
 .d2l-labs-navigation-centerer,
-.d2l-labs-navigation-centerer > *,
+.d2l-labs-navigation-centerer>*,
 .d2l-labs-navigation-centerer div,
 .d2l-labs-navigation-gutters,
-.d2l-labs-navigation-gutters > *,
+.d2l-labs-navigation-gutters>*,
 .d2l-labs-navigation-gutters div,
 .d2l-labs-navigation-main-footer,
-.d2l-labs-navigation-main-footer > *,
+.d2l-labs-navigation-main-footer>*,
 .d2l-labs-navigation,
 d2l-labs-navigation-main-header,
 d2l-labs-navigation-main-header *,
@@ -571,7 +585,7 @@ slot[name="main"],
 
 /* CRITICAL: Fix additional course card elements */
 .d2l-card-container,
-.d2l-card-container > *,
+.d2l-card-container>*,
 .d2l-card-container div,
 .d2l-card-header,
 .d2l-card-content,
@@ -588,7 +602,7 @@ d2l-card {
 
 /* Fix all nested divs in card link containers */
 .d2l-card-link-container div,
-.d2l-card-link-container > div,
+.d2l-card-link-container>div,
 .d2l-card-link-container * {
   background-color: #2d2d2d !important;
 }
@@ -810,9 +824,9 @@ input.d2l-input::placeholder {
 
 /* Content/Lessons navigation sidebar */
 .navigation-tree,
-.navigation-tree > div,
+.navigation-tree>div,
 .navigation-item,
-.navigation-item > div,
+.navigation-item>div,
 .navigation-item div,
 .unit,
 .unit-box,
@@ -868,8 +882,8 @@ div.navigation-item .accent,
 .lesson-box .title-container,
 .unit-box .title-container .title,
 .lesson-box .title-container .title,
-.unit-box .title-container .title > div,
-.lesson-box .title-container .title > div,
+.unit-box .title-container .title>div,
+.lesson-box .title-container .title>div,
 .unit-box .title-text,
 .lesson-box .title-text,
 .unit-box .title-text span,
@@ -888,8 +902,8 @@ div.navigation-item .accent,
 .navigation-container .navigation-tree .lesson-box .title-container,
 .navigation-container .navigation-tree .unit-box .title,
 .navigation-container .navigation-tree .lesson-box .title,
-.navigation-container .navigation-tree .unit-box .title > div,
-.navigation-container .navigation-tree .lesson-box .title > div,
+.navigation-container .navigation-tree .unit-box .title>div,
+.navigation-container .navigation-tree .lesson-box .title>div,
 .navigation-container .navigation-tree .unit-box .title-text,
 .navigation-container .navigation-tree .lesson-box .title-text,
 .navigation-container .navigation-tree .unit-box .title-text span,
@@ -1303,8 +1317,8 @@ d2l-floating-buttons,
 /* Action menu trigger and list container - dark 1 */
 button[aria-haspopup="true"][aria-label^="Actions for"],
 div[role="list"]:not(.d2l-navigation-s-main-wrapper) {
-  background: #1a1a1a !important;
-  background-color: #1a1a1a !important;
+  background: #2d2d2d !important;
+  background-color: #2d2d2d !important;
   background-image: none !important;
   color: #e0e0e0 !important;
   border-color: #404040 !important;
@@ -1411,11 +1425,11 @@ d2l-breadcrumb d2l-icon {
 }
 
 /* ===== DTU Evaluation Site (evaluering.dtu.dk) ===== */
-header.header,
-header.header *,
-.header__title,
-.header__actions,
-.header__logo {
+.tsMasterContent header.header,
+.tsMasterContent header.header *,
+.tsMasterContent .header__title,
+.tsMasterContent .header__actions,
+.tsMasterContent .header__logo {
   background-color: #2d2d2d !important;
   color: #e0e0e0 !important;
 }
@@ -1602,13 +1616,13 @@ form[action*="/Answer/SaveAnswers/"],
   justify-content: space-between !important;
 }
 
-.mx-s.hide-on-print .flex.flex--content-between > div {
+.mx-s.hide-on-print .flex.flex--content-between>div {
   background-color: transparent !important;
   background: transparent !important;
   min-height: 0 !important;
 }
 
-.mx-s.hide-on-print .flex.flex--content-between > div:first-child {
+.mx-s.hide-on-print .flex.flex--content-between>div:first-child {
   flex: 0 0 auto !important;
 }
 
@@ -1826,10 +1840,12 @@ button[aria-label^="Actions for Lecture 01, Quiz 1"] d2l-icon[icon="tier1:chevro
   color: #ffffff !important;
   border-color: var(--dtu-ad-accent-deep) !important;
 }
+
 .btn-dtured:hover {
   background-color: var(--dtu-ad-accent-deep-hover) !important;
   background: var(--dtu-ad-accent-deep-hover) !important;
 }
+
 .btn-dtured.disabled,
 .btn-dtured[disabled] {
   background-color: var(--dtu-ad-accent-deep) !important;
@@ -1850,8 +1866,18 @@ button[aria-label^="Actions for Lecture 01, Quiz 1"] d2l-icon[icon="tier1:chevro
 
 /* Rows and columns */
 .row,
-.col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6,
-.col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12 {
+.col-md-1,
+.col-md-2,
+.col-md-3,
+.col-md-4,
+.col-md-5,
+.col-md-6,
+.col-md-7,
+.col-md-8,
+.col-md-9,
+.col-md-10,
+.col-md-11,
+.col-md-12 {
   background-color: transparent !important;
   color: #e0e0e0 !important;
 }
@@ -2023,28 +2049,28 @@ button.dropdown-toggle.red {
   background-color: #2d2d2d !important;
 }
 
-.nav-tabs > li,
-.nav-tabs > li[role="presentation"] {
+.nav-tabs>li,
+.nav-tabs>li[role="presentation"] {
   background-color: #2d2d2d !important;
 }
 
-.nav-tabs > li > a,
-.nav-tabs > li[role="presentation"] > a {
+.nav-tabs>li>a,
+.nav-tabs>li[role="presentation"]>a {
   color: #ffffff !important;
   background-color: #2d2d2d !important;
   border-color: #404040 !important;
 }
 
-.nav-tabs > li > a:hover,
-.nav-tabs > li[role="presentation"] > a:hover {
+.nav-tabs>li>a:hover,
+.nav-tabs>li[role="presentation"]>a:hover {
   background-color: #3d3d3d !important;
   border-color: #404040 !important;
   color: #ffffff !important;
 }
 
-.nav-tabs > li.active > a,
-.nav-tabs > li.active > a:hover,
-.nav-tabs > li.active > a:focus {
+.nav-tabs>li.active>a,
+.nav-tabs>li.active>a:hover,
+.nav-tabs>li.active>a:focus {
   background-color: #1a1a1a !important;
   color: #ffffff !important;
   border-color: #404040 !important;
@@ -2078,7 +2104,7 @@ button.dropdown-toggle.red {
 .dialog,
 .modal-dialog,
 .modal-content,
-[data-toggle="modal"] + .modal .modal-content {
+[data-toggle="modal"]+.modal .modal-content {
   background-color: #2d2d2d !important;
   color: #e0e0e0 !important;
   border-color: #404040 !important;
@@ -2328,7 +2354,7 @@ em {
 }
 
 /* Mofoclass nav tabs - accent color */
-.mofoclass .nav-tabs > li > a {
+.mofoclass .nav-tabs>li>a {
   background-color: var(--dtu-ad-accent-deep) !important;
   background: var(--dtu-ad-accent-deep) !important;
   color: #ffffff !important;
@@ -2526,6 +2552,7 @@ div.d2l-admin-tools-column:not([data-dtu-ext]) {
   background: #2d2d2d !important;
   color: #e0e0e0 !important;
 }
+
 .d2l-admin-tools-column .d2l-list:not([data-dtu-ext]),
 .d2l-admin-tools-column li:not([data-dtu-ext]),
 .d2l-admin-tools-column label:not([data-dtu-ext]) {
@@ -2900,8 +2927,8 @@ ul.container_12.topmenuitems {
 /* ===== CampusNet Grades (campusnet.dtu.dk) ===== */
 /* Grades page root container (explicit path from capture) - dark 1 */
 #ctl00_ContentBox.main__content--box,
-#ctl00_ContentBox.main__content--box > .gradesPage,
-#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm {
+#ctl00_ContentBox.main__content--box>.gradesPage,
+#ctl00_ContentBox.main__content--box>.gradesPage>form#aspnetForm {
   background-color: #1a1a1a !important;
   background: #1a1a1a !important;
   color: #e0e0e0 !important;
@@ -2982,14 +3009,17 @@ table.gradesList td[style*="color : green"] {
   background-color: #2d2d2d !important;
   color: #e0e0e0 !important;
 }
+
 .ects-progress-container span {
   background: transparent !important;
   background-color: transparent !important;
 }
+
 .ects-bar-bg {
   background: #1a1a1a !important;
   background-color: #1a1a1a !important;
 }
+
 .ects-bar-pct {
   background: transparent !important;
   background-color: transparent !important;
@@ -3001,11 +3031,13 @@ table.gradesList td[style*="color : green"] {
   background-color: #202124 !important;
   border-left: 2px solid rgba(var(--dtu-ad-accent-rgb), 0.55) !important;
 }
+
 .gpa-sim-row td {
   background-color: #202124 !important;
   color: #e0e0e0 !important;
   padding: 6px 8px !important;
 }
+
 .gpa-sim-input,
 .gpa-sim-select {
   background-color: #1f1f1f !important;
@@ -3019,10 +3051,12 @@ table.gradesList td[style*="color : green"] {
   line-height: 1.2 !important;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
 }
+
 .gpa-sim-input::placeholder {
   color: #8f9aae !important;
   opacity: 1 !important;
 }
+
 .gpa-sim-input:focus,
 .gpa-sim-select:focus {
   border-color: var(--dtu-ad-accent) !important;
@@ -3030,6 +3064,7 @@ table.gradesList td[style*="color : green"] {
   box-shadow: 0 0 0 2px rgba(var(--dtu-ad-accent-rgb), 0.2) !important;
   background-color: #232323 !important;
 }
+
 .gpa-sim-delete-btn {
   background: transparent !important;
   background-color: transparent !important;
@@ -3043,16 +3078,20 @@ table.gradesList td[style*="color : green"] {
   padding: 0 !important;
   border-radius: 6px !important;
 }
+
 .gpa-sim-delete-btn:hover {
   background-color: rgba(239, 83, 80, 0.18) !important;
   border-color: rgba(239, 83, 80, 0.3) !important;
 }
+
 .gpa-sim-add-row {
   background-color: #1a1a1a !important;
 }
+
 .gpa-sim-add-row td {
   background-color: #1a1a1a !important;
 }
+
 .gpa-sim-add-btn {
   background-color: rgba(var(--dtu-ad-accent-rgb), 0.12) !important;
   color: var(--dtu-ad-accent-soft) !important;
@@ -3064,15 +3103,18 @@ table.gradesList td[style*="color : green"] {
   font-weight: 600 !important;
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
 }
+
 .gpa-sim-add-btn:hover {
   background-color: rgba(var(--dtu-ad-accent-rgb), 0.2) !important;
   border-color: rgba(var(--dtu-ad-accent-rgb), 0.8) !important;
   color: #ffffff !important;
 }
+
 .gpa-projected-row {
   background-color: rgba(var(--dtu-ad-accent-rgb), 0.12) !important;
   border-top: 1px dashed rgba(var(--dtu-ad-accent-rgb), 0.7) !important;
 }
+
 .gpa-projected-row td {
   background-color: rgba(var(--dtu-ad-accent-rgb), 0.12) !important;
   color: inherit !important;
@@ -3220,6 +3262,7 @@ h2.widget__title {
   box-shadow: none !important;
   overflow: hidden !important;
 }
+
 .service-icon .icon__base,
 .item__icon .icon__base {
   background-color: transparent !important;
@@ -3228,8 +3271,10 @@ h2.widget__title {
   border: 0 !important;
   border-color: transparent !important;
   box-shadow: none !important;
-  opacity: 0 !important; /* hide native red base layer that can bleed at the bottom */
+  opacity: 0 !important;
+  /* hide native red base layer that can bleed at the bottom */
 }
+
 .service-icon .icon__content,
 .item__icon .icon__content {
   background-color: var(--dtu-ad-accent) !important;
@@ -3240,6 +3285,7 @@ h2.widget__title {
   fill: #ffffff !important;
   stroke: #ffffff !important;
 }
+
 .service-icon:hover .icon__content,
 .item__icon:hover .icon__content,
 .service-icon:focus .icon__content,
@@ -3252,6 +3298,7 @@ h2.widget__title {
   fill: #ffffff !important;
   stroke: #ffffff !important;
 }
+
 /* Keep glyph/logo layers transparent so their image/small-logo details remain intact. */
 .service-icon .icon__identifier,
 .item__icon .icon__identifier {
@@ -3261,6 +3308,7 @@ h2.widget__title {
   fill: #ffffff !important;
   stroke: #ffffff !important;
 }
+
 .service-icon:hover .icon__identifier,
 .item__icon:hover .icon__identifier,
 .service-icon:focus .icon__identifier,
@@ -3271,40 +3319,69 @@ h2.widget__title {
 }
 
 /* CampusNet group/course page header */
-.box.mainContentPageTemplate > .boxHeader,
+.box.mainContentPageTemplate>.boxHeader,
 .box.mainContentPageTemplate .boxHeader {
   background-color: var(--dtu-ad-accent-deep) !important;
   background: var(--dtu-ad-accent-deep) !important;
   border-bottom: 2px solid var(--dtu-ad-accent-deep-hover) !important;
 }
+
 .box.mainContentPageTemplate .boxHeader h2 {
   background: transparent !important;
   background-color: transparent !important;
   color: #ffffff !important;
 }
 
+/* CampusNet group-menu burger headers:
+   keep accent background + white text in dark mode, even if broad header rules run. */
+.group-menu__item > header,
+.group-menu__item-burger > header,
+.group-menu__item header,
+.group-menu__item-burger header {
+  background-color: var(--dtu-ad-accent-deep) !important;
+  background: var(--dtu-ad-accent-deep) !important;
+  border-color: var(--dtu-ad-accent-deep) !important;
+}
+
+.group-menu__item > header .item__title,
+.group-menu__item-burger > header .item__title,
+.group-menu__item header .item__title,
+.group-menu__item-burger header .item__title,
+.group-menu__item > header .group-menu__item-burger-expander,
+.group-menu__item-burger > header .group-menu__item-burger-expander,
+.group-menu__item header .group-menu__item-burger-expander,
+.group-menu__item-burger header .group-menu__item-burger-expander {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: #ffffff !important;
+}
+
 /* CampusNet Reporting widget accent support */
-#afrapporteringWidget > .boxHeader,
+#afrapporteringWidget>.boxHeader,
 #afrapporteringWidget .boxHeader {
   background-color: var(--dtu-ad-accent-deep) !important;
   background: var(--dtu-ad-accent-deep) !important;
   border-bottom: 2px solid var(--dtu-ad-accent-deep-hover) !important;
 }
+
 #afrapporteringWidget .boxHeader h2 {
   color: #ffffff !important;
 }
+
 #afrapporteringWidget .lessonplan__progressbar .progressbar__percentage {
   background-color: var(--dtu-ad-accent) !important;
   background: var(--dtu-ad-accent) !important;
 }
 
 /* CampusNet sidebar/info widgets (e.g. Settings) */
-.box.widget > .boxHeader,
+.box.widget>.boxHeader,
 .box.widget .boxHeader {
   background-color: var(--dtu-ad-accent-deep) !important;
   background: var(--dtu-ad-accent-deep) !important;
   border-bottom: 2px solid var(--dtu-ad-accent-deep-hover) !important;
 }
+
 .box.widget .boxHeader h2 {
   color: #ffffff !important;
 }
@@ -3519,6 +3596,12 @@ ul.menu__items {
   border-color: #404040 !important;
 }
 
+.menu__item:hover,
+.arc-menu .menu__item:hover,
+#pageTitle .menu__item:hover {
+  background-color: #3d3d3d !important;
+}
+
 .item__link {
   color: #e0e0e0 !important;
 }
@@ -3552,10 +3635,12 @@ h4.category__title a {
   background: var(--dtu-ad-accent-deep) !important;
   color: #ffffff !important;
 }
+
 h4.category__title .arc-menu-burger-expander,
 h4.category__title .toggle-category {
   color: #ffffff !important;
 }
+
 h4.category__title:hover,
 h4.category__title:focus-within {
   background-color: var(--dtu-ad-accent-deep-hover) !important;
@@ -3623,8 +3708,9 @@ h4.category__title:focus-within {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
-.dturedbackground + *,
-.dturedbackground ~ * {
+
+.dturedbackground+*,
+.dturedbackground~* {
   border-top-color: var(--dtu-ad-accent-deep) !important;
 }
 
@@ -3642,7 +3728,7 @@ h4.category__title:focus-within {
 }
 
 .dturedbackground .seperator {
-  color: rgba(255,255,255,0.6) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 .dturedbackground .caret,
@@ -3703,16 +3789,18 @@ h4.category__title:focus-within {
   background: #1a1a1a !important;
   color: #e0e0e0 !important;
 }
+
 .text-center.span-seperation a {
   color: #66b3ff !important;
 }
 
 /* KursussÃ¸gning tab - DTU red */
-.nav-tabs > li[role="presentation"] > a[href*="kurser.dtu.dk"] {
+.nav-tabs>li[role="presentation"]>a[href*="kurser.dtu.dk"] {
   background-color: var(--dtu-ad-accent-deep) !important;
   color: #ffffff !important;
 }
-.nav-tabs > li[role="presentation"] > a[href*="kurser.dtu.dk"]:hover {
+
+.nav-tabs>li[role="presentation"]>a[href*="kurser.dtu.dk"]:hover {
   background-color: var(--dtu-ad-accent-deep-hover) !important;
 }
 
@@ -3808,23 +3896,23 @@ form.form-horizontal .form-control {
 /* Histogram styles intentionally left to default (light) */
 
 /* CampusNet Grades page wrapper (final override) - dark 1 */
-#ctl00_ContentBox.main__content--box > .gradesPage,
-#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm,
-#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm > div {
+#ctl00_ContentBox.main__content--box>.gradesPage,
+#ctl00_ContentBox.main__content--box>.gradesPage>form#aspnetForm,
+#ctl00_ContentBox.main__content--box>.gradesPage>form#aspnetForm>div {
   background-color: #1a1a1a !important;
   background: #1a1a1a !important;
 }
 
 /* CampusNet Grades total-points block - dark 1 */
-.gradesPoints > table:not(.gradesList),
-.gradesPoints > table:not(.gradesList) tr,
-.gradesPoints > table:not(.gradesList) td {
+.gradesPoints>table:not(.gradesList),
+.gradesPoints>table:not(.gradesList) tr,
+.gradesPoints>table:not(.gradesList) td {
   background-color: #1a1a1a !important;
   background: #1a1a1a !important;
 }
 
 /* CampusNet grade-page section titles - dark 1 */
-.gradesPoints > h2,
+.gradesPoints>h2,
 .gradesPdfTitle,
 .gradesDtuPaperTitle {
   background-color: #1a1a1a !important;
@@ -3832,11 +3920,11 @@ form.form-horizontal .form-control {
   color: #e0e0e0 !important;
 }
 
-.gradesPoints > h2 {
+.gradesPoints>h2 {
   color: #e0e0e0 !important;
 }
 
-.gradesPoints > table:not(.gradesList) {
+.gradesPoints>table:not(.gradesList) {
   border: 1px solid #404040 !important;
   border-collapse: collapse !important;
 }
@@ -3886,8 +3974,8 @@ form.form-horizontal .form-control {
 
 /* CampusNet main content row - dark 1 */
 main.main.arc-row,
-main.main.arc-row > #ctl00_LeftMenuContainer.main__aside,
-main.main.arc-row > section.main__content {
+main.main.arc-row>#ctl00_LeftMenuContainer.main__aside,
+main.main.arc-row>section.main__content {
   background-color: #1a1a1a !important;
   background: #1a1a1a !important;
 }

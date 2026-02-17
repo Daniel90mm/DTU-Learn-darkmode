@@ -1,5 +1,5 @@
 ﻿// Dark mode script to inject styles into Shadow DOM elements
-(function() {
+(function () {
     'use strict';
 
     // ===== DARK MODE TOGGLE =====
@@ -36,12 +36,12 @@
             if (typeof browser !== 'undefined' && browser.storage && browser.storage.local) {
                 return { api: 'browser', area: browser.storage.local };
             }
-        } catch (e) {}
+        } catch (e) { }
         try {
             if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
                 return { api: 'chrome', area: chrome.storage.local };
             }
-        } catch (e) {}
+        } catch (e) { }
         return null;
     }
 
@@ -58,7 +58,7 @@
             if (storage.api === 'browser') {
                 storage.area.set({ [DARK_MODE_KEY]: enabled });
             } else {
-                storage.area.set({ [DARK_MODE_KEY]: enabled }, function() {});
+                storage.area.set({ [DARK_MODE_KEY]: enabled }, function () { });
             }
         }
     }
@@ -88,6 +88,119 @@
         (document.head || document.documentElement).appendChild(link);
     }
 
+    // Inject accent overrides for specific UI elements regardless of dark mode state
+    function injectAccentOverrides() {
+        if (document.getElementById('dtu-accent-overrides-css')) return;
+        const style = document.createElement('style');
+        style.id = 'dtu-accent-overrides-css';
+        style.textContent = `
+            /* Structural accent overrides for CampusNet/DTU sites (Light & Dark modes) */
+            .boxHeader,
+            .box.mainContentPageTemplate .boxHeader,
+            .box.widget .boxHeader,
+            #afrapporteringWidget .boxHeader {
+                background-color: var(--dtu-ad-accent-deep) !important;
+                background: var(--dtu-ad-accent-deep) !important;
+                border-bottom-color: var(--dtu-ad-accent-deep-hover) !important;
+                color: #ffffff !important;
+            }
+
+            .boxHeader h2,
+            .box.mainContentPageTemplate .boxHeader h2,
+            .box.widget .boxHeader h2,
+            #afrapporteringWidget .boxHeader h2 {
+                color: #ffffff !important;
+                background-color: transparent !important;
+            }
+
+            /* Category titles in sidebar */
+            h4.category__title,
+            h4.category__title a {
+                background-color: var(--dtu-ad-accent-deep) !important;
+                background: var(--dtu-ad-accent-deep) !important;
+                color: #ffffff !important;
+            }
+
+            h4.category__title:hover,
+            h4.category__title:focus-within {
+                background-color: var(--dtu-ad-accent-deep-hover) !important;
+                background: var(--dtu-ad-accent-deep-hover) !important;
+            }
+
+            h4.category__title i,
+            h4.category__title .toggle-category,
+            h4.category__title .arc-menu-burger-expander {
+                color: #ffffff !important;
+            }
+
+            /* Icon base (circle background) */
+            .item__icon .icon__base,
+            .service-icon .icon__base {
+                color: var(--dtu-ad-accent) !important;
+            }
+
+            /* Group menu items (Courses, Groups, etc.) */
+            .group-menu__item,
+            .group-menu__item-burger {
+                border-color: var(--dtu-ad-accent-deep) !important;
+                background-color: var(--dtu-ad-accent-deep) !important;
+            }
+
+            .group-menu__item header,
+            .group-menu__item-burger header {
+                background-color: var(--dtu-ad-accent-deep) !important;
+                background: var(--dtu-ad-accent-deep) !important;
+            }
+
+            .group-menu__item .item__title,
+            .group-menu__item-burger .item__title,
+            .group-menu__item header h2,
+            .group-menu__item-burger header h2 {
+                color: #ffffff !important;
+            }
+
+            .group-menu__item-burger-expander {
+                color: #ffffff !important;
+            }
+
+            /* Links (Generic content links) */
+            a,
+            .groupLinksTable a:not(.arc-button) {
+                color: var(--dtu-ad-accent) !important;
+                text-decoration: none;
+            }
+            
+            a:hover {
+                color: var(--dtu-ad-accent-hover) !important;
+            }
+
+            /* Exclude top navigation and header links (keep them white) */
+            .nav__item a,
+            .header__top a,
+            .top-menu a,
+            .header__logo-area a,
+            section.header a {
+                color: #ffffff !important;
+            }
+
+            /* Keep black-bar top menu ("DTU INSIDE") white */
+            .top-menu a,
+            .top-menu a * {
+                color: #ffffff !important;
+            }
+
+            /* Prevent red background on hover for menu items (Light mode fix) */
+            .menu__item:hover {
+                background-color: white !important;
+                transition: none !important;
+            }
+        `;
+        (document.head || document.documentElement).appendChild(style);
+    }
+
+    // Always inject accent overrides (even in light mode)
+    injectAccentOverrides();
+
     // Synchronous check â€” inject CSS immediately if enabled (runs at document_start)
     const darkModeEnabled = isDarkModeEnabled();
     if (darkModeEnabled) {
@@ -101,7 +214,7 @@
             if (location.hostname.endsWith('.dtu.dk')) {
                 document.cookie = 'dtuDarkMode=' + storedEnabled + '; domain=.dtu.dk; path=/; max-age=31536000; SameSite=Lax';
             }
-        } catch (e) {}
+        } catch (e) { }
         if (storedEnabled !== darkModeEnabled && window === window.top) {
             location.reload();
         }
@@ -111,11 +224,11 @@
     var extensionStorage = getExtensionStorageArea();
     if (extensionStorage) {
         if (extensionStorage.api === 'browser') {
-            extensionStorage.area.get(DARK_MODE_KEY).then(function(result) {
+            extensionStorage.area.get(DARK_MODE_KEY).then(function (result) {
                 applyStoredDarkModeValue(result[DARK_MODE_KEY]);
-            }).catch(function() {});
+            }).catch(function () { });
         } else {
-            extensionStorage.area.get([DARK_MODE_KEY], function(result) {
+            extensionStorage.area.get([DARK_MODE_KEY], function (result) {
                 if (chrome && chrome.runtime && chrome.runtime.lastError) return;
                 applyStoredDarkModeValue(result ? result[DARK_MODE_KEY] : undefined);
             });
@@ -123,7 +236,7 @@
     }
 
     function subscribeDarkModeStorageChanges() {
-        var onChanged = function(changes, areaName) {
+        var onChanged = function (changes, areaName) {
             if (!IS_TOP_WINDOW) return;
             if (areaName && areaName !== 'local') return;
             if (!changes || !changes[DARK_MODE_KEY]) return;
@@ -139,12 +252,12 @@
                 browser.storage.onChanged.addListener(onChanged);
                 return;
             }
-        } catch (e) {}
+        } catch (e) { }
         try {
             if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
                 chrome.storage.onChanged.addListener(onChanged);
             }
-        } catch (e) {}
+        } catch (e) { }
     }
     subscribeDarkModeStorageChanges();
 
@@ -207,13 +320,13 @@
         }
         try {
             if (storage.api === 'browser') {
-                storage.area.get(defaults).then(function(result) {
+                storage.area.get(defaults).then(function (result) {
                     cb(result || Object.assign({}, defaults));
-                }).catch(function() {
+                }).catch(function () {
                     cb(Object.assign({}, defaults));
                 });
             } else {
-                storage.area.get(defaults, function(result) {
+                storage.area.get(defaults, function (result) {
                     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError) {
                         cb(Object.assign({}, defaults));
                         return;
@@ -231,9 +344,9 @@
         if (!storage) return;
         try {
             if (storage.api === 'browser') {
-                storage.area.set(items).catch(function() {});
+                storage.area.set(items).catch(function () { });
             } else {
-                storage.area.set(items, function() {});
+                storage.area.set(items, function () { });
             }
         } catch (e) {
             // ignore
@@ -562,37 +675,38 @@
 
     function syncAccentThemeUi() {
         try {
-            document.querySelectorAll('[data-dtu-accent-theme-select]').forEach(function(sel) {
+            document.querySelectorAll('[data-dtu-accent-theme-select]').forEach(function (sel) {
                 if (!sel) return;
-                try { sel.value = _accentThemeId; } catch (e0) {}
+                try { sel.value = _accentThemeId; } catch (e0) { }
             });
-        } catch (e) {}
+        } catch (e) { }
 
         try {
-            document.querySelectorAll('[data-dtu-accent-custom-input]').forEach(function(inp) {
+            document.querySelectorAll('[data-dtu-accent-custom-input]').forEach(function (inp) {
                 if (!inp) return;
-                try { inp.value = normalizeHexColor(_accentCustomHex, ACCENT_CUSTOM_DEFAULT) || ACCENT_CUSTOM_DEFAULT; } catch (e0) {}
-                try { inp.style.display = (_accentThemeId === 'custom') ? '' : 'none'; } catch (e1) {}
+                try { inp.value = normalizeHexColor(_accentCustomHex, ACCENT_CUSTOM_DEFAULT) || ACCENT_CUSTOM_DEFAULT; } catch (e0) { }
+                try { inp.style.display = (_accentThemeId === 'custom') ? '' : 'none'; } catch (e1) { }
             });
-        } catch (e1) {}
+        } catch (e1) { }
 
         // Keep any open settings UI in sync.
         try {
-            document.querySelectorAll('.dtu-am-root').forEach(function(rootEl) {
-                try { applyAfterDarkAdminMenuThemeVars(rootEl); } catch (e1) {}
+            document.querySelectorAll('.dtu-am-root').forEach(function (rootEl) {
+                try { applyAfterDarkAdminMenuThemeVars(rootEl); } catch (e1) { }
             });
-        } catch (e2) {}
+        } catch (e2) { }
     }
 
     function setAccentCustomHex(nextHex, opts) {
         var normalized = normalizeHexColor(nextHex, null);
         if (!normalized) return;
         _accentCustomHex = normalized;
-        try { localStorage.setItem(ACCENT_CUSTOM_HEX_KEY, normalized); } catch (e0) {}
+        try { localStorage.setItem(ACCENT_CUSTOM_HEX_KEY, normalized); } catch (e0) { }
 
         if (_accentThemeId === 'custom') {
             applyAccentThemeVars(getAccentThemeById('custom'));
             syncAccentThemeUi();
+            try { replaceLogoImage(); } catch (eLogoCustom) { }
         }
 
         if (opts && opts.noStorage) return;
@@ -602,10 +716,11 @@
     function setAccentThemeId(nextId, opts) {
         var id = normalizeAccentThemeId(nextId);
         _accentThemeId = id;
-        try { localStorage.setItem(ACCENT_THEME_KEY, id); } catch (e0) {}
+        try { localStorage.setItem(ACCENT_THEME_KEY, id); } catch (e0) { }
 
         applyAccentThemeVars(getAccentThemeById(id));
         syncAccentThemeUi();
+        try { replaceLogoImage(); } catch (eLogoTheme) { }
 
         if (opts && opts.noStorage) return;
         storageLocalSet({ [ACCENT_THEME_KEY]: id });
@@ -619,7 +734,7 @@
         storageLocalGet({
             [ACCENT_THEME_KEY]: ACCENT_THEME_DEFAULT,
             [ACCENT_CUSTOM_HEX_KEY]: ACCENT_CUSTOM_DEFAULT
-        }, function(result) {
+        }, function (result) {
             _accentThemeLoaded = true;
             var storedTheme = result ? result[ACCENT_THEME_KEY] : null;
             var storedCustom = result ? result[ACCENT_CUSTOM_HEX_KEY] : null;
@@ -628,7 +743,7 @@
             if (typeof storedCustom === 'string' && storedCustom) {
                 var normCustom = normalizeHexColor(storedCustom, ACCENT_CUSTOM_DEFAULT) || ACCENT_CUSTOM_DEFAULT;
                 _accentCustomHex = normCustom;
-                try { localStorage.setItem(ACCENT_CUSTOM_HEX_KEY, normCustom); } catch (e0) {}
+                try { localStorage.setItem(ACCENT_CUSTOM_HEX_KEY, normCustom); } catch (e0) { }
             }
 
             if (typeof storedTheme === 'string' && storedTheme) {
@@ -652,7 +767,7 @@
         if (_accentThemeStorageSubscribed) return;
         _accentThemeStorageSubscribed = true;
 
-        var onChanged = function(changes, areaName) {
+        var onChanged = function (changes, areaName) {
             if (areaName && areaName !== 'local') return;
             if (!changes) return;
 
@@ -672,12 +787,12 @@
                 browser.storage.onChanged.addListener(onChanged);
                 return;
             }
-        } catch (e) {}
+        } catch (e) { }
         try {
             if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
                 chrome.storage.onChanged.addListener(onChanged);
             }
-        } catch (e2) {}
+        } catch (e2) { }
     }
 
     // Apply sync value immediately for faster first paint.
@@ -685,7 +800,7 @@
     _accentCustomHex = normalizeHexColor(getAccentCustomHexFromLocalStorage(), ACCENT_CUSTOM_DEFAULT) || ACCENT_CUSTOM_DEFAULT;
     applyAccentThemeVars(getAccentThemeById(_accentThemeId));
     // Then sync from extension storage (cross-domain).
-    loadAccentTheme(function() {});
+    loadAccentTheme(function () { });
     subscribeAccentThemeStorageChanges();
 
     function loadFeatureFlags(cb) {
@@ -693,7 +808,7 @@
             if (cb) cb(_featureFlags);
             return;
         }
-        storageLocalGet(FEATURE_FLAG_DEFAULTS, function(flags) {
+        storageLocalGet(FEATURE_FLAG_DEFAULTS, function (flags) {
             _featureFlags = Object.assign({}, FEATURE_FLAG_DEFAULTS, flags || {});
             _featureFlagsLoaded = true;
             if (cb) cb(_featureFlags);
@@ -719,12 +834,12 @@
         if (_featureFlagStorageSubscribed) return;
         _featureFlagStorageSubscribed = true;
 
-        var onChanged = function(changes, areaName) {
+        var onChanged = function (changes, areaName) {
             if (areaName && areaName !== 'local') return;
             if (!changes) return;
 
             var touched = false;
-            Object.keys(changes).forEach(function(key) {
+            Object.keys(changes).forEach(function (key) {
                 if (!Object.prototype.hasOwnProperty.call(FEATURE_FLAG_DEFAULTS, key)) return;
                 var next = changes[key] ? changes[key].newValue : undefined;
                 if (typeof next !== 'boolean') return;
@@ -740,13 +855,13 @@
 
             if (!touched) return;
             if (_featureFlagStorageChangeTimer) return;
-            _featureFlagStorageChangeTimer = setTimeout(function() {
+            _featureFlagStorageChangeTimer = setTimeout(function () {
                 _featureFlagStorageChangeTimer = null;
                 if (IS_TOP_WINDOW) {
-                    try { syncAfterDarkFeatureToggleStates(); } catch (e1) {}
-                    try { runTopWindowFeatureChecks(null, false); } catch (e2) {}
+                    try { syncAfterDarkFeatureToggleStates(); } catch (e1) { }
+                    try { runTopWindowFeatureChecks(null, false); } catch (e2) { }
                 } else {
-                    try { runFrameFeatureChecks(null); } catch (e3) {}
+                    try { runFrameFeatureChecks(null); } catch (e3) { }
                 }
             }, 120);
         };
@@ -756,23 +871,23 @@
                 browser.storage.onChanged.addListener(onChanged);
                 return;
             }
-        } catch (e) {}
+        } catch (e) { }
         try {
             if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
                 chrome.storage.onChanged.addListener(onChanged);
             }
-        } catch (e2) {}
+        } catch (e2) { }
     }
 
     // Load feature flags early so cross-domain toggles work without a full refresh cycle.
     // Note: some pages (Brightspace Content) render inside same-origin iframes; we still
     // want lightweight features (e.g. Smart Room Links) there.
-    loadFeatureFlags(function() {
+    loadFeatureFlags(function () {
         if (IS_TOP_WINDOW) {
-            try { syncAfterDarkFeatureToggleStates(); } catch (e1) {}
-            try { runTopWindowFeatureChecks(null, false); } catch (e2) {}
+            try { syncAfterDarkFeatureToggleStates(); } catch (e1) { }
+            try { runTopWindowFeatureChecks(null, false); } catch (e2) { }
         } else {
-            try { runFrameFeatureChecks(null); } catch (e3) {}
+            try { runFrameFeatureChecks(null); } catch (e3) { }
         }
     });
     subscribeFeatureFlagStorageChanges();
@@ -848,14 +963,14 @@
         /* Action trigger buttons */
         button[aria-haspopup="true"][aria-label^="Actions for"],
         button[aria-label^="Actions for"] {
-            background-color: #1a1a1a !important;
+            background-color: #2d2d2d !important;
             color: ${DARK_TEXT} !important;
             border-color: ${DARK_BORDER} !important;
         }
 
         button[aria-label^="Actions for"] d2l-icon[icon="tier1:chevron-down"] {
-            background-color: #1a1a1a !important;
-            background: #1a1a1a !important;
+            background-color: #2d2d2d !important;
+            background: #2d2d2d !important;
             background-image: none !important;
         }
 
@@ -1402,7 +1517,7 @@
         button,
         button[aria-haspopup="true"][aria-label^="Actions for"] {
             color: ${DARK_TEXT} !important;
-            background-color: #1a1a1a !important;
+            background-color: #2d2d2d !important;
             border-color: ${DARK_BORDER} !important;
         }
 
@@ -1627,6 +1742,27 @@
         }
     `;
 
+    // Light-mode accent badge styles -- injected into shadow roots even when dark mode is OFF
+    // so that the user's chosen accent color replaces the default Brightspace red.
+    const lightAccentBadgeStyles = `
+        .d2l-w2d-count,
+        .d2l-w2d-heading-3-count {
+            background-color: var(--dtu-ad-accent-deep) !important;
+            background: var(--dtu-ad-accent-deep) !important;
+            color: #ffffff !important;
+        }
+        .d2l-count-badge-number {
+            background-color: var(--dtu-ad-accent-deep) !important;
+            background: var(--dtu-ad-accent-deep) !important;
+            color: #ffffff !important;
+        }
+        .d2l-count-badge-number > div {
+            background: transparent !important;
+            background-color: transparent !important;
+            color: #ffffff !important;
+        }
+    `;
+
     // Styles for HTML block content (module descriptions, lecturer info, etc.)
     const htmlBlockStyles = `
         /* Light text for readability on dark backgrounds */
@@ -1786,8 +1922,8 @@
                 styleId = 'dark-mode-shadow-styles-w2d-list';
                 styleText = w2dListStyles;
             } else if (tagName === 'd2l-list-item-nav' || tagName === 'd2l-list-item-content' ||
-                       tagName === 'd2l-list' || tagName === 'd2l-list-item' ||
-                       tagName.startsWith('d2l-lessons-') || tagName.startsWith('d2l-toc-')) {
+                tagName === 'd2l-list' || tagName === 'd2l-list-item' ||
+                tagName.startsWith('d2l-lessons-') || tagName.startsWith('d2l-toc-')) {
                 styleId = 'dark-mode-shadow-styles-list-item-nav';
                 styleText = listItemNavStyles;
             } else if (tagName === 'd2l-input-search') {
@@ -1818,12 +1954,12 @@
         // Some Brightspace widgets (counts, badges, titles) live deep inside shadow DOM.
         // CSS injection alone is sometimes insufficient due to component-specific inline styles.
         // Force key accent elements inline within this shadow root.
-        try { forceDTULearnAccentInRoot(shadowRoot); } catch (eAcc0) {}
+        try { forceDTULearnAccentInRoot(shadowRoot); } catch (eAcc0) { }
 
         observeInjectedShadowRoot(shadowRoot);
         processNestedShadowRoots(shadowRoot);
         // Also scan for room mentions inside Brightspace shadow DOM (announcements, dialogs, etc.).
-        try { seedSmartRoomLinkerShadowRoot(shadowRoot); } catch (eSeed) {}
+        try { seedSmartRoomLinkerShadowRoot(shadowRoot); } catch (eSeed) { }
     }
 
     // Function to process shadow roots nested inside a shadow root
@@ -1858,7 +1994,7 @@
         if (retryCount >= SHADOW_HOST_MAX_RETRIES) return;
         _shadowHostRetryCount.set(element, retryCount + 1);
 
-        var retryTimer = setTimeout(function() {
+        var retryTimer = setTimeout(function () {
             _pendingShadowHostRetry.delete(element);
             if (!element.isConnected) return;
             scheduleShadowHostRetry(element);
@@ -1909,13 +2045,13 @@
                 }
             }
             scheduleSmartRoomLinkerScan(node, 140);
-        } catch (eLink) {}
+        } catch (eLink) { }
     }
 
     function observeInjectedShadowRoot(shadowRoot) {
         if (!shadowRoot || _observedShadowRoots.has(shadowRoot)) return;
 
-        const observer = new MutationObserver(function(mutations) {
+        const observer = new MutationObserver(function (mutations) {
             for (var i = 0; i < mutations.length; i++) {
                 var mutation = mutations[i];
                 if (mutation.type !== 'childList') continue;
@@ -1928,7 +2064,7 @@
             }
             // Re-apply accent inside this shadow root after mutations, since Brightspace can
             // re-render badges with new nodes and inline styles.
-            try { forceDTULearnAccentInRoot(shadowRoot); } catch (eAcc1) {}
+            try { forceDTULearnAccentInRoot(shadowRoot); } catch (eAcc1) { }
         });
 
         observer.observe(shadowRoot, {
@@ -1980,7 +2116,7 @@
         _htmlBlockRetryCount.set(block, retryCount + 1);
 
         // Keep one short retry timer per block to avoid timer fan-out.
-        const retryTimer = setTimeout(function() {
+        const retryTimer = setTimeout(function () {
             _pendingHtmlBlockRetry.delete(block);
             ensureHtmlBlockStyled(block);
         }, 400);
@@ -2101,12 +2237,12 @@
         .generic-download-area,
         .vui-fileviewer-generic-size,
         .vui-fileviewer-generic-download,
-        header.header,
+        .tsMasterContent header.header,
         div.main.row,
         form[action*="/Answer/Exclude/"],
         form[action*="/Answer/SaveAnswers/"],
-        .header__title,
-        .header__actions,
+        .tsMasterContent .header__title,
+        .tsMasterContent .header__actions,
         nav.navigation,
         .navigation__items,
         .navigation__item,
@@ -2396,13 +2532,13 @@
             if (scope.matches && scope.matches(LESSONS_TOC_DARK1_SELECTORS)) {
                 forceLessonsTocDark1Element(scope);
             }
-        } catch (e0) {}
+        } catch (e0) { }
 
         if (!scope.querySelectorAll) return;
         try {
             var targets = scope.querySelectorAll(LESSONS_TOC_DARK1_SELECTORS);
             targets.forEach(forceLessonsTocDark1Element);
-        } catch (e1) {}
+        } catch (e1) { }
     }
 
     function forceD2LActionButtonsDark1(root) {
@@ -2417,12 +2553,12 @@
             if (scope.matches && scope.matches('.d2l-action-buttons, .d2l-action-buttons-list, ul.d2l-action-buttons-list, .d2l-action-buttons-item')) {
                 forceLessonsTocDark1Element(scope);
             }
-        } catch (e0) {}
+        } catch (e0) { }
 
         if (!scope.querySelectorAll) return;
         try {
             scope.querySelectorAll('.d2l-action-buttons, .d2l-action-buttons-list, ul.d2l-action-buttons-list, .d2l-action-buttons-item').forEach(forceLessonsTocDark1Element);
-            scope.querySelectorAll('.d2l-action-buttons .d2l-button, .d2l-action-buttons-item .d2l-button').forEach(function(btn) {
+            scope.querySelectorAll('.d2l-action-buttons .d2l-button, .d2l-action-buttons-item .d2l-button').forEach(function (btn) {
                 if (!btn || !btn.style) return;
                 btn.style.setProperty('background', 'var(--dtu-ad-accent)', 'important');
                 btn.style.setProperty('background-color', 'var(--dtu-ad-accent)', 'important');
@@ -2430,7 +2566,7 @@
                 btn.style.setProperty('color', '#ffffff', 'important');
                 btn.style.setProperty('border-color', 'var(--dtu-ad-accent-border)', 'important');
             });
-        } catch (e1) {}
+        } catch (e1) { }
     }
 
     // Function to apply darkest style to an element (#1a1a1a)
@@ -2606,22 +2742,30 @@
 
     // Historically we forced DTU-red header bars to dark 2 in dark mode to avoid harsh red.
     // Now that the accent color is user-configurable, keep these bars tied to the accent.
+    // Uses resolved hex color instead of var() reference because some browsers fail to
+    // resolve CSS variables in inline styles on deeply nested elements.
+    function getResolvedAccentDeep() {
+        var theme = getAccentThemeById(_accentThemeId);
+        return (theme && theme.accentDeep) || '#7d0000';
+    }
+
     function forceDtuRedBackgroundDark2(el) {
         if (!el || !el.style) return;
+        var color = getResolvedAccentDeep();
         var styleAttr = (el.getAttribute && el.getAttribute('style')) || '';
-        var hasAccentBg = /background(?:-color)?\s*:\s*var\(\s*--dtu-ad-accent-deep\s*\)/i.test(styleAttr);
-        var hasAccentBorder = /border-color\s*:\s*var\(\s*--dtu-ad-accent-deep/i.test(styleAttr);
-        var hasNoBgImage = /background-image\s*:\s*none/i.test(styleAttr);
-        if (hasAccentBg && hasAccentBorder && hasNoBgImage) return;
+        var currentBg = (styleAttr.match(/background-color\s*:\s*([^;!]+)/i) || [])[1];
+        if (currentBg && currentBg.trim() === color) return;
 
-        el.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
-        el.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
+        el.style.setProperty('background', color, 'important');
+        el.style.setProperty('background-color', color, 'important');
         el.style.setProperty('background-image', 'none', 'important');
-        el.style.setProperty('border-color', 'var(--dtu-ad-accent-deep)', 'important');
+        el.style.setProperty('border-color', color, 'important');
+        if (el.tagName === 'A') {
+            el.style.setProperty('color', '#ffffff', 'important');
+        }
     }
 
     function enforceDtuRedBackgroundZoneDark2() {
-        if (!darkModeEnabled) return;
         var targets = document.querySelectorAll(
             '.dturedbackground, '
             + '.dturedbackground .container, '
@@ -2629,6 +2773,7 @@
             + '.dturedbackground [class*="col-"], '
             + '.dturedbackground .pull-right, '
             + '.dturedbackground .pull-right span, '
+            + '.dturedbackground .pull-right span a, '
             + '.dturedbackground .dropdown, '
             + '.dturedbackground .dropdown-toggle.red, '
             + '.dturedbackground .dropdown-menu.red, '
@@ -2652,12 +2797,12 @@
         try {
             forceLessonsTocDark1(document);
             if (root !== document) forceLessonsTocDark1(root);
-        } catch (eToc) {}
+        } catch (eToc) { }
         // DTU Learn assignment action bar: dark 1 container + accent button.
         try {
             forceD2LActionButtonsDark1(document);
             if (root !== document) forceD2LActionButtonsDark1(root);
-        } catch (eAction) {}
+        } catch (eAction) { }
 
         // Force white text on nav dropdown (Courses/Groups/Shortcuts menu)
         root.querySelectorAll('.nav__dropdown, article.nav__dropdown').forEach(dropdown => {
@@ -2673,7 +2818,7 @@
         // We set these inline with !important because applyDarkStyle() also writes inline !important.
         try {
             var badgeBg = darkModeEnabled ? 'var(--dtu-ad-accent)' : 'var(--dtu-ad-accent-deep)';
-            root.querySelectorAll('.d2l-w2d-count, .d2l-w2d-heading-3-count, .d2l-count-badge-number').forEach(function(el) {
+            root.querySelectorAll('.d2l-w2d-count, .d2l-w2d-heading-3-count, .d2l-count-badge-number').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', badgeBg, 'important');
                 el.style.setProperty('background-color', badgeBg, 'important');
@@ -2683,17 +2828,17 @@
                 el.style.setProperty('outline', '0', 'important');
                 el.style.setProperty('box-shadow', 'none', 'important');
             });
-            root.querySelectorAll('.d2l-count-badge-number > div').forEach(function(el) {
+            root.querySelectorAll('.d2l-count-badge-number > div').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', 'transparent', 'important');
                 el.style.setProperty('background-color', 'transparent', 'important');
                 el.style.setProperty('color', '#ffffff', 'important');
             });
-            root.querySelectorAll('.uw-text').forEach(function(el) {
+            root.querySelectorAll('.uw-text').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('color', 'var(--dtu-ad-accent)', 'important');
             });
-        } catch (eAcc) {}
+        } catch (eAcc) { }
     }
 
     // MutationObserver to watch for style changes
@@ -2706,10 +2851,10 @@
                         if (el && el.closest && el.closest('.navigation-container .navigation-tree')) {
                             forceLessonsTocDark1(el);
                         }
-                    } catch (eTocAttr) {}
+                    } catch (eTocAttr) { }
                     try {
                         forceD2LActionButtonsDark1(el);
-                    } catch (eActionAttr) {}
+                    } catch (eActionAttr) { }
                     // Check lighter dark selectors first (they take priority)
                     if (el.matches && el.matches(LIGHTER_DARK_SELECTORS)) {
                         applyLighterDarkStyle(el);
@@ -2724,10 +2869,10 @@
                                 if (node.closest && node.closest('.navigation-container .navigation-tree')) {
                                     forceLessonsTocDark1(node);
                                 }
-                            } catch (eTocNode) {}
+                            } catch (eTocNode) { }
                             try {
                                 forceD2LActionButtonsDark1(node);
-                            } catch (eActionNode) {}
+                            } catch (eActionNode) { }
                             // Apply dark first, then lighter (lighter wins)
                             if (node.matches && node.matches(DARK_SELECTORS)) {
                                 applyDarkStyle(node);
@@ -2962,9 +3107,109 @@
     // Load and visibility handlers are managed by unified scheduling section below
 
     // ===== LOGO REPLACEMENT =====
-    // Replace the "My Home" logo with custom white DTU logo for dark mode
+    // Replace the "My Home" logo with accent-colored DTU logos.
+    // Uses PNG alpha masking:
+    // - Dark mode: accent fill
+    // - Light mode: accent fill + black outline border
+    var _accentLogoPngImage = null;
+    var _accentLogoPngLoadPromise = null;
+    var _accentLogoDataUrlCache = {};
+
+    function getResolvedAccent() {
+        var theme = getAccentThemeById(_accentThemeId);
+        return (theme && theme.accent) || '#990000';
+    }
+
+    function getAccentLogoSrc() {
+        var accentHex = normalizeHexColor(getResolvedAccent(), '#990000') || '#990000';
+        var modeKey = darkModeEnabled ? 'dark' : 'light';
+        var cacheKey = modeKey + '|' + accentHex;
+        if (Object.prototype.hasOwnProperty.call(_accentLogoDataUrlCache, cacheKey)) {
+            return _accentLogoDataUrlCache[cacheKey];
+        }
+
+        var pngUrl = getExtensionUrl('images/Corp_White_Transparent.png');
+        if (_accentLogoPngImage && _accentLogoPngImage.naturalWidth > 0 && _accentLogoPngImage.naturalHeight > 0) {
+            try {
+                var rgbParts = (hexToRgbTriplet(accentHex, '153,0,0') || '153,0,0').split(',');
+                var r = parseInt(rgbParts[0], 10) || 153;
+                var g = parseInt(rgbParts[1], 10) || 0;
+                var b = parseInt(rgbParts[2], 10) || 0;
+
+                var w = _accentLogoPngImage.naturalWidth;
+                var h = _accentLogoPngImage.naturalHeight;
+                var canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                var ctx = canvas.getContext('2d');
+                if (!ctx) return pngUrl;
+
+                function makeMaskedSolid(rgbCss) {
+                    var c = document.createElement('canvas');
+                    c.width = w;
+                    c.height = h;
+                    var cctx = c.getContext('2d');
+                    if (!cctx) return c;
+                    cctx.clearRect(0, 0, w, h);
+                    cctx.fillStyle = rgbCss;
+                    cctx.fillRect(0, 0, w, h);
+                    cctx.globalCompositeOperation = 'destination-in';
+                    cctx.drawImage(_accentLogoPngImage, 0, 0, w, h);
+                    cctx.globalCompositeOperation = 'source-over';
+                    return c;
+                }
+
+                var accentMask = makeMaskedSolid('rgb(' + r + ',' + g + ',' + b + ')');
+                ctx.clearRect(0, 0, w, h);
+
+                if (!darkModeEnabled) {
+                    // Light mode: add a thin black outline around the logo for contrast.
+                    var outlineMask = makeMaskedSolid('#000000');
+                    var offsets = [
+                        [-1, 0], [1, 0], [0, -1], [0, 1],
+                        [-1, -1], [-1, 1], [1, -1], [1, 1]
+                    ];
+                    offsets.forEach(function (off) {
+                        ctx.drawImage(outlineMask, off[0], off[1], w, h);
+                    });
+                }
+
+                ctx.drawImage(accentMask, 0, 0, w, h);
+
+                var dataUrl = canvas.toDataURL('image/png');
+                _accentLogoDataUrlCache[cacheKey] = dataUrl;
+                return dataUrl;
+            } catch (e0) {
+                return pngUrl;
+            }
+        }
+
+        if (!_accentLogoPngLoadPromise) {
+            _accentLogoPngLoadPromise = new Promise(function (resolve) {
+                try {
+                    var img = new Image();
+                    img.onload = function () {
+                        _accentLogoPngImage = img;
+                        resolve();
+                    };
+                    img.onerror = function () { resolve(); };
+                    img.src = pngUrl;
+                } catch (eLoad) {
+                    resolve();
+                }
+            })
+                .finally(function () {
+                    _accentLogoPngLoadPromise = null;
+                    try { replaceLogoImage(); } catch (e0) { }
+                });
+        }
+
+        // Fallback while PNG is loading.
+        return pngUrl;
+    }
+
     function replaceLogoImage(rootNode) {
-        const newSrc = getExtensionUrl('images/Corp_White_Transparent.png');
+        const newSrc = getAccentLogoSrc();
 
         function replaceHostLogosInRoot(root) {
             if (!root || !root.querySelectorAll) return;
@@ -3028,8 +3273,8 @@
         checkShadowRoots(baseRoot);
     }
 
-    // Run logo replacement (dark mode only)
-    if (darkModeEnabled) replaceLogoImage();
+    // Run logo replacement
+    replaceLogoImage();
 
     // ===== MOJANGLES TEXT INSERTION =====
     // Insert Mojangles text image into the navigation header with Minecraft-style animation
@@ -3255,14 +3500,14 @@
     function closestComposed(el, selector) {
         var cur = el;
         while (cur) {
-            try { if (cur.matches && cur.matches(selector)) return cur; } catch (e0) {}
+            try { if (cur.matches && cur.matches(selector)) return cur; } catch (e0) { }
             try {
                 if (cur.parentElement) { cur = cur.parentElement; continue; }
-            } catch (e1) {}
+            } catch (e1) { }
             try {
                 var root = cur.getRootNode ? cur.getRootNode() : null;
                 if (root && root.host) { cur = root.host; continue; }
-            } catch (e2) {}
+            } catch (e2) { }
             cur = null;
         }
         return null;
@@ -3274,7 +3519,7 @@
             if (dd.hasAttribute && (dd.hasAttribute('opened') || dd.hasAttribute('_opened'))) return true;
             if (dd.opened === true) return true;
             if (dd._opened === true) return true;
-        } catch (e) {}
+        } catch (e) { }
         return false;
     }
 
@@ -3283,27 +3528,27 @@
     function guardDropdownOpen(dd) {
         if (!dd) return null;
         var hadNoAutoClose = false;
-        try { hadNoAutoClose = dd.hasAttribute('no-auto-close'); } catch (e0) {}
-        try { dd.setAttribute('no-auto-close', ''); } catch (e1) {}
+        try { hadNoAutoClose = dd.hasAttribute('no-auto-close'); } catch (e0) { }
+        try { dd.setAttribute('no-auto-close', ''); } catch (e1) { }
 
         function preventClose(e) {
-            try { e.preventDefault(); } catch (e2) {}
-            try { e.stopPropagation(); } catch (e3) {}
-            try { e.stopImmediatePropagation(); } catch (e4) {}
+            try { e.preventDefault(); } catch (e2) { }
+            try { e.stopPropagation(); } catch (e3) { }
+            try { e.stopImmediatePropagation(); } catch (e4) { }
         }
-        try { dd.addEventListener('d2l-dropdown-close', preventClose, true); } catch (e5) {}
+        try { dd.addEventListener('d2l-dropdown-close', preventClose, true); } catch (e5) { }
 
         return function releaseGuard() {
             // Force the dropdown to remain open after mutations.
             try {
                 dd.setAttribute('opened', '');
                 if (typeof dd.opened !== 'undefined') dd.opened = true;
-            } catch (e6) {}
+            } catch (e6) { }
             // Remove guards after the DOM has settled.
-            setTimeout(function() {
-                try { dd.removeEventListener('d2l-dropdown-close', preventClose, true); } catch (e7) {}
+            setTimeout(function () {
+                try { dd.removeEventListener('d2l-dropdown-close', preventClose, true); } catch (e7) { }
                 if (!hadNoAutoClose) {
-                    try { dd.removeAttribute('no-auto-close'); } catch (e8) {}
+                    try { dd.removeAttribute('no-auto-close'); } catch (e8) { }
                 }
             }, 600);
         };
@@ -3332,11 +3577,11 @@
         try {
             if (!el) return null;
             if (el.parentElement) return el.parentElement;
-        } catch (e0) {}
+        } catch (e0) { }
         try {
             var root = el.getRootNode ? el.getRootNode() : null;
             if (root && root.host) return root.host;
-        } catch (e1) {}
+        } catch (e1) { }
         return null;
     }
 
@@ -3347,7 +3592,7 @@
         var hops = 0;
         var limit = (typeof maxHops === 'number' && maxHops > 0) ? maxHops : 10;
         while (cur && hops < limit) {
-            try { if (elementSeemsVisible(cur)) return true; } catch (e0) {}
+            try { if (elementSeemsVisible(cur)) return true; } catch (e0) { }
             cur = getComposedParent(cur);
             hops++;
         }
@@ -3359,7 +3604,7 @@
         // If the user just clicked the gear, we treat it as "open enough" to enhance.
         try {
             if (isD2LDropdownOpen(dd)) return true;
-        } catch (e0) {}
+        } catch (e0) { }
         try {
             var dt = Date.now() - (_adminToolsLastGearInteractionTs || 0);
             if (dt >= 0 && dt <= 2500) {
@@ -3367,10 +3612,10 @@
                 if (elementOrAncestorSeemsVisible(placeholder)) return true;
                 if (elementOrAncestorSeemsVisible(dd)) return true;
             }
-        } catch (e1) {}
+        } catch (e1) { }
         try {
             if (elementOrAncestorSeemsVisible(placeholder)) return true;
-        } catch (e2) {}
+        } catch (e2) { }
         return false;
     }
 
@@ -3389,10 +3634,10 @@
 
     function snapshotAdminToolsDomState() {
         var out = {
-            ts: (function(){ try { return new Date().toISOString(); } catch(e){ return String(Date.now()); } })(),
-            href: (function(){ try { return String(location.href); } catch(e){ return null; } })(),
-            readyState: (function(){ try { return String(document.readyState); } catch(e){ return null; } })(),
-            ua: (function(){ try { return String(navigator.userAgent); } catch(e){ return null; } })(),
+            ts: (function () { try { return new Date().toISOString(); } catch (e) { return String(Date.now()); } })(),
+            href: (function () { try { return String(location.href); } catch (e) { return null; } })(),
+            readyState: (function () { try { return String(document.readyState); } catch (e) { return null; } })(),
+            ua: (function () { try { return String(navigator.userAgent); } catch (e) { return null; } })(),
             gearButton: null,
             openedDropdowns: [],
             placeholders: []
@@ -3414,7 +3659,7 @@
                     hooked: gear.getAttribute ? gear.getAttribute('data-dtu-gear-hooked') : null
                 };
             }
-        } catch (e2) {}
+        } catch (e2) { }
 
         try {
             // Capture a handful of dropdown-content nodes near the top bar to see where Brightspace stores open state.
@@ -3429,7 +3674,7 @@
                 try { area = r ? (r.w * r.h) : 0; } catch (eA) { area = 0; }
                 scored.push({ dd: dd, rect: r, area: area });
             }
-            scored.sort(function(a, b) { return (b.area || 0) - (a.area || 0); });
+            scored.sort(function (a, b) { return (b.area || 0) - (a.area || 0); });
             var take = scored.slice(0, 12);
             for (var j = 0; j < take.length; j++) {
                 var dd2 = take[j].dd;
@@ -3446,7 +3691,7 @@
                     styleWidth: (dd2.style && dd2.style.width) ? String(dd2.style.width) : null
                 });
             }
-        } catch (e4) {}
+        } catch (e4) { }
 
         try {
             var hits2 = [];
@@ -3470,7 +3715,7 @@
                     });
                 }
             }
-        } catch (e8) {}
+        } catch (e8) { }
 
         return out;
     }
@@ -3484,14 +3729,14 @@
         if (_adminToolsDebugBridgeInstalled) return;
         _adminToolsDebugBridgeInstalled = true;
         try {
-            window.addEventListener('DTU_AD_ADMIN_TOOLS_DEBUG_REQUEST', function(ev) {
+            window.addEventListener('DTU_AD_ADMIN_TOOLS_DEBUG_REQUEST', function (ev) {
                 try {
                     var detail = ev && ev.detail ? ev.detail : {};
                     var reqId = detail && detail.reqId ? String(detail.reqId) : String(Date.now());
                     var payloadObj = {
                         meta: {
-                            ts: (function(){ try { return new Date().toISOString(); } catch(e){ return String(Date.now()); } })(),
-                            href: (function(){ try { return String(location.href); } catch(e){ return null; } })()
+                            ts: (function () { try { return new Date().toISOString(); } catch (e) { return String(Date.now()); } })(),
+                            href: (function () { try { return String(location.href); } catch (e) { return null; } })()
                         },
                         snapshot: snapshotAdminToolsDomState(),
                         log: _adminToolsDebugLog
@@ -3499,17 +3744,17 @@
                     var payload = '';
                     try { payload = JSON.stringify(payloadObj, null, 2); } catch (e0) { payload = String(payloadObj); }
                     window.dispatchEvent(new CustomEvent('DTU_AD_ADMIN_TOOLS_DEBUG_RESPONSE', { detail: { reqId: reqId, payload: payload } }));
-                } catch (e1) {}
+                } catch (e1) { }
             });
-            window.addEventListener('DTU_AD_ADMIN_TOOLS_DEBUG_CLEAR_REQUEST', function(ev) {
+            window.addEventListener('DTU_AD_ADMIN_TOOLS_DEBUG_CLEAR_REQUEST', function (ev) {
                 try {
                     var detail = ev && ev.detail ? ev.detail : {};
                     var reqId = detail && detail.reqId ? String(detail.reqId) : String(Date.now());
                     _adminToolsDebugLog = [];
                     window.dispatchEvent(new CustomEvent('DTU_AD_ADMIN_TOOLS_DEBUG_RESPONSE', { detail: { reqId: reqId, payload: 'CLEARED' } }));
-                } catch (e2) {}
+                } catch (e2) { }
             });
-        } catch (e3) {}
+        } catch (e3) { }
 
         // Inject a page-context helper so DevTools console can call it in Firefox (content script isolation).
         try {
@@ -3547,8 +3792,8 @@
                 + '  } catch (e) {}'
                 + '})();';
             (document.head || document.documentElement).appendChild(s);
-            try { s.remove(); } catch (e4) {}
-        } catch (e5) {}
+            try { s.remove(); } catch (e4) { }
+        } catch (e5) { }
     }
     function exposeAdminToolsDebugApi() {
         try {
@@ -3560,7 +3805,7 @@
             // In Firefox, prefer exportFunction so the functions are callable from page DevTools even under strict CSP.
             try {
                 if (window && window.wrappedJSObject && (typeof exportFunction === 'function')) {
-                    exportFunction(function() {
+                    exportFunction(function () {
                         try {
                             return JSON.stringify({
                                 snapshot: snapshotAdminToolsDomState(),
@@ -3569,42 +3814,42 @@
                         } catch (e0) { return String(_adminToolsDebugLog); }
                     }, window.wrappedJSObject, { defineAs: '__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_EXPORT__' });
 
-                    exportFunction(function() {
+                    exportFunction(function () {
                         _adminToolsDebugLog = [];
                         return true;
                     }, window.wrappedJSObject, { defineAs: '__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_CLEAR__' });
 
-                    exportFunction(function() {
+                    exportFunction(function () {
                         try { return localStorage.getItem(ADMIN_TOOLS_DEBUG_KEY) === 'true'; } catch (e1) { return false; }
                     }, window.wrappedJSObject, { defineAs: '__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_ENABLED__' });
 
-                    exportFunction(function() {
+                    exportFunction(function () {
                         return 'Run: __DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_EXPORT__()  (returns JSON string).';
                     }, window.wrappedJSObject, { defineAs: '__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_HELP__' });
                 }
-            } catch (eX) {}
+            } catch (eX) { }
 
             // Fallback assignment (Chromium / less strict contexts).
             try {
                 if (!w.__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_EXPORT__) {
-                    w.__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_EXPORT__ = function() {
+                    w.__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_EXPORT__ = function () {
                         try { return JSON.stringify({ snapshot: snapshotAdminToolsDomState(), log: _adminToolsDebugLog }, null, 2); }
                         catch (e0) { return String(_adminToolsDebugLog); }
                     };
                 }
                 if (!w.__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_CLEAR__) {
-                    w.__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_CLEAR__ = function() {
+                    w.__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_CLEAR__ = function () {
                         _adminToolsDebugLog = [];
                         return true;
                     };
                 }
                 if (!w.__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_ENABLED__) {
-                    w.__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_ENABLED__ = function() {
+                    w.__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG_ENABLED__ = function () {
                         try { return localStorage.getItem(ADMIN_TOOLS_DEBUG_KEY) === 'true'; } catch (e1) { return false; }
                     };
                 }
-            } catch (eY) {}
-        } catch (e) {}
+            } catch (eY) { }
+        } catch (e) { }
     }
     function adminToolsDbg(event, data) {
         try {
@@ -3623,12 +3868,12 @@
                 if (evName.indexOf('placeholder_') === 0) shouldPrint = false;
                 if (evName === 'enhance_tick') shouldPrint = false;
                 if (shouldPrint) console.log('[DTU After Dark][AdminTools]', entry.event, entry.data || '');
-            } catch (e1) {}
+            } catch (e1) { }
             try {
                 var w = getPageWindowForDebugApi();
                 if (w) w.__DTU_AFTER_DARK_ADMIN_TOOLS_DEBUG__ = _adminToolsDebugLog;
-            } catch (e2) {}
-        } catch (e) {}
+            } catch (e2) { }
+        } catch (e) { }
     }
     function adminToolsDbgError(event, err) {
         try {
@@ -3636,7 +3881,7 @@
                 message: err && err.message ? String(err.message) : String(err),
                 stack: err && err.stack ? String(err.stack) : null
             });
-        } catch (e) {}
+        } catch (e) { }
     }
     function getAdminToolsPlaceholder() {
         try {
@@ -3648,7 +3893,7 @@
                         adminToolsDbg('placeholder_cache_hit', { opened: true });
                         return _adminToolsPlaceholderCache;
                     }
-                } catch (eC) {}
+                } catch (eC) { }
             }
         } catch (e0) { _adminToolsPlaceholderCache = null; }
 
@@ -3656,13 +3901,13 @@
         try {
             var direct = document.querySelector('#AdminToolsPlaceholderId');
             if (direct) candidates.push(direct);
-        } catch (e1) {}
+        } catch (e1) { }
         try {
             var hits = deepQueryAll('#AdminToolsPlaceholderId', document);
             if (hits && hits.length) {
                 for (var i = 0; i < hits.length; i++) candidates.push(hits[i]);
             }
-        } catch (e2) {}
+        } catch (e2) { }
 
         // Dedupe candidates.
         var uniq = [];
@@ -3708,18 +3953,18 @@
             found: !!chosen,
             candidates: uniq.length,
             chosenInOpenedDropdown: chosenOpen,
-            readyState: (function() { try { return document.readyState; } catch (e4) { return null; } })()
+            readyState: (function () { try { return document.readyState; } catch (e4) { return null; } })()
         });
         if (isAdminToolsDebugEnabled() && uniq.length > 1) {
             try {
-                var info = uniq.map(function(cand2) {
+                var info = uniq.map(function (cand2) {
                     var dd2 = null;
                     var open2 = false;
                     var rect = null;
                     try {
                         dd2 = closestComposed(cand2, 'd2l-dropdown-content');
                         open2 = isD2LDropdownOpen(dd2);
-                    } catch (e5) {}
+                    } catch (e5) { }
                     try { rect = cand2.getBoundingClientRect ? cand2.getBoundingClientRect() : null; } catch (e6) { rect = null; }
                     return {
                         open: open2,
@@ -3729,7 +3974,7 @@
                     };
                 });
                 adminToolsDbg('placeholder_candidates', info);
-            } catch (e7) {}
+            } catch (e7) { }
         }
         return chosen;
     }
@@ -3834,7 +4079,7 @@
         const label = document.createElement('label');
         label.style.cssText = darkModeEnabled
             ? 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; '
-                + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
+            + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
             : 'display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;';
 
         const toggle = document.createElement('input');
@@ -3887,8 +4132,8 @@
                     _openedAttr: dd && dd.hasAttribute ? dd.hasAttribute('_opened') : null,
                     openedProp: dd && (typeof dd.opened !== 'undefined') ? dd.opened : null,
                     _openedProp: dd && (typeof dd._opened !== 'undefined') ? dd._opened : null,
-                    sinceGearMs: (function(){ try { return Date.now() - (_adminToolsLastGearInteractionTs || 0); } catch(e){ return null; } })(),
-                    placeholderVisible: (function(){ try { return elementOrAncestorSeemsVisible(placeholder); } catch(e2){ return null; } })()
+                    sinceGearMs: (function () { try { return Date.now() - (_adminToolsLastGearInteractionTs || 0); } catch (e) { return null; } })(),
+                    placeholderVisible: (function () { try { return elementOrAncestorSeemsVisible(placeholder); } catch (e2) { return null; } })()
                 });
                 return;
             }
@@ -3905,7 +4150,7 @@
         // Guard: prevent Brightspace from auto-closing the dropdown while we mutate its content.
         // Also suppress the unified MutationObserver so our DOM changes don't trigger re-processing.
         var releaseGuard = null;
-        try { releaseGuard = guardDropdownOpen(dd); } catch (eG) {}
+        try { releaseGuard = guardDropdownOpen(dd); } catch (eG) { }
         _suppressHeavyWork = true;
 
         try {
@@ -3919,11 +4164,11 @@
             try { restructureAdminToolsPanel(); } catch (e7) { adminToolsDbgError('enhance_err_restructure', e7); }
         } finally {
             _suppressHeavyWork = false;
-            if (releaseGuard) { try { releaseGuard(); } catch (eR) {} }
+            if (releaseGuard) { try { releaseGuard(); } catch (eR) { } }
         }
 
         adminToolsDbg('enhance_end', {
-            hasUi: (function() {
+            hasUi: (function () {
                 try {
                     var p = getAdminToolsPlaceholder();
                     return !!(p && p.querySelector && p.querySelector('.dtu-am-root'));
@@ -3939,7 +4184,7 @@
 
         var attempts = 0;
         adminToolsDbg('enhance_schedule_start', null);
-        _adminToolsEnhanceTimer = setInterval(function() {
+        _adminToolsEnhanceTimer = setInterval(function () {
             attempts++;
             adminToolsDbg('enhance_tick', { attempts: attempts });
             enhanceAdminToolsMenuOnce();
@@ -3988,13 +4233,13 @@
             // Fully intercept the gear button: block ALL event phases so Brightspace's
             // native admin tools dropdown never opens. Only our settings modal is shown.
             function blockEvent(e) {
-                try { e.preventDefault(); } catch (eP) {}
-                try { e.stopPropagation(); } catch (eS) {}
-                try { e.stopImmediatePropagation(); } catch (eI) {}
+                try { e.preventDefault(); } catch (eP) { }
+                try { e.stopPropagation(); } catch (eS) { }
+                try { e.stopImmediatePropagation(); } catch (eI) { }
             }
             btn.addEventListener('pointerdown', blockEvent, true);
             btn.addEventListener('mousedown', blockEvent, true);
-            btn.addEventListener('click', function(e) {
+            btn.addEventListener('click', function (e) {
                 blockEvent(e);
                 adminToolsDbg('gear_click_intercepted', null);
                 var existing = document.querySelector('.dtu-settings-modal-overlay');
@@ -4012,19 +4257,19 @@
                     d2lDropdown.addEventListener('d2l-dropdown-open', blockEvent, true);
                     d2lDropdown.addEventListener('click', blockEvent, true);
                 }
-            } catch (eDd) {}
+            } catch (eDd) { }
             return true;
         }
 
         // The top bar can render late; keep a short bootstrap loop.
         var tries = 0;
-        var t = setInterval(function() {
+        var t = setInterval(function () {
             tries++;
             var ok = false;
             try { ok = tryHook(); } catch (e6) { ok = false; adminToolsDbgError('gear_hook_try_err', e6); }
             adminToolsDbg('gear_hook_try', { tries: tries, hooked: ok });
             if (ok || tries >= 20) {
-                try { clearInterval(t); } catch (e7) {}
+                try { clearInterval(t); } catch (e7) { }
             }
         }, 250);
     }
@@ -4082,7 +4327,7 @@
             + 'border: 1px solid ' + (isError ? theme.errorBorder : theme.border) + ';';
 
         if (_contextCaptureToastTimer) clearTimeout(_contextCaptureToastTimer);
-        _contextCaptureToastTimer = setTimeout(function() {
+        _contextCaptureToastTimer = setTimeout(function () {
             if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
         }, 3600);
     }
@@ -4133,7 +4378,7 @@
         try {
             var root = element.getRootNode ? element.getRootNode() : null;
             if (root && root.host && root.host.nodeType === 1) return root.host;
-        } catch (e) {}
+        } catch (e) { }
         return null;
     }
 
@@ -4182,7 +4427,7 @@
         _contextCaptureActive = true;
         showContextCaptureToast('Context capture active: click one element. Press Esc to cancel.', false);
 
-        var clickHandler = async function(event) {
+        var clickHandler = async function (event) {
             if (!_contextCaptureActive) return;
             if (event.button !== 0) return; // Left click only
 
@@ -4209,7 +4454,7 @@
             }
         };
 
-        var keydownHandler = function(event) {
+        var keydownHandler = function (event) {
             if (!_contextCaptureActive) return;
             if (event.key === 'Escape') {
                 event.preventDefault();
@@ -4221,7 +4466,7 @@
         document.addEventListener('click', clickHandler, true);
         document.addEventListener('keydown', keydownHandler, true);
 
-        _contextCaptureCleanup = function() {
+        _contextCaptureCleanup = function () {
             document.removeEventListener('click', clickHandler, true);
             document.removeEventListener('keydown', keydownHandler, true);
         };
@@ -4231,7 +4476,7 @@
         if (!ENABLE_CONTEXT_CAPTURE_HELPER) return;
         if (!IS_TOP_WINDOW || _contextCaptureHotkeyBound) return;
 
-        document.addEventListener('keydown', function(event) {
+        document.addEventListener('keydown', function (event) {
             if (event.defaultPrevented) return;
             if (!event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey) return;
 
@@ -4271,11 +4516,11 @@
         btn.textContent = 'Capture';
         btn.style.cssText = darkModeEnabled
             ? 'position: fixed; right: 14px; bottom: 54px; z-index: 2147483646; '
-                + 'background: #2d2d2d; color: #66b3ff; border: 1px solid #4f5f74; border-radius: 6px; '
-                + 'cursor: pointer; font-size: 12px; padding: 6px 10px;'
+            + 'background: #2d2d2d; color: #66b3ff; border: 1px solid #4f5f74; border-radius: 6px; '
+            + 'cursor: pointer; font-size: 12px; padding: 6px 10px;'
             : 'position: fixed; right: 14px; bottom: 54px; z-index: 2147483646; '
-                + 'background: #ffffff; color: #0b67c2; border: 1px solid #c8d0db; border-radius: 6px; '
-                + 'cursor: pointer; font-size: 12px; padding: 6px 10px;';
+            + 'background: #ffffff; color: #0b67c2; border: 1px solid #c8d0db; border-radius: 6px; '
+            + 'cursor: pointer; font-size: 12px; padding: 6px 10px;';
         // Prevent host-page global button rules from turning this into a full-width bar.
         btn.style.setProperty('position', 'fixed', 'important');
         btn.style.setProperty('right', '14px', 'important');
@@ -4345,9 +4590,9 @@
         btn.setAttribute('data-dtu-ext', '1');
         btn.style.cssText = darkModeEnabled
             ? 'background: #2d2d2d; color: #66b3ff; border: 1px solid #4f5f74; border-radius: 4px; '
-                + 'cursor: pointer; font-size: 12px; padding: 3px 8px;'
+            + 'cursor: pointer; font-size: 12px; padding: 3px 8px;'
             : 'background: #ffffff; color: #0b67c2; border: 1px solid #c8d0db; border-radius: 4px; '
-                + 'cursor: pointer; font-size: 12px; padding: 3px 8px;';
+            + 'cursor: pointer; font-size: 12px; padding: 3px 8px;';
         btn.textContent = 'Capture Context';
         btn.addEventListener('pointerdown', triggerContextCaptureFromButton, true);
         btn.addEventListener('click', triggerContextCaptureFromButton, true);
@@ -4488,12 +4733,12 @@
         function dismissBubble() {
             bubble.style.transition = 'opacity 0.3s';
             bubble.style.opacity = '0';
-            setTimeout(function() { bubble.remove(); }, 300);
+            setTimeout(function () { bubble.remove(); }, 300);
         }
         bubble.addEventListener('click', dismissBubble);
 
         // Auto-dismiss after 15 seconds
-        setTimeout(function() {
+        setTimeout(function () {
             if (document.querySelector('#dtu-dark-hint')) dismissBubble();
         }, 15000);
     }
@@ -4518,7 +4763,7 @@
         if (scope.matches && scope.matches('.typebox')) {
             preserveSingleTypeboxColor(scope);
         }
-        scope.querySelectorAll('.typebox').forEach(function(typebox) {
+        scope.querySelectorAll('.typebox').forEach(function (typebox) {
             preserveSingleTypeboxColor(typebox);
         });
     }
@@ -4746,6 +4991,33 @@
 
     const DANISH_GRADES = [12, 10, 7, 4, 2, 0, -3];
 
+    function syncGpaSimulatorDisclaimer(table) {
+        if (!table) return;
+        var addRow = table.querySelector('.gpa-sim-add-row');
+        if (!addRow) return;
+
+        var disclaimerRow = table.querySelector('.gpa-sim-disclaimer-row');
+        if (!disclaimerRow) {
+            disclaimerRow = document.createElement('tr');
+            disclaimerRow.className = 'gpa-sim-disclaimer-row';
+            disclaimerRow.setAttribute('data-dtu-ext', '1');
+
+            var td = document.createElement('td');
+            td.colSpan = 5;
+            td.setAttribute('data-dtu-ext', '1');
+            td.style.cssText = 'text-align:right;padding:4px 6px 2px;font-size:10px;';
+            td.style.setProperty('color', darkModeEnabled ? '#9aa1aa' : '#6b7280', 'important');
+            td.textContent = 'Hypothetical GPA is an estimate. Always verify official grades/GPA in DTU systems.';
+            disclaimerRow.appendChild(td);
+        }
+
+        var simRows = table.querySelectorAll('.gpa-sim-row');
+        var anchor = simRows.length ? simRows[simRows.length - 1] : addRow;
+        if (anchor && anchor.parentNode && disclaimerRow.previousElementSibling !== anchor) {
+            anchor.after(disclaimerRow);
+        }
+    }
+
     function saveSimEntries() {
         const rows = document.querySelectorAll('.gpa-sim-row');
         const entries = [];
@@ -4813,6 +5085,8 @@
         const existingProjected = table.querySelector('.gpa-projected-row');
         if (existingProjected) existingProjected.remove();
 
+        // Keep disclaimer visible even when no hypothetical rows exist.
+        syncGpaSimulatorDisclaimer(table);
         // Only show projected row if there are sim entries
         if (simECTS === 0) return;
 
@@ -4987,7 +5261,7 @@
     function insertGPASimulator() {
         if (!IS_TOP_WINDOW) return;
         if (!isFeatureFlagEnabled(FEATURE_CAMPUSNET_GPA_TOOLS_KEY)) {
-            document.querySelectorAll('.gpa-sim-row, .gpa-sim-add-row, .gpa-projected-row').forEach(function(el) {
+            document.querySelectorAll('.gpa-sim-row, .gpa-sim-add-row, .gpa-projected-row, .gpa-sim-disclaimer-row').forEach(function (el) {
                 el.remove();
             });
             return;
@@ -5038,13 +5312,13 @@
             updateProjectedGPA();
             _suppressHeavyWork = false;
         });
-        addBtn.addEventListener('mouseenter', function() {
+        addBtn.addEventListener('mouseenter', function () {
             addBtn.style.setProperty('background-color', 'rgba(var(--dtu-ad-accent-rgb), 0.2)', 'important');
             addBtn.style.setProperty('background', 'rgba(var(--dtu-ad-accent-rgb), 0.2)', 'important');
             addBtn.style.setProperty('border-color', 'rgba(var(--dtu-ad-accent-rgb), 0.8)', 'important');
             addBtn.style.setProperty('color', '#ffffff', 'important');
         });
-        addBtn.addEventListener('mouseleave', function() {
+        addBtn.addEventListener('mouseleave', function () {
             addBtn.style.setProperty('background', 'rgba(var(--dtu-ad-accent-rgb), 0.12)', 'important');
             addBtn.style.setProperty('background-color', 'rgba(var(--dtu-ad-accent-rgb), 0.12)', 'important');
             addBtn.style.setProperty('color', darkModeEnabled ? 'var(--dtu-ad-accent-soft)' : 'var(--dtu-ad-accent-deep)', 'important');
@@ -5063,6 +5337,7 @@
             insertAfter.after(simRow);
             insertAfter = simRow;
         });
+        syncGpaSimulatorDisclaimer(table);
 
         // Calculate projected GPA if there are saved entries
         if (savedEntries.length > 0) {
@@ -5211,7 +5486,7 @@
                 continue;
             }
             var deduped = dedupeIntelCourseList(s.courses || []);
-            var filteredCourses = deduped.list.filter(function(c) {
+            var filteredCourses = deduped.list.filter(function (c) {
                 var code = normalizeIntelCourseCode(c && c.code);
                 var nm = '';
                 try { nm = data.courseNames ? (data.courseNames[code] || '') : ''; } catch (eN0) { nm = ''; }
@@ -5226,7 +5501,7 @@
 
         if (data.self && typeof data.self === 'object') {
             var selfDeduped = dedupeIntelCourseList(data.self.courses || []);
-            var filteredSelfCourses = selfDeduped.list.filter(function(c) {
+            var filteredSelfCourses = selfDeduped.list.filter(function (c) {
                 var code = normalizeIntelCourseCode(c && c.code);
                 var nm = '';
                 try { nm = data.courseNames ? (data.courseNames[code] || '') : ''; } catch (eN1) { nm = ''; }
@@ -5284,7 +5559,7 @@
     }
 
     function loadParticipantIntel(cb) {
-        storageLocalGet({ [PARTICIPANT_INTEL_STORAGE_KEY]: null }, function(result) {
+        storageLocalGet({ [PARTICIPANT_INTEL_STORAGE_KEY]: null }, function (result) {
             var data = result[PARTICIPANT_INTEL_STORAGE_KEY];
             if (!data || typeof data !== 'object') {
                 data = { self: null, students: {}, retention: {}, courseNames: {}, backfill: { scanned: {}, autoWeekly: false, lastRunTs: 0 } };
@@ -5308,7 +5583,7 @@
     // One-time migration: clear participant intel corrupted by semester-guessing bug.
     // Remove this block after one release cycle.
     (function clearCorruptedIntel() {
-        storageLocalGet({ _intelSemFixApplied3: false }, function(r) {
+        storageLocalGet({ _intelSemFixApplied3: false }, function (r) {
             if (r._intelSemFixApplied3) return;
             storageLocalSet({ [PARTICIPANT_INTEL_STORAGE_KEY]: null, _intelSemFixApplied3: true });
             console.log('[DTU After Dark] Cleared participant intel (archived-flag fix). Re-scan to rebuild.');
@@ -5318,7 +5593,7 @@
     // One-time reset requested during semester-twins ranking tuning:
     // clear current participant-intel list so users can rescan from a clean slate.
     (function resetParticipantIntelForRescan() {
-        storageLocalGet({ _intelRescanResetApplied1: false }, function(r) {
+        storageLocalGet({ _intelRescanResetApplied1: false }, function (r) {
             if (r._intelRescanResetApplied1) return;
             storageLocalSet({ [PARTICIPANT_INTEL_STORAGE_KEY]: null, _intelRescanResetApplied1: true });
             console.log('[DTU After Dark] Reset participant intel for clean rescan.');
@@ -5326,7 +5601,7 @@
     })();
 
     function loadSemesterTwinPrefs(cb) {
-        storageLocalGet({ [SEMESTER_TWIN_PREFS_KEY]: null }, function(result) {
+        storageLocalGet({ [SEMESTER_TWIN_PREFS_KEY]: null }, function (result) {
             var raw = result[SEMESTER_TWIN_PREFS_KEY];
             if (!raw || typeof raw !== 'object') raw = {};
             var limit = parseInt(raw.rowLimit, 10);
@@ -5345,7 +5620,7 @@
     }
 
     function updateSemesterTwinPrefs(patch, cb) {
-        loadSemesterTwinPrefs(function(prev) {
+        loadSemesterTwinPrefs(function (prev) {
             var next = Object.assign({}, prev || {}, patch || {});
             next.hideOwnProgram = next.hideOwnProgram === true;
             var limit = parseInt(next.rowLimit, 10);
@@ -5428,20 +5703,20 @@
         try {
             var breadcrumb = doc.querySelector('#breadcrumb, .breadcrumb, nav[aria-label="breadcrumb"]');
             if (breadcrumb) candidates.push(normalizeWhitespace(breadcrumb.textContent));
-        } catch (e1) {}
+        } catch (e1) { }
 
         // Headings / element titles
         try {
-            doc.querySelectorAll('h1, h2, .course-title, .element-title').forEach(function(h) {
+            doc.querySelectorAll('h1, h2, .course-title, .element-title').forEach(function (h) {
                 var txt = normalizeWhitespace(h.textContent);
                 if (txt) candidates.push(txt);
             });
-        } catch (e2) {}
+        } catch (e2) { }
 
         // Page title
         try {
             if (doc.title) candidates.push(normalizeWhitespace(doc.title));
-        } catch (e3) {}
+        } catch (e3) { }
 
         for (var i = 0; i < candidates.length; i++) {
             var sem = parseDTUSemesterFromText(candidates[i]);
@@ -5501,7 +5776,7 @@
         var tf = t;
         try {
             tf = tf.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        } catch (eNorm) {}
+        } catch (eNorm) { }
 
         if (/\b(?:group|groups|gruppe|grupper|team|teams|hold)\b/i.test(tf)) return true;
         if (/\b(?:pcb|frilab|fri\s*lab|free\s*lab)\b/i.test(tf)) return true;
@@ -5549,14 +5824,14 @@
         // Breadcrumb links often contain "02105 Course name"
         var breadcrumb = doc.querySelector('#breadcrumb, .breadcrumb, nav[aria-label="breadcrumb"]');
         if (breadcrumb) {
-            breadcrumb.querySelectorAll('a, span').forEach(function(n) {
+            breadcrumb.querySelectorAll('a, span').forEach(function (n) {
                 var txt = cleanCandidate(n.textContent);
                 if (txt) candidates.push(txt);
             });
         }
 
         // Headings / element titles
-        doc.querySelectorAll('h1, h2, .course-title, .element-title').forEach(function(h) {
+        doc.querySelectorAll('h1, h2, .course-title, .element-title').forEach(function (h) {
             var txt = cleanCandidate(h.textContent);
             if (txt) candidates.push(txt);
         });
@@ -5564,7 +5839,7 @@
         // Page title
         try {
             if (doc.title) candidates.push(cleanCandidate(doc.title));
-        } catch (e0) {}
+        } catch (e0) { }
 
         var codeEsc = escapeRegExp(code);
         var codeRe = new RegExp('\\b' + codeEsc + '\\b');
@@ -5663,7 +5938,7 @@
                 if (node.classList && node.classList.contains('ui-participant')) {
                     if (!seen.has(node)) { seen.add(node); items.push(node); }
                 } else if (node.querySelectorAll) {
-                    node.querySelectorAll('.ui-participant').forEach(function(p) {
+                    node.querySelectorAll('.ui-participant').forEach(function (p) {
                         if (!seen.has(p)) { seen.add(p); items.push(p); }
                     });
                 }
@@ -5709,7 +5984,7 @@
             if (!isNaN(cur) && cur >= max) return false;
 
             // Set to max and trigger the page's refresh handler.
-            try { ss.setItem(key, String(now)); } catch (e4) {}
+            try { ss.setItem(key, String(now)); } catch (e4) { }
             _participantIntelPageSizeAdjustTs = now;
 
             for (var oo = 0; oo < sel.options.length; oo++) {
@@ -5729,14 +6004,14 @@
                     var evt = document.createEvent('HTMLEvents');
                     evt.initEvent('change', true, false);
                     sel.dispatchEvent(evt);
-                } catch (e2) {}
+                } catch (e2) { }
             }
 
             // Run again after the page updates (avoids requiring a full reload).
             if (!_participantIntelPageSizeAdjustTimer) {
-                _participantIntelPageSizeAdjustTimer = setTimeout(function() {
+                _participantIntelPageSizeAdjustTimer = setTimeout(function () {
                     _participantIntelPageSizeAdjustTimer = null;
-                    try { insertParticipantIntelligence(); } catch (e3) {}
+                    try { insertParticipantIntelligence(); } catch (e3) { }
                 }, 1600);
             }
 
@@ -5849,7 +6124,7 @@
         _participantIntelLastCollectSig = sig;
         _participantIntelLastCollectTs = now;
 
-        loadParticipantIntel(function(intel) {
+        loadParticipantIntel(function (intel) {
             if (courseCode && courseName) {
                 var existingName = intel.courseNames ? intel.courseNames[courseCode] : null;
                 if (!existingName || existingName.length < courseName.length) {
@@ -5871,7 +6146,7 @@
                 if (!student.courses) student.courses = [];
 
                 if (courseCode) {
-                    var alreadyHas = student.courses.some(function(c) { return c.code === courseCode && c.semester === semester; });
+                    var alreadyHas = student.courses.some(function (c) { return c.code === courseCode && c.semester === semester; });
                     if (!alreadyHas) student.courses.push({ code: courseCode, semester: semester });
                 }
             }
@@ -5879,7 +6154,7 @@
             // Prune oldest if over limit
             var sNumbers = Object.keys(intel.students);
             if (sNumbers.length > PARTICIPANT_INTEL_MAX_STUDENTS) {
-                sNumbers.sort(function(a, b) { return intel.students[a].lastSeen - intel.students[b].lastSeen; });
+                sNumbers.sort(function (a, b) { return intel.students[a].lastSeen - intel.students[b].lastSeen; });
                 var toRemove = sNumbers.length - PARTICIPANT_INTEL_MAX_STUDENTS;
                 for (var r = 0; r < toRemove; r++) delete intel.students[sNumbers[r]];
             }
@@ -5941,7 +6216,7 @@
                 var idMatch = href.match(/id=(\d+)/i);
                 if (idMatch) { myUserId = idMatch[1]; break; }
             }
-        } catch (e0) {}
+        } catch (e0) { }
 
         if (!myUserId) {
             // Fallback: user avatar in the header often uses /cnnet/userpicture/<id>
@@ -5955,7 +6230,7 @@
                     var mImg = src.match(/\/cnnet\/userpicture\/(\d+)/i);
                     if (mImg) { myUserId = mImg[1]; break; }
                 }
-            } catch (e0b) {}
+            } catch (e0b) { }
         }
 
         if (myUserId) {
@@ -5991,7 +6266,7 @@
                 var mS = (el.textContent || '').match(/\b(s\d{6})\b/i);
                 if (mS) { headerSNumber = mS[1].toLowerCase(); break; }
             }
-        } catch (eHdr) {}
+        } catch (eHdr) { }
 
         if (headerSNumber) {
             for (var hs = 0; hs < participants.length; hs++) {
@@ -6025,7 +6300,7 @@
                     profileLink = links[l];
                     break;
                 }
-            } catch (e1) {}
+            } catch (e1) { }
             if (profileLink) {
                 var closest = profileLink.closest('.nav__dropdown--group, .header, header');
                 if (closest) headerNameEl = profileLink;
@@ -6078,11 +6353,11 @@
             }
         }
 
-        var sorted = Object.keys(programCounts).map(function(k) {
+        var sorted = Object.keys(programCounts).map(function (k) {
             return { program: k, count: programCounts[k] };
-        }).sort(function(a, b) { return b.count - a.count; });
+        }).sort(function (a, b) { return b.count - a.count; });
 
-        loadParticipantIntel(function(intel) {
+        loadParticipantIntel(function (intel) {
             var selfProgram = intel.self ? normalizeProgramLabel(intel.self.program) : null;
             var isOutlier = false;
             if (selfProgram && totalWithProgram > 0) {
@@ -6102,7 +6377,7 @@
             + (selfProgram || '') + '|'
             + (isOutlier ? '1' : '0') + '|'
             + totalWithProgram + '|' + totalUsers + '|' + loadedUsers + '|'
-            + sorted.map(function(r) { return r.program + ':' + r.count; }).join('|');
+            + sorted.map(function (r) { return r.program + ':' + r.count; }).join('|');
 
         var card = document.querySelector('[data-dtu-participant-demographics]');
         if (!card) {
@@ -6355,7 +6630,7 @@
                     }
                 }
             }
-        } catch (eSelf) {}
+        } catch (eSelf) { }
 
         return stats;
     }
@@ -6531,7 +6806,7 @@
                 data.meta.lineSpecificCourseCount = lineSpecificCodes.length;
                 data.meta.lineSpecificCourses = lineSpecificCodes.slice(0);
 
-                var filtered = myCourses.filter(function(code) { return !lineSpecificSet[code]; });
+                var filtered = myCourses.filter(function (code) { return !lineSpecificSet[code]; });
                 if (filtered.length >= 2) {
                     myCoursesUsed = filtered;
                     myTotalUsed = myCoursesUsed.length;
@@ -6642,7 +6917,7 @@
             return data;
         }
 
-        candidates.sort(function(a, b) {
+        candidates.sort(function (a, b) {
             // In "This semester" mode, heavily prioritize current-semester overlap
             // (verified current courses first), then use total history as tie-breaker.
             if (scope === 'semester') {
@@ -6671,13 +6946,13 @@
         // "Twin" is a high overlap score; for large histories this can be rare, so we always
         // fill the requested list with the closest matches (and finally 0-overlap) instead
         // of only showing the 50%+ set.
-        var twins = candidates.filter(function(m) { return m.syncScore >= 0.50 && m.shared && m.shared.length; });
+        var twins = candidates.filter(function (m) { return m.syncScore >= 0.50 && m.shared && m.shared.length; });
         data.meta.twinCount = twins.length;
 
         var preferredMinOverlap = (scope === 'all') ? 1 : ((myTotalUsed >= 3) ? 2 : 1);
-        var preferred = candidates.filter(function(m) { return (m.shared && m.shared.length >= preferredMinOverlap); });
-        var lowOverlap = candidates.filter(function(m) { return (m.shared && m.shared.length > 0 && m.shared.length < preferredMinOverlap); });
-        var zeroOverlap = candidates.filter(function(m) { return !(m.shared && m.shared.length); });
+        var preferred = candidates.filter(function (m) { return (m.shared && m.shared.length >= preferredMinOverlap); });
+        var lowOverlap = candidates.filter(function (m) { return (m.shared && m.shared.length > 0 && m.shared.length < preferredMinOverlap); });
+        var zeroOverlap = candidates.filter(function (m) { return !(m.shared && m.shared.length); });
 
         var seen = {};
         var display = [];
@@ -6696,9 +6971,9 @@
         pushFrom(lowOverlap);
         pushFrom(zeroOverlap);
 
-        data.meta.includingClosest = twins.length > 0 && display.some(function(m) { return m.syncScore < 0.50; });
-        data.meta.includesLowOverlap = display.some(function(m) { return m.shared && m.shared.length > 0 && m.shared.length < preferredMinOverlap; });
-        data.meta.includesZeroOverlap = display.some(function(m) { return !(m.shared && m.shared.length); });
+        data.meta.includingClosest = twins.length > 0 && display.some(function (m) { return m.syncScore < 0.50; });
+        data.meta.includesLowOverlap = display.some(function (m) { return m.shared && m.shared.length > 0 && m.shared.length < preferredMinOverlap; });
+        data.meta.includesZeroOverlap = display.some(function (m) { return !(m.shared && m.shared.length); });
 
         var showingClosest = twins.length === 0;
         data.meta.showingClosest = showingClosest;
@@ -6707,7 +6982,7 @@
     }
 
     function removeDTULearnSemesterTwinWidget() {
-        document.querySelectorAll('[data-dtu-semester-twin]').forEach(function(el) { el.remove(); });
+        document.querySelectorAll('[data-dtu-semester-twin]').forEach(function (el) { el.remove(); });
     }
 
     function insertSemesterTwinWidget() {
@@ -6731,8 +7006,8 @@
         }
         _participantIntelSemesterTwinLastTs = now;
 
-        loadParticipantIntel(function(intel) {
-            loadSemesterTwinPrefs(function(prefs) {
+        loadParticipantIntel(function (intel) {
+            loadSemesterTwinPrefs(function (prefs) {
                 var computed = computeSemesterTwinData(intel, prefs);
                 renderSemesterTwinWidget(computed.twins, computed.myTotal, computed.meta);
             });
@@ -6902,7 +7177,7 @@
             markExt(chipsWrap);
             chipsWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
 
-            t.shared.forEach(function(code) {
+            t.shared.forEach(function (code) {
                 var rawName = normalizeWhitespace(courseNames[code] || '');
                 var label = sanitizeCourseLabel(code, rawName);
 
@@ -6926,7 +7201,7 @@
 
             // Toggle expand/collapse on click
             var isExpanded = false;
-            card.addEventListener('click', function(e) {
+            card.addEventListener('click', function (e) {
                 e.stopPropagation();
                 isExpanded = !isExpanded;
                 if (isExpanded) {
@@ -6994,7 +7269,7 @@
             sel.style.setProperty('background-color', isDark ? '#1a1a1a' : '#f3f3f3', 'important');
             sel.style.setProperty('color', isDark ? '#e0e0e0' : '#222', 'important');
             sel.style.setProperty('border', '1px solid ' + (isDark ? '#404040' : '#d0d0d0'), 'important');
-            options.forEach(function(o) {
+            options.forEach(function (o) {
                 var opt = document.createElement('option');
                 opt.value = o.value;
                 opt.textContent = o.label;
@@ -7109,7 +7384,7 @@
             scanBtn.disabled = true;
             scanBtn.textContent = 'Scanning...';
             scanStopBtn.style.display = 'block';
-            var initPoll = setInterval(function() {
+            var initPoll = setInterval(function () {
                 if (!_campusnetArchiveBackfillRunning) {
                     clearInterval(initPoll);
                     var p = _campusnetArchiveBackfillProgress;
@@ -7119,8 +7394,8 @@
                     scanStopBtn.style.display = 'none';
                     _participantIntelSemesterTwinLastTs = 0;
                     _participantIntelSemesterTwinCampusnetLastTs = 0;
-                    try { insertSemesterTwinWidget(); } catch (e1) {}
-                    try { insertCampusnetSemesterTwinWidget(); } catch (e2) {}
+                    try { insertSemesterTwinWidget(); } catch (e1) { }
+                    try { insertCampusnetSemesterTwinWidget(); } catch (e2) { }
                     return;
                 }
                 var p2 = _campusnetArchiveBackfillProgress;
@@ -7129,15 +7404,15 @@
         }
 
         // Scan logic: fetch archive page remotely, then run the backfill
-        scanBtn.addEventListener('click', function(e) {
+        scanBtn.addEventListener('click', function (e) {
             e.stopPropagation();
             if (_campusnetArchiveBackfillRunning) return;
             scanBtn.disabled = true;
             scanBtn.textContent = 'Fetching course list...';
             scanStatus.textContent = 'Loading your archived courses...';
 
-            fetchAndParseArchivedElements().then(function(items) {
-                var courseItems = items.filter(function(it) {
+            fetchAndParseArchivedElements().then(function (items) {
+                var courseItems = items.filter(function (it) {
                     return !!it.codeHint && isCampusnetLikelyAcademicCourse(it.codeHint, it.title, { title: it.title });
                 });
                 if (!courseItems.length) {
@@ -7147,7 +7422,7 @@
                     return;
                 }
 
-                loadParticipantIntel(function(intel) {
+                loadParticipantIntel(function (intel) {
                     // If self is unknown, try to detect from CampusNet page header
                     if (!intel.self || !intel.self.sNumber) {
                         try {
@@ -7168,7 +7443,7 @@
                                 intel.self = { sNumber: headerSNum, name: '', program: '', courses: [] };
                                 saveParticipantIntel(intel);
                             }
-                        } catch (eSelfDetect) {}
+                        } catch (eSelfDetect) { }
                     }
 
                     // Seed own course history from archive list
@@ -7181,15 +7456,15 @@
                                 if (!isCampusnetLikelyAcademicCourse(it0.codeHint, it0.title, { title: it0.title })) continue;
                                 var sem0 = it0.semesterHint;
                                 if (!sem0) continue; // Don't guess semester; backfill will resolve it
-                                var has0 = intel.self.courses.some(function(c) { return c && c.code === it0.codeHint && c.semester === sem0; });
+                                var has0 = intel.self.courses.some(function (c) { return c && c.code === it0.codeHint && c.semester === sem0; });
                                 if (!has0) intel.self.courses.push({ code: it0.codeHint, semester: sem0, archived: true });
                             }
                             saveParticipantIntel(intel);
                         }
-                    } catch (eSeed) {}
+                    } catch (eSeed) { }
 
                     var scanned = (intel.backfill && intel.backfill.scanned) ? intel.backfill.scanned : {};
-                    var queue = courseItems.filter(function(it) { return !scanned[it.elementId]; });
+                    var queue = courseItems.filter(function (it) { return !scanned[it.elementId]; });
 
                     if (!queue.length) {
                         scanStatus.textContent = 'All ' + courseItems.length + ' courses already scanned. Nothing new to do.';
@@ -7205,7 +7480,7 @@
                     runCampusnetArchiveBackfill(queue, intel);
 
                     // Poll progress
-                    var pollTimer = setInterval(function() {
+                    var pollTimer = setInterval(function () {
                         if (!_campusnetArchiveBackfillRunning) {
                             clearInterval(pollTimer);
                             var p = _campusnetArchiveBackfillProgress;
@@ -7220,8 +7495,8 @@
                             // Refresh the widget
                             _participantIntelSemesterTwinLastTs = 0;
                             _participantIntelSemesterTwinCampusnetLastTs = 0;
-                            try { insertSemesterTwinWidget(); } catch (e1) {}
-                            try { insertCampusnetSemesterTwinWidget(); } catch (e2) {}
+                            try { insertSemesterTwinWidget(); } catch (e1) { }
+                            try { insertCampusnetSemesterTwinWidget(); } catch (e2) { }
                             return;
                         }
                         var p2 = _campusnetArchiveBackfillProgress;
@@ -7231,14 +7506,14 @@
                         }
                     }, 500);
                 });
-            }).catch(function(err) {
+            }).catch(function (err) {
                 scanStatus.textContent = 'Failed to load archive page. Are you logged into CampusNet?';
                 scanBtn.disabled = false;
                 scanBtn.textContent = 'Scan course history';
             });
         });
 
-        scanStopBtn.addEventListener('click', function(e) {
+        scanStopBtn.addEventListener('click', function (e) {
             e.stopPropagation();
             stopCampusnetArchiveBackfill();
             scanStopBtn.style.display = 'none';
@@ -7250,13 +7525,13 @@
 
         // Toggle dropdown
         var isOpen = false;
-        btn.addEventListener('click', function(e) {
+        btn.addEventListener('click', function (e) {
             e.stopPropagation();
             isOpen = !isOpen;
             panel.style.display = isOpen ? 'block' : 'none';
         });
         // Close on outside click
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (isOpen && !wrap.contains(e.target)) {
                 isOpen = false;
                 panel.style.display = 'none';
@@ -7300,7 +7575,7 @@
             filterDrop.style.setProperty('color', isDark ? '#e0e0e0' : '#333', 'important');
         }
         // Theme cards
-        widget.querySelectorAll('[data-dtu-semester-twin-row]').forEach(function(row) {
+        widget.querySelectorAll('[data-dtu-semester-twin-row]').forEach(function (row) {
             row.style.setProperty('background', isDark ? '#1a1a1a' : '#f6f8fb', 'important');
             row.style.setProperty('background-color', isDark ? '#1a1a1a' : '#f6f8fb', 'important');
             row.style.setProperty('border', '1px solid ' + (isDark ? '#333' : '#e4e8ee'), 'important');
@@ -7355,11 +7630,11 @@
             + myTotalBeforeLineSpecific + '|' + myTotalAfterLineSpecific + '|'
             + lineSpecificCourseCount + '|' + lineSpecificSuppressed + '|'
             + (lineSpecificNote || '') + '|' + (lineSpecificCourses || []).join(',') + '|'
-            + twins.map(function(t) {
+            + twins.map(function (t) {
                 var pct = Math.round(t.syncScore * 100);
                 var sharedSig = '';
                 if (t.shared && t.shared.length) {
-                    sharedSig = t.shared.map(function(code) {
+                    sharedSig = t.shared.map(function (code) {
                         var nm = normalizeWhitespace(courseNames[code] || '');
                         return code + '=' + nm;
                     }).join(',');
@@ -7432,11 +7707,11 @@
                 : 'Your study line is unknown yet. Visit a CampusNet participant page (Users list) to learn it.';
             if (filterInputEl.getAttribute('data-dtu-semester-twin-filter-bound') !== '1') {
                 filterInputEl.setAttribute('data-dtu-semester-twin-filter-bound', '1');
-                filterInputEl.addEventListener('change', function() {
+                filterInputEl.addEventListener('change', function () {
                     updateSemesterTwinPrefs({ hideOwnProgram: !!filterInputEl.checked });
                     _participantIntelSemesterTwinLastTs = 0;
                     _participantIntelSemesterTwinCampusnetLastTs = 0;
-                    try { insertCampusnetSemesterTwinWidget(); } catch (e2) {}
+                    try { insertCampusnetSemesterTwinWidget(); } catch (e2) { }
                 });
             }
         }
@@ -7539,7 +7814,7 @@
     function scheduleCampusnetSemesterTwinEnsure(delayMs) {
         if (!IS_TOP_WINDOW) return;
         if (_campusnetSemesterTwinRetryTimer) return;
-        _campusnetSemesterTwinRetryTimer = setTimeout(function() {
+        _campusnetSemesterTwinRetryTimer = setTimeout(function () {
             _campusnetSemesterTwinRetryTimer = null;
 
             if (!isCampusnetFrontpageDTU()) {
@@ -7567,7 +7842,7 @@
             } else {
                 // Force a fresh attempt regardless of throttling.
                 _participantIntelSemesterTwinCampusnetLastTs = 0;
-                try { insertCampusnetSemesterTwinWidget(); } catch (e1) {}
+                try { insertCampusnetSemesterTwinWidget(); } catch (e1) { }
                 widget = document.querySelector('[data-dtu-campusnet-semester-twin]');
             }
 
@@ -7585,6 +7860,8 @@
 
     function applyCampusnetSemesterTwinTheme(widget, isDark) {
         if (!widget) return;
+        var accentDeepHex = getResolvedAccentDeep();
+        var accentDeepHoverHex = (getAccentThemeById(_accentThemeId) || {}).accentDeepHover || '#990000';
         widget.style.setProperty('background', isDark ? '#2d2d2d' : '#ffffff', 'important');
         widget.style.setProperty('background-color', isDark ? '#2d2d2d' : '#ffffff', 'important');
         widget.style.setProperty('color', isDark ? '#e0e0e0' : '#222', 'important');
@@ -7594,12 +7871,13 @@
         var body = widget.querySelector('[data-dtu-campusnet-semester-twin-body]');
         var title = widget.querySelector('.widget__title');
         if (header) {
-            header.style.setProperty('background', isDark ? '#2d2d2d' : '#ffffff', 'important');
-            header.style.setProperty('background-color', isDark ? '#2d2d2d' : '#ffffff', 'important');
-            header.style.setProperty('color', isDark ? '#e0e0e0' : '#222', 'important');
+            header.style.setProperty('background', accentDeepHex, 'important');
+            header.style.setProperty('background-color', accentDeepHex, 'important');
+            header.style.setProperty('border-bottom-color', accentDeepHoverHex, 'important');
+            header.style.setProperty('color', '#ffffff', 'important');
         }
         if (title) {
-            title.style.setProperty('color', isDark ? '#e0e0e0' : '#222', 'important');
+            title.style.setProperty('color', '#ffffff', 'important');
             title.style.setProperty('background', 'transparent', 'important');
             title.style.setProperty('background-color', 'transparent', 'important');
         }
@@ -7609,9 +7887,9 @@
         // Theme filter button + dropdown
         var filterBtn = widget.querySelector('[data-dtu-semester-twin-filterbtn]');
         if (filterBtn) {
-            filterBtn.style.setProperty('background', isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', 'important');
-            filterBtn.style.setProperty('background-color', isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', 'important');
-            filterBtn.style.setProperty('color', isDark ? '#ccc' : '#555', 'important');
+            filterBtn.style.setProperty('background', 'rgba(255,255,255,0.16)', 'important');
+            filterBtn.style.setProperty('background-color', 'rgba(255,255,255,0.16)', 'important');
+            filterBtn.style.setProperty('color', '#ffffff', 'important');
         }
         var filterDrop = widget.querySelector('[data-dtu-semester-twin-filterdrop]');
         if (filterDrop) {
@@ -7621,21 +7899,21 @@
             filterDrop.style.setProperty('color', isDark ? '#e0e0e0' : '#333', 'important');
         }
         // Theme selects in dropdown
-        widget.querySelectorAll('[data-dtu-campusnet-semester-twin-scope-select],[data-dtu-campusnet-semester-twin-limit-select]').forEach(function(sel) {
+        widget.querySelectorAll('[data-dtu-campusnet-semester-twin-scope-select],[data-dtu-campusnet-semester-twin-limit-select]').forEach(function (sel) {
             sel.style.setProperty('background', isDark ? '#1a1a1a' : '#f3f3f3', 'important');
             sel.style.setProperty('background-color', isDark ? '#1a1a1a' : '#f3f3f3', 'important');
             sel.style.setProperty('color', isDark ? '#e0e0e0' : '#222', 'important');
             sel.style.setProperty('border', '1px solid ' + (isDark ? '#404040' : '#d0d0d0'), 'important');
         });
         // Theme cards
-        widget.querySelectorAll('[data-dtu-campusnet-semester-twin-row],[data-dtu-semester-twin-row]').forEach(function(row) {
+        widget.querySelectorAll('[data-dtu-campusnet-semester-twin-row],[data-dtu-semester-twin-row]').forEach(function (row) {
             row.style.setProperty('background', isDark ? '#1a1a1a' : '#f6f8fb', 'important');
             row.style.setProperty('background-color', isDark ? '#1a1a1a' : '#f6f8fb', 'important');
             row.style.setProperty('border', '1px solid ' + (isDark ? '#333' : '#e4e8ee'), 'important');
             row.style.setProperty('color', isDark ? '#e0e0e0' : '#1f2937', 'important');
         });
         // Ensure name/program don't pick up mismatched CampusNet greys.
-        widget.querySelectorAll('[data-dtu-campusnet-semester-twin-name],[data-dtu-campusnet-semester-twin-program]').forEach(function(el) {
+        widget.querySelectorAll('[data-dtu-campusnet-semester-twin-name],[data-dtu-campusnet-semester-twin-program]').forEach(function (el) {
             el.style.setProperty('background', 'transparent', 'important');
             el.style.setProperty('background-color', 'transparent', 'important');
             el.style.setProperty('color', isDark ? '#e0e0e0' : '#222', 'important');
@@ -7676,11 +7954,11 @@
             + (lineSpecificNote || '') + '|' + (lineSpecificCourses || []).join(',') + '|'
             + (showingClosest ? 'closest' : 'twins') + '|'
             + emptyMessage + '|'
-            + (twins || []).map(function(t) {
+            + (twins || []).map(function (t) {
                 var pct = Math.round(t.syncScore * 100);
                 var sharedSig = '';
                 if (t.shared && t.shared.length) {
-                    sharedSig = t.shared.map(function(code) {
+                    sharedSig = t.shared.map(function (code) {
                         var nm = normalizeWhitespace(courseNames[code] || '');
                         return code + '=' + nm;
                     }).join(',');
@@ -7732,11 +8010,11 @@
             scopeSelectEl.value = scope;
             if (scopeSelectEl.getAttribute('data-dtu-campusnet-semester-twin-scope-bound') !== '1') {
                 scopeSelectEl.setAttribute('data-dtu-campusnet-semester-twin-scope-bound', '1');
-                scopeSelectEl.addEventListener('change', function() {
+                scopeSelectEl.addEventListener('change', function () {
                     updateSemesterTwinPrefs({ scope: String(scopeSelectEl.value || 'semester') });
                     _participantIntelSemesterTwinLastTs = 0;
                     _participantIntelSemesterTwinCampusnetLastTs = 0;
-                    try { insertCampusnetSemesterTwinWidget(); } catch (e1) {}
+                    try { insertCampusnetSemesterTwinWidget(); } catch (e1) { }
                 });
             }
         }
@@ -7747,11 +8025,11 @@
             limitSelectEl.value = String(rowLimit);
             if (limitSelectEl.getAttribute('data-dtu-campusnet-semester-twin-limit-bound') !== '1') {
                 limitSelectEl.setAttribute('data-dtu-campusnet-semester-twin-limit-bound', '1');
-                limitSelectEl.addEventListener('change', function() {
+                limitSelectEl.addEventListener('change', function () {
                     updateSemesterTwinPrefs({ rowLimit: parseInt(limitSelectEl.value, 10) });
                     _participantIntelSemesterTwinLastTs = 0;
                     _participantIntelSemesterTwinCampusnetLastTs = 0;
-                    try { insertCampusnetSemesterTwinWidget(); } catch (e1) {}
+                    try { insertCampusnetSemesterTwinWidget(); } catch (e1) { }
                 });
             }
         }
@@ -7767,11 +8045,11 @@
                 : 'Your study line is unknown yet. Visit a CampusNet participant page (Users list) to learn it.';
             if (filterInputEl.getAttribute('data-dtu-campusnet-semester-twin-filter-bound') !== '1') {
                 filterInputEl.setAttribute('data-dtu-campusnet-semester-twin-filter-bound', '1');
-                filterInputEl.addEventListener('change', function() {
+                filterInputEl.addEventListener('change', function () {
                     updateSemesterTwinPrefs({ hideOwnProgram: !!filterInputEl.checked });
                     _participantIntelSemesterTwinLastTs = 0;
                     _participantIntelSemesterTwinCampusnetLastTs = 0;
-                    try { insertCampusnetSemesterTwinWidget(); } catch (e1) {}
+                    try { insertCampusnetSemesterTwinWidget(); } catch (e1) { }
                 });
             }
         }
@@ -7888,21 +8166,21 @@
         var links = [];
         try {
             var sections = document.querySelectorAll('.group-menu__item.group-menu__item-burger');
-            sections.forEach(function(sec) {
+            sections.forEach(function (sec) {
                 if (!sec || !sec.querySelector) return;
                 var titleEl = sec.querySelector('h2.item__title');
                 var sectionTitle = normalizeWhitespace(titleEl ? titleEl.textContent : '').toLowerCase();
                 // English + Danish
                 if (!/^(courses|kurser)$/.test(sectionTitle)) return;
-                sec.querySelectorAll('a[href*="/cnnet/element/"]').forEach(function(a) { links.push(a); });
+                sec.querySelectorAll('a[href*="/cnnet/element/"]').forEach(function (a) { links.push(a); });
             });
-        } catch (eLinks) {}
+        } catch (eLinks) { }
 
         // Fallback: broad scan if the Courses section is not present in DOM yet.
         if (!links.length) {
             try {
-                document.querySelectorAll('a[href*="/cnnet/element/"]').forEach(function(a) { links.push(a); });
-            } catch (eLinks2) {}
+                document.querySelectorAll('a[href*="/cnnet/element/"]').forEach(function (a) { links.push(a); });
+            } catch (eLinks2) { }
         }
 
         for (var i = 0; i < links.length; i++) {
@@ -7920,7 +8198,7 @@
                 if (sectionTitle && (sectionTitle.indexOf('project') > -1 || sectionTitle.indexOf('group') > -1 || sectionTitle.indexOf('shortcut') > -1)) {
                     continue;
                 }
-            } catch (eSec) {}
+            } catch (eSec) { }
 
             var text = normalizeWhitespace(a.textContent);
             var m = text.match(codeRe);
@@ -7959,7 +8237,7 @@
         }
 
         if (seeded) {
-            try { saveParticipantIntel(intel); } catch (e) {}
+            try { saveParticipantIntel(intel); } catch (e) { }
         }
         return seeded;
     }
@@ -7994,11 +8272,11 @@
         }
         _participantIntelSemesterTwinCampusnetLastTs = now;
 
-        loadParticipantIntel(function(intel) {
+        loadParticipantIntel(function (intel) {
             // Seed active courses from frontpage DOM (non-archived, current semester)
             seedActiveFrontpageCourses(intel);
 
-            loadSemesterTwinPrefs(function(prefs) {
+            loadSemesterTwinPrefs(function (prefs) {
                 var computed = computeSemesterTwinData(intel, prefs);
                 renderCampusnetSemesterTwinWidget(computed.twins, computed.myTotal, computed.meta);
                 scheduleCampusnetSemesterTwinEnsure(600);
@@ -8011,7 +8289,7 @@
     function annotateParticipantHistory() {
         if (!isCampusnetParticipantPage()) return;
         if (!isFeatureFlagEnabled(FEATURE_PARTICIPANT_INTEL_KEY) || !isFeatureFlagEnabled(FEATURE_PARTICIPANT_INTEL_SHARED_HISTORY_KEY)) {
-            document.querySelectorAll('[data-dtu-shared-history]').forEach(function(el) { el.remove(); });
+            document.querySelectorAll('[data-dtu-shared-history]').forEach(function (el) { el.remove(); });
             return;
         }
 
@@ -8024,12 +8302,12 @@
 
         // Remove any old badges that ended up on non-user categories (admins/authors).
         var userSet = new Set(userItems);
-        document.querySelectorAll('[data-dtu-shared-history]').forEach(function(badge) {
+        document.querySelectorAll('[data-dtu-shared-history]').forEach(function (badge) {
             var p = badge.closest && badge.closest('.ui-participant');
             if (!p || !userSet.has(p)) badge.remove();
         });
 
-        loadParticipantIntel(function(intel) {
+        loadParticipantIntel(function (intel) {
             var items = userItems;
             var isDark = darkModeEnabled;
             var selfSNumber = '';
@@ -8091,7 +8369,7 @@
                     nameEl.appendChild(badge);
                 }
 
-                var sharedTitle = shared.map(function(s) {
+                var sharedTitle = shared.map(function (s) {
                     var nm = '';
                     try { nm = intel.courseNames ? (intel.courseNames[s.code] || '') : ''; } catch (eName) { nm = ''; }
                     nm = normalizeWhitespace(nm);
@@ -8134,7 +8412,7 @@
             return;
         }
 
-        loadParticipantIntel(function(intel) {
+        loadParticipantIntel(function (intel) {
             var existing = document.querySelector('[data-dtu-profile-history]');
             var student = intel.students[sNumber];
             if (!student || !student.courses || !student.courses.length) {
@@ -8145,7 +8423,7 @@
             var studentCourses = dedupedStudentCourses.list;
 
             var isDark = darkModeEnabled;
-            var courseSig = studentCourses.map(function(c) { return (c.code || '') + '_' + (c.semester || ''); }).join('|');
+            var courseSig = studentCourses.map(function (c) { return (c.code || '') + '_' + (c.semester || ''); }).join('|');
             var sig = (isDark ? 'd' : 'l') + '|' + sNumber + '|' + courseSig;
 
             var showPerson = document.querySelector('.show-person');
@@ -8223,7 +8501,7 @@
         var rKey = courseCode + '_' + semester;
 
         _retentionSnapshotInFlight = true;
-        loadParticipantIntel(function(intel) {
+        loadParticipantIntel(function (intel) {
             _retentionSnapshotInFlight = false;
             if (!intel.retention[rKey]) intel.retention[rKey] = [];
             var snapshots = intel.retention[rKey];
@@ -8350,7 +8628,7 @@
                 if (node.classList && node.classList.contains('ui-participant')) {
                     if (!seen.has(node)) { seen.add(node); items.push(node); }
                 } else if (node.querySelectorAll) {
-                    node.querySelectorAll('.ui-participant').forEach(function(p) {
+                    node.querySelectorAll('.ui-participant').forEach(function (p) {
                         if (!seen.has(p)) { seen.add(p); items.push(p); }
                     });
                 }
@@ -8441,7 +8719,7 @@
     function parseCampusnetArchivedElementsFromDoc(doc) {
         var out = [];
         if (!doc || !doc.querySelectorAll) return out;
-        doc.querySelectorAll('article.archived-element[data-id]').forEach(function(article) {
+        doc.querySelectorAll('article.archived-element[data-id]').forEach(function (article) {
             if (!article) return;
             var id = (article.getAttribute('data-id') || '').trim();
             var link = article.querySelector('.archived-element__title a[href*=\"/cnnet/element/\"]');
@@ -8477,7 +8755,7 @@
 
     // Fetch the archive page remotely and parse archived elements from it.
     function fetchAndParseArchivedElements() {
-        return fetchCampusnetDoc('/cnnet/grouparchive/default').then(function(doc) {
+        return fetchCampusnetDoc('/cnnet/grouparchive/default').then(function (doc) {
             return parseCampusnetArchivedElementsFromDoc(doc);
         });
     }
@@ -8492,7 +8770,7 @@
             var hh = String(d.getHours()).padStart(2, '0');
             var mi = String(d.getMinutes()).padStart(2, '0');
             return yyyy + '-' + mm + '-' + dd + ' ' + hh + ':' + mi;
-        } catch (e) {}
+        } catch (e) { }
         return 'never';
     }
 
@@ -8509,10 +8787,10 @@
             }
         }
 
-        return fetch(absUrl, { credentials: 'same-origin', cache: 'no-store' }).then(function(res) {
+        return fetch(absUrl, { credentials: 'same-origin', cache: 'no-store' }).then(function (res) {
             if (!res || !res.ok) throw new Error('http_' + (res ? res.status : '0'));
             return res.text();
-        }).then(function(html) {
+        }).then(function (html) {
             var doc = null;
             try {
                 doc = new DOMParser().parseFromString(html, 'text/html');
@@ -8541,11 +8819,11 @@
         var best = null;
         var lastErr = '';
         var chain = Promise.resolve();
-        candidates.forEach(function(url) {
-            chain = chain.then(function() {
+        candidates.forEach(function (url) {
+            chain = chain.then(function () {
                 if (_campusnetArchiveBackfillAbort) return null;
                 if (best && best.usersCount && best.loaded >= best.usersCount) return null;
-                return fetchCampusnetDoc(url).then(function(doc) {
+                return fetchCampusnetDoc(url).then(function (doc) {
                     var loaded = getCampusnetUsersParticipantElementsFromDoc(doc).length;
                     var usersCount = getCampusnetUsersCountFromDoc(doc);
                     var rec = { url: url, doc: doc, loaded: loaded, usersCount: usersCount };
@@ -8557,14 +8835,14 @@
                         best = rec;
                     }
                     return null;
-                }).catch(function(e) {
+                }).catch(function (e) {
                     try { lastErr = (e && e.message) ? String(e.message) : 'fetch_error'; } catch (e2) { lastErr = 'fetch_error'; }
                     return null;
                 });
             });
         });
 
-        return chain.then(function() {
+        return chain.then(function () {
             if (best) return best;
             return { url: candidates[0] || '', doc: null, loaded: 0, usersCount: null, err: lastErr || 'fetch_failed' };
         });
@@ -8598,7 +8876,7 @@
             if (!student.courses) student.courses = [];
 
             if (courseCode && semester) {
-                var alreadyHas = student.courses.some(function(c) { return c.code === courseCode && c.semester === semester; });
+                var alreadyHas = student.courses.some(function (c) { return c.code === courseCode && c.semester === semester; });
                 if (!alreadyHas) {
                     var entry = { code: courseCode, semester: semester };
                     if (isArchived) entry.archived = true;
@@ -8612,7 +8890,7 @@
                 if (p.program) intel.self.program = p.program;
                 if (!intel.self.courses) intel.self.courses = [];
                 if (courseCode && semester) {
-                    var selfHas = intel.self.courses.some(function(c) { return c.code === courseCode && c.semester === semester; });
+                    var selfHas = intel.self.courses.some(function (c) { return c.code === courseCode && c.semester === semester; });
                     if (!selfHas) {
                         var selfEntry = { code: courseCode, semester: semester };
                         if (isArchived) selfEntry.archived = true;
@@ -8624,7 +8902,7 @@
 
         var sNumbers = Object.keys(intel.students);
         if (sNumbers.length > PARTICIPANT_INTEL_MAX_STUDENTS) {
-            sNumbers.sort(function(a, b) { return intel.students[a].lastSeen - intel.students[b].lastSeen; });
+            sNumbers.sort(function (a, b) { return intel.students[a].lastSeen - intel.students[b].lastSeen; });
             var toRemove = sNumbers.length - PARTICIPANT_INTEL_MAX_STUDENTS;
             for (var r = 0; r < toRemove; r++) delete intel.students[sNumbers[r]];
         }
@@ -8667,12 +8945,12 @@
                     if (!isCampusnetLikelyAcademicCourse(it.codeHint, it.title, { title: it.title })) continue;
                     var sem = it.semesterHint;
                     if (!sem) continue; // Don't guess semester; backfill will resolve it from the page
-                    var has = intel.self.courses.some(function(c) { return c && c.code === it.codeHint && c.semester === sem; });
+                    var has = intel.self.courses.some(function (c) { return c && c.code === it.codeHint && c.semester === sem; });
                     if (!has) intel.self.courses.push({ code: it.codeHint, semester: sem, archived: true });
                 }
-                try { saveParticipantIntel(intel); } catch (eSeedSave) {}
+                try { saveParticipantIntel(intel); } catch (eSeedSave) { }
             }
-        } catch (eSeed) {}
+        } catch (eSeed) { }
 
         function afterOne() {
             _campusnetArchiveBackfillProgress.done++;
@@ -8689,7 +8967,7 @@
             if (_campusnetArchiveBackfillAbort) {
                 _campusnetArchiveBackfillRunning = false;
                 _campusnetArchiveBackfillAbort = false;
-                try { saveParticipantIntel(intel); } catch (e0) {}
+                try { saveParticipantIntel(intel); } catch (e0) { }
                 updateCampusnetArchiveBackfillWidgetStatus('Scan stopped. (' + _campusnetArchiveBackfillProgress.done + '/' + _campusnetArchiveBackfillProgress.total + ')');
                 _campusnetArchiveBackfillProgress = null;
                 return;
@@ -8699,7 +8977,7 @@
             if (!item) {
                 _campusnetArchiveBackfillRunning = false;
                 intel.backfill.lastRunTs = Date.now();
-                try { saveParticipantIntel(intel); } catch (e1) {}
+                try { saveParticipantIntel(intel); } catch (e1) { }
                 var lastErr = _campusnetArchiveBackfillProgress.lastError ? (' Last error: ' + _campusnetArchiveBackfillProgress.lastError) : '';
                 updateCampusnetArchiveBackfillWidgetStatus('Scan finished. OK: ' + _campusnetArchiveBackfillProgress.ok + ', failed: ' + _campusnetArchiveBackfillProgress.failed + '.' + lastErr);
                 _campusnetArchiveBackfillProgress = null;
@@ -8713,7 +8991,7 @@
                 + ' | Now: ' + _campusnetArchiveBackfillProgress.lastTitle
             );
 
-            fetchBestCampusnetParticipantsDoc(item.elementId).then(function(best) {
+            fetchBestCampusnetParticipantsDoc(item.elementId).then(function (best) {
                 if (!best || !best.doc) throw new Error((best && best.err) ? best.err : 'fetch_failed');
 
                 var doc = best.doc;
@@ -8728,9 +9006,9 @@
                 intel.backfill.scanned[item.elementId] = Date.now();
                 _campusnetArchiveBackfillProgress.ok++;
 
-                try { saveParticipantIntel(intel); } catch (e2) {}
+                try { saveParticipantIntel(intel); } catch (e2) { }
                 afterOne();
-            }).catch(function(e) {
+            }).catch(function (e) {
                 _campusnetArchiveBackfillProgress.failed++;
                 try { _campusnetArchiveBackfillProgress.lastError = (e && e.message) ? String(e.message) : 'scan_failed'; } catch (e2) { _campusnetArchiveBackfillProgress.lastError = 'scan_failed'; }
                 afterOne();
@@ -8763,18 +9041,18 @@
 
         var isDark = darkModeEnabled;
         var items = parseCampusnetArchivedElements();
-        var courseItems = items.filter(function(it) {
+        var courseItems = items.filter(function (it) {
             return !!it.codeHint && isCampusnetLikelyAcademicCourse(it.codeHint, it.title, { title: it.title });
         });
 
         if (!existing) _archiveBackfillInsertPending = true;
-        loadParticipantIntel(function(intel) {
+        loadParticipantIntel(function (intel) {
             _archiveBackfillInsertPending = false;
             // Re-check if another callback already created the widget.
             existing = document.querySelector('[data-dtu-archive-backfill]');
             var scanned = intel.backfill && intel.backfill.scanned ? intel.backfill.scanned : {};
             var scannedCount = 0;
-            courseItems.forEach(function(it) { if (scanned && scanned[it.elementId]) scannedCount++; });
+            courseItems.forEach(function (it) { if (scanned && scanned[it.elementId]) scannedCount++; });
 
             // Ensure your own course history includes archived course codes from the archive list itself.
             // This is important because fetched participant pages can be truncated and may not include you.
@@ -8788,7 +9066,7 @@
                         if (!isCampusnetLikelyAcademicCourse(it0.codeHint, it0.title, { title: it0.title })) continue;
                         var sem0 = it0.semesterHint;
                         if (!sem0) continue; // Don't guess semester; backfill resolves it from the page
-                        var has0 = intel.self.courses.some(function(c) { return c && c.code === it0.codeHint && c.semester === sem0; });
+                        var has0 = intel.self.courses.some(function (c) { return c && c.code === it0.codeHint && c.semester === sem0; });
                         if (!has0) {
                             intel.self.courses.push({ code: it0.codeHint, semester: sem0, archived: true });
                             seeded++;
@@ -8796,7 +9074,7 @@
                     }
                     if (seeded) saveParticipantIntel(intel);
                 }
-            } catch (eSeed2) {}
+            } catch (eSeed2) { }
 
             var lastRun = intel.backfill ? intel.backfill.lastRunTs : 0;
             var autoWeekly = !!(intel.backfill && intel.backfill.autoWeekly);
@@ -8895,12 +9173,12 @@
                 note.style.cssText = 'font-size:11px;opacity:0.6;margin-top:10px;line-height:1.35;';
                 widget.appendChild(note);
 
-                startBtn.addEventListener('click', function() {
+                startBtn.addEventListener('click', function () {
                     if (_campusnetArchiveBackfillRunning) return;
-                    loadParticipantIntel(function(intel2) {
+                    loadParticipantIntel(function (intel2) {
                         var list = parseCampusnetArchivedElements();
                         var scanned2 = (intel2.backfill && intel2.backfill.scanned) ? intel2.backfill.scanned : {};
-                        var queue = list.filter(function(it) {
+                        var queue = list.filter(function (it) {
                             return !!it.codeHint
                                 && isCampusnetLikelyAcademicCourse(it.codeHint, it.title, { title: it.title })
                                 && !scanned2[it.elementId];
@@ -8915,13 +9193,13 @@
                     });
                 });
 
-                stopBtn.addEventListener('click', function() {
+                stopBtn.addEventListener('click', function () {
                     if (!_campusnetArchiveBackfillRunning) return;
                     stopCampusnetArchiveBackfill();
                 });
 
-                autoInput.addEventListener('change', function() {
-                    loadParticipantIntel(function(intel3) {
+                autoInput.addEventListener('change', function () {
+                    loadParticipantIntel(function (intel3) {
                         intel3.backfill.autoWeekly = !!autoInput.checked;
                         saveParticipantIntel(intel3);
                     });
@@ -8966,7 +9244,7 @@
             }
 
             if (due && !_campusnetArchiveBackfillRunning && !document.hidden) {
-                var queue2 = courseItems.filter(function(it) { return !scanned[it.elementId]; });
+                var queue2 = courseItems.filter(function (it) { return !scanned[it.elementId]; });
                 if (queue2.length) {
                     runCampusnetArchiveBackfill(queue2, intel);
                 } else {
@@ -8982,7 +9260,7 @@
     function scheduleAnnotateParticipantHistory(delayMs) {
         if (!isFeatureFlagEnabled(FEATURE_PARTICIPANT_INTEL_KEY) || !isFeatureFlagEnabled(FEATURE_PARTICIPANT_INTEL_SHARED_HISTORY_KEY)) return;
         if (_participantIntelAnnotateTimer) return;
-        _participantIntelAnnotateTimer = setTimeout(function() {
+        _participantIntelAnnotateTimer = setTimeout(function () {
             _participantIntelAnnotateTimer = null;
             annotateParticipantHistory();
         }, delayMs || 260);
@@ -8998,7 +9276,7 @@
             document.querySelectorAll(
                 '[data-dtu-participant-demographics],[data-dtu-shared-history],'
                 + '[data-dtu-retention-indicator],[data-dtu-profile-history],[data-dtu-archive-backfill]'
-            ).forEach(function(el) { el.remove(); });
+            ).forEach(function (el) { el.remove(); });
             return;
         }
 
@@ -9018,7 +9296,7 @@
                     clearTimeout(_participantIntelAnnotateTimer);
                     _participantIntelAnnotateTimer = null;
                 }
-                document.querySelectorAll('[data-dtu-shared-history]').forEach(function(el) { el.remove(); });
+                document.querySelectorAll('[data-dtu-shared-history]').forEach(function (el) { el.remove(); });
             }
             if (!retentionEnabled) {
                 var oldRet = document.querySelector('[data-dtu-retention-indicator]');
@@ -9172,7 +9450,7 @@
             if (parsed.pathname && parsed.pathname.startsWith('/d2l/')) {
                 return parsed.pathname + parsed.search + parsed.hash;
             }
-        } catch (e) {}
+        } catch (e) { }
         if (/^\/d2l\//.test(urlStr)) return urlStr;
         return null;
     }
@@ -9298,7 +9576,7 @@
         if (_contentButtonBootstrapTimer) return;
 
         let attempts = 0;
-        _contentButtonBootstrapTimer = setInterval(function() {
+        _contentButtonBootstrapTimer = setInterval(function () {
             if (!isDTULearnHomepage()) {
                 clearInterval(_contentButtonBootstrapTimer);
                 _contentButtonBootstrapTimer = null;
@@ -9325,11 +9603,11 @@
         if (!scanRoot) return;
 
         // Remove injected buttons and their shadow-root style helpers.
-        deepQueryAll('.dtu-dark-content-btn', scanRoot).forEach(function(btn) {
-            try { btn.remove(); } catch (e) {}
+        deepQueryAll('.dtu-dark-content-btn', scanRoot).forEach(function (btn) {
+            try { btn.remove(); } catch (e) { }
         });
-        deepQueryAll('#dtu-content-btn-styles', scanRoot).forEach(function(styleEl) {
-            try { styleEl.remove(); } catch (e) {}
+        deepQueryAll('#dtu-content-btn-styles', scanRoot).forEach(function (styleEl) {
+            try { styleEl.remove(); } catch (e) { }
         });
     }
 
@@ -9442,8 +9720,8 @@
                     var opener = dd.querySelector('button.d2l-dropdown-opener, button[aria-haspopup="true"]');
                     if (opener && opener.getAttribute('data-dtu-afterdark-menu-hook') !== '1') {
                         opener.setAttribute('data-dtu-afterdark-menu-hook', '1');
-                        opener.addEventListener('click', function() {
-                            setTimeout(function() { try { insertDTULearnNavResourceLinks(); } catch (e) {} }, 50);
+                        opener.addEventListener('click', function () {
+                            setTimeout(function () { try { insertDTULearnNavResourceLinks(); } catch (e) { } }, 50);
                         });
                     }
                 }
@@ -9464,10 +9742,10 @@
             markExt(item);
 
             function openLink() {
-                try { window.open(spec.url, '_blank', 'noopener,noreferrer'); } catch (e) {}
+                try { window.open(spec.url, '_blank', 'noopener,noreferrer'); } catch (e) { }
             }
             item.addEventListener('click', openLink);
-            item.addEventListener('keydown', function(e) {
+            item.addEventListener('keydown', function (e) {
                 if (!e) return;
                 if (e.key === 'Enter' || e.key === ' ') openLink();
             });
@@ -9486,7 +9764,7 @@
 
             // Only reorder the Student Resources menu (avoid unintended side-effects on other dropdowns).
             var label = '';
-            try { label = String(menu.getAttribute('label') || '').trim(); } catch (e) {}
+            try { label = String(menu.getAttribute('label') || '').trim(); } catch (e) { }
             if (label && !/^Student Resources$/i.test(label)) return;
 
             var items = Array.prototype.slice.call(menu.querySelectorAll('d2l-menu-item, d2l-menu-item-link'));
@@ -9539,41 +9817,41 @@
             // Rebuild menu: keep any separators at the end (none in your menu today),
             // but don't let them block ordering.
             var seps = Array.prototype.slice.call(menu.querySelectorAll('d2l-menu-item-separator'));
-            seps.forEach(function(s) { try { s.remove(); } catch (e) {} });
+            seps.forEach(function (s) { try { s.remove(); } catch (e) { } });
 
             // Detach all items first.
-            items.forEach(function(it3) { try { it3.remove(); } catch (e) {} });
+            items.forEach(function (it3) { try { it3.remove(); } catch (e) { } });
 
             var rebuilt = chosen.concat(rest);
-            rebuilt.forEach(function(it4) { try { menu.appendChild(it4); } catch (e) {} });
-            seps.forEach(function(s2) { try { menu.appendChild(s2); } catch (e) {} });
+            rebuilt.forEach(function (it4) { try { menu.appendChild(it4); } catch (e) { } });
+            seps.forEach(function (s2) { try { menu.appendChild(s2); } catch (e) { } });
 
             // Update first/last markers for Brightspace styling.
             try {
-                rebuilt.forEach(function(it5) { it5.removeAttribute('first'); it5.removeAttribute('last'); });
+                rebuilt.forEach(function (it5) { it5.removeAttribute('first'); it5.removeAttribute('last'); });
                 if (rebuilt[0]) rebuilt[0].setAttribute('first', 'true');
                 if (rebuilt[rebuilt.length - 1]) rebuilt[rebuilt.length - 1].setAttribute('last', 'true');
-            } catch (e2) {}
+            } catch (e2) { }
         }
 
         var panopto = { id: 'panopto', text: 'Panopto', url: 'https://panopto.dtu.dk/Panopto/Pages/Home.aspx' };
         var campusnet = { id: 'campusnet', text: 'CampusNet', url: 'https://campusnet.dtu.dk/cnnet/' };
 
         // Place Panopto under Student Resources (not Find Courses).
-        getNavDropdownTargets(/^Student Resources$/i).forEach(function(t) { ensureExternalMenuItem(t.menu, panopto); });
+        getNavDropdownTargets(/^Student Resources$/i).forEach(function (t) { ensureExternalMenuItem(t.menu, panopto); });
 
         // CampusNet fits naturally under Student Resources.
-        getNavDropdownTargets(/^Student Resources$/i).forEach(function(t) { ensureExternalMenuItem(t.menu, campusnet); });
+        getNavDropdownTargets(/^Student Resources$/i).forEach(function (t) { ensureExternalMenuItem(t.menu, campusnet); });
 
         // Reorder Student Resources items for better ergonomics.
-        getNavDropdownTargets(/^Student Resources$/i).forEach(function(t) { reorderStudentResourcesMenu(t.menu); });
+        getNavDropdownTargets(/^Student Resources$/i).forEach(function (t) { reorderStudentResourcesMenu(t.menu); });
     }
 
     function removeDTULearnNavResourceLinks() {
         if (!IS_TOP_WINDOW) return;
         if (window.location.hostname !== 'learn.inside.dtu.dk') return;
-        document.querySelectorAll('[data-dtu-afterdark-nav-link]').forEach(function(el) {
-            try { el.remove(); } catch (e) {}
+        document.querySelectorAll('[data-dtu-afterdark-nav-link]').forEach(function (el) {
+            try { el.remove(); } catch (e) { }
         });
     }
 
@@ -9647,7 +9925,7 @@
 
     function formatDeadlineRangeCompact(item) {
         if (!item) return '';
-        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         var sm = String(item.startIso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
         var em = String(item.endIso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
         if (!sm) return formatDeadlineRange(item);
@@ -9671,9 +9949,9 @@
 
     function buildUpcomingDeadlineRows(groups, todayTs, limit) {
         const out = [];
-        (groups || []).forEach(function(g) {
+        (groups || []).forEach(function (g) {
             const period = String(g && g.heading || '');
-            (g && Array.isArray(g.items) ? g.items : []).forEach(function(item) {
+            (g && Array.isArray(g.items) ? g.items : []).forEach(function (item) {
                 if (!item || typeof item.startTs !== 'number') return;
                 const state = getDeadlineState(item, todayTs);
                 const nextTs = getDeadlineNextTs(item, todayTs);
@@ -9690,7 +9968,7 @@
                 });
             });
         });
-        out.sort(function(a, b) { return a.nextTs - b.nextTs; });
+        out.sort(function (a, b) { return a.nextTs - b.nextTs; });
         return out.slice(0, (typeof limit === 'number' && limit > 0) ? limit : 8);
     }
 
@@ -9703,7 +9981,7 @@
         _deadlinesLastRequestAt = now;
 
         _deadlinesFetchInProgress = true;
-        sendRuntimeMessage({ type: 'dtu-student-deadlines', forceRefresh: !!forceRefresh }, function(response) {
+        sendRuntimeMessage({ type: 'dtu-student-deadlines', forceRefresh: !!forceRefresh }, function (response) {
             _deadlinesFetchInProgress = false;
             if (response && response.ok) {
                 _deadlinesLastResponse = response;
@@ -9758,18 +10036,18 @@
 
         const courseRows = buildUpcomingDeadlineRows((resp && resp.course && resp.course.groups) || [], todayTs, 60);
         const examRows = buildUpcomingDeadlineRows((resp && resp.exam && resp.exam.groups) || [], todayTs, 60);
-        courseRows.forEach(function(r) {
+        courseRows.forEach(function (r) {
             r.kind = 'course';
             r.sourceUrl = courseUrl;
             out.push(r);
         });
-        examRows.forEach(function(r) {
+        examRows.forEach(function (r) {
             r.kind = 'exam';
             r.sourceUrl = examUrl;
             out.push(r);
         });
 
-        out.sort(function(a, b) { return a.nextTs - b.nextTs; });
+        out.sort(function (a, b) { return a.nextTs - b.nextTs; });
         return out.slice(0, (typeof limit === 'number' && limit > 0) ? limit : 3);
     }
 
@@ -9960,7 +10238,7 @@
             if (next) next.appendChild(loading);
 
             if (!_deadlinesFetchInProgress) {
-                requestStudentDeadlines(false, function() { renderDeadlinesHomepageWidget(widget); });
+                requestStudentDeadlines(false, function () { renderDeadlinesHomepageWidget(widget); });
             }
 
             if (refreshBtn) {
@@ -10041,7 +10319,7 @@
         if (sources) {
             const courseUrl = (resp.course && resp.course.url) ? resp.course.url : 'https://student.dtu.dk/en/courses-and-teaching/course-registration/course-registration-deadlines';
             const examUrl = (resp.exam && resp.exam.url) ? resp.exam.url : 'https://student.dtu.dk/en/exam/exam-registration/-deadlines-for-exams';
-            sources.querySelectorAll('a').forEach(function(a) {
+            sources.querySelectorAll('a').forEach(function (a) {
                 if (a.getAttribute('data-kind') === 'course') a.href = courseUrl;
                 if (a.getAttribute('data-kind') === 'exam') a.href = examUrl;
             });
@@ -10052,7 +10330,7 @@
         const fetchedAt = (resp && typeof resp.fetchedAt === 'number') ? resp.fetchedAt : 0;
         const stale = !fetchedAt || (now - fetchedAt) > DEADLINES_CACHE_TTL_MS;
         if (stale && !_deadlinesFetchInProgress) {
-            requestStudentDeadlines(false, function() { renderDeadlinesHomepageWidget(widget); });
+            requestStudentDeadlines(false, function () { renderDeadlinesHomepageWidget(widget); });
         }
 
         if (refreshBtn) {
@@ -10167,7 +10445,7 @@
             chevronBtn.setAttribute('icon', expandedInit ? 'tier1:chevron-up' : 'tier1:chevron-down');
             chevronBtn.setAttribute('expanded', expandedInit ? 'true' : 'false');
             chevronBtn.setAttribute('text', expandedInit ? 'Show fewer deadlines' : 'Show more deadlines');
-            chevronBtn.addEventListener('click', function() {
+            chevronBtn.addEventListener('click', function () {
                 const nextState = localStorage.getItem(DEADLINES_EXPANDED_KEY) !== 'true';
                 localStorage.setItem(DEADLINES_EXPANDED_KEY, nextState ? 'true' : 'false');
                 renderDeadlinesHomepageWidget(widget);
@@ -10232,16 +10510,16 @@
             refreshBtn.style.setProperty('background', 'transparent', 'important');
             refreshBtn.style.setProperty('color', darkModeEnabled ? '#888' : '#9ca3af', 'important');
             refreshBtn.style.setProperty('border', 'none', 'important');
-            refreshBtn.addEventListener('mouseenter', function() {
+            refreshBtn.addEventListener('mouseenter', function () {
                 refreshBtn.style.setProperty('color', darkModeEnabled ? '#ccc' : '#555', 'important');
             });
-            refreshBtn.addEventListener('mouseleave', function() {
+            refreshBtn.addEventListener('mouseleave', function () {
                 refreshBtn.style.setProperty('color', darkModeEnabled ? '#888' : '#9ca3af', 'important');
             });
-            refreshBtn.addEventListener('click', function() {
+            refreshBtn.addEventListener('click', function () {
                 refreshBtn.disabled = true;
                 refreshBtn.style.opacity = '0.5';
-                requestStudentDeadlines(true, function() { renderDeadlinesHomepageWidget(widget); });
+                requestStudentDeadlines(true, function () { renderDeadlinesHomepageWidget(widget); });
             });
 
             footerLeft.appendChild(meta);
@@ -10259,8 +10537,8 @@
             courseA.rel = 'noopener noreferrer';
             courseA.setAttribute('data-kind', 'course');
             courseA.style.cssText = 'color: ' + (darkModeEnabled ? '#888' : '#9ca3af') + ' !important; text-decoration: none;';
-            courseA.addEventListener('mouseenter', function() { courseA.style.textDecoration = 'underline'; });
-            courseA.addEventListener('mouseleave', function() { courseA.style.textDecoration = 'none'; });
+            courseA.addEventListener('mouseenter', function () { courseA.style.textDecoration = 'underline'; });
+            courseA.addEventListener('mouseleave', function () { courseA.style.textDecoration = 'none'; });
 
             const sep = document.createElement('span');
             markExt(sep);
@@ -10273,8 +10551,8 @@
             examA.rel = 'noopener noreferrer';
             examA.setAttribute('data-kind', 'exam');
             examA.style.cssText = 'color: ' + (darkModeEnabled ? '#888' : '#9ca3af') + ' !important; text-decoration: none;';
-            examA.addEventListener('mouseenter', function() { examA.style.textDecoration = 'underline'; });
-            examA.addEventListener('mouseleave', function() { examA.style.textDecoration = 'none'; });
+            examA.addEventListener('mouseenter', function () { examA.style.textDecoration = 'underline'; });
+            examA.addEventListener('mouseleave', function () { examA.style.textDecoration = 'none'; });
 
             sources.appendChild(courseA);
             sources.appendChild(sep);
@@ -10349,7 +10627,7 @@
             + 'display: flex; align-items: center; justify-content: center; '
             + 'font-family: sans-serif; opacity: 0; transition: opacity 0.2s;';
 
-        requestAnimationFrame(function() { overlay.style.opacity = '1'; });
+        requestAnimationFrame(function () { overlay.style.opacity = '1'; });
 
         const modal = document.createElement('div');
         markExt(modal);
@@ -10360,10 +10638,10 @@
 
         function dismiss() {
             overlay.style.opacity = '0';
-            setTimeout(function() { overlay.remove(); }, 160);
+            setTimeout(function () { overlay.remove(); }, 160);
         }
 
-        overlay.addEventListener('click', function(e) {
+        overlay.addEventListener('click', function (e) {
             if (e.target === overlay) dismiss();
         });
 
@@ -10394,7 +10672,7 @@
         refreshBtn.style.setProperty('background-color', 'transparent', 'important');
         refreshBtn.style.setProperty('color', theme.text, 'important');
         refreshBtn.style.setProperty('border-color', theme.border, 'important');
-        refreshBtn.addEventListener('click', function() {
+        refreshBtn.addEventListener('click', function () {
             refreshBtn.disabled = true;
             refreshBtn.style.opacity = '0.7';
             renderBody(null, true);
@@ -10441,8 +10719,8 @@
             a.rel = 'noopener noreferrer';
             a.textContent = 'Open source';
             a.style.cssText = 'font-size: 12px; color: ' + theme.link + '; text-decoration: none;';
-            a.addEventListener('mouseenter', function() { a.style.textDecoration = 'underline'; });
-            a.addEventListener('mouseleave', function() { a.style.textDecoration = 'none'; });
+            a.addEventListener('mouseenter', function () { a.style.textDecoration = 'underline'; });
+            a.addEventListener('mouseleave', function () { a.style.textDecoration = 'none'; });
 
             cardHeader.appendChild(h);
             cardHeader.appendChild(a);
@@ -10456,7 +10734,7 @@
                 return card;
             }
 
-            rows.forEach(function(r, idx) {
+            rows.forEach(function (r, idx) {
                 const row = document.createElement('div');
                 row.style.cssText = 'display: grid; grid-template-columns: 1fr auto; gap: 10px; '
                     + 'padding: 10px 0; align-items: center;'
@@ -10527,7 +10805,7 @@
                 loading.textContent = _deadlinesFetchInProgress ? 'Loading deadlines...' : 'Loading deadlines...';
                 body.appendChild(loading);
 
-                requestStudentDeadlines(!!force, function(newResp) {
+                requestStudentDeadlines(!!force, function (newResp) {
                     refreshBtn.disabled = false;
                     refreshBtn.style.opacity = '1';
                     renderBody(newResp, false);
@@ -10591,7 +10869,7 @@
             btn.title = 'Deadlines: no upcoming deadlines found.';
             return;
         }
-        rows.sort(function(a, b) { return a.nextTs - b.nextTs; });
+        rows.sort(function (a, b) { return a.nextTs - b.nextTs; });
         const next = rows[0];
         const days = diffDaysUtc(todayTs, next.nextTs);
         if (days === 0) summary.textContent = 'Today';
@@ -10653,16 +10931,16 @@
             summary.style.setProperty('color', darkModeEnabled ? '#b0b0b0' : '#666', 'important');
             markExt(summary);
 
-            btn.addEventListener('mouseenter', function() {
+            btn.addEventListener('mouseenter', function () {
                 btn.style.boxShadow = darkModeEnabled
                     ? '0 6px 20px rgba(0,0,0,0.35)'
                     : '0 8px 22px rgba(15,23,42,0.12)';
             });
-            btn.addEventListener('mouseleave', function() {
+            btn.addEventListener('mouseleave', function () {
                 btn.style.boxShadow = 'none';
             });
 
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 showDeadlinesModal(false);
             });
 
@@ -10702,7 +10980,7 @@
             : 0;
         const stale = !fetchedAt || (now - fetchedAt) > DEADLINES_CACHE_TTL_MS;
         if ((_deadlinesLastResponse == null || stale) && !_deadlinesFetchInProgress) {
-            requestStudentDeadlines(false, function() { updateDeadlinesWidgetSummary(); });
+            requestStudentDeadlines(false, function () { updateDeadlinesWidgetSummary(); });
         }
     }
 
@@ -10786,14 +11064,14 @@
     }
 
     function requestLibraryEvents(cb, forceRefresh) {
-        sendRuntimeMessage({ type: 'dtu-library-events', forceRefresh: !!forceRefresh }, function(resp) {
+        sendRuntimeMessage({ type: 'dtu-library-events', forceRefresh: !!forceRefresh }, function (resp) {
             if (resp && resp.ok) _libraryEventsCache = resp;
             if (cb) cb(resp);
         });
     }
 
     function requestLibraryNews(cb, forceRefresh) {
-        sendRuntimeMessage({ type: 'dtu-library-news', forceRefresh: !!forceRefresh }, function(resp) {
+        sendRuntimeMessage({ type: 'dtu-library-news', forceRefresh: !!forceRefresh }, function (resp) {
             if (resp && resp.ok) _libraryNewsCache = resp;
             if (cb) cb(resp);
         });
@@ -10813,10 +11091,10 @@
         var backdrop = document.querySelector('.dtu-library-backdrop');
         if (backdrop) backdrop.remove();
         if (_libraryEscHandler) {
-            try { document.removeEventListener('keydown', _libraryEscHandler); } catch (eEsc) {}
+            try { document.removeEventListener('keydown', _libraryEscHandler); } catch (eEsc) { }
             _libraryEscHandler = null;
         }
-        document.querySelectorAll('.dtu-library-nav-item .d2l-dropdown-opener[aria-expanded="true"]').forEach(function(btn) {
+        document.querySelectorAll('.dtu-library-nav-item .d2l-dropdown-opener[aria-expanded="true"]').forEach(function (btn) {
             btn.setAttribute('aria-expanded', 'false');
         });
     }
@@ -10901,7 +11179,7 @@
 
         // Instead of using Brightspace's d2l-dropdown-menu (which is complicated to
         // wire up), we use a custom panel that opens on click.
-        openerBtn.addEventListener('click', function(e) {
+        openerBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
             var existing = document.querySelector('.dtu-library-panel');
@@ -10922,13 +11200,13 @@
         var overlay = document.createElement('div');
         overlay.className = 'dtu-library-modal-overlay';
         markExt(overlay);
-        overlay.addEventListener('mousedown', function(e) {
+        overlay.addEventListener('mousedown', function (e) {
             if (e.target !== overlay) return;
             hideLibraryPanel();
             anchorBtn.setAttribute('aria-expanded', 'false');
         });
 
-        _libraryEscHandler = function(e) {
+        _libraryEscHandler = function (e) {
             if (!e || e.key !== 'Escape') return;
             hideLibraryPanel();
             anchorBtn.setAttribute('aria-expanded', 'false');
@@ -10942,21 +11220,21 @@
         // Header
         var header = document.createElement('div');
         header.className = 'dtu-library-header';
-        
+
         var headerTitle = document.createElement('div');
         headerTitle.className = 'dtu-library-title';
         headerTitle.textContent = 'DTU Library';
-        
+
         var closeBtn = document.createElement('button');
         closeBtn.type = 'button';
         closeBtn.className = 'dtu-library-close';
         closeBtn.textContent = '×';
         closeBtn.title = 'Close';
-        closeBtn.addEventListener('click', function() {
+        closeBtn.addEventListener('click', function () {
             hideLibraryPanel();
             anchorBtn.setAttribute('aria-expanded', 'false');
         });
-        
+
         header.appendChild(headerTitle);
         header.appendChild(closeBtn);
         panel.appendChild(header);
@@ -10970,14 +11248,14 @@
         // Quick Links section
         var linksSection = document.createElement('div');
         linksSection.className = 'dtu-library-section';
-        
+
         var linksHeader = document.createElement('div');
         linksHeader.className = 'dtu-library-section-header';
-        
+
         var linksTitle = document.createElement('div');
         linksTitle.className = 'dtu-library-section-title';
         linksTitle.textContent = 'Quick Links';
-        
+
         linksHeader.appendChild(linksTitle);
         linksSection.appendChild(linksHeader);
 
@@ -10993,7 +11271,7 @@
         var linksGrid = document.createElement('div');
         linksGrid.className = 'dtu-library-link-grid';
 
-        links.forEach(function(lnk) {
+        links.forEach(function (lnk) {
             var a = document.createElement('a');
             a.className = 'dtu-library-link-item';
             a.href = lnk.url;
@@ -11023,10 +11301,10 @@
         document.body.appendChild(overlay);
 
         // Fetch data
-        requestLibraryEvents(function(resp) {
+        requestLibraryEvents(function (resp) {
             renderLibraryFeedItems(eventsSection, resp, 'events');
         });
-        requestLibraryNews(function(resp) {
+        requestLibraryNews(function (resp) {
             renderLibraryFeedItems(newsSection, resp, 'news');
         });
     }
@@ -11060,13 +11338,13 @@
 
         var body = document.createElement('div');
         body.className = 'dtu-library-feed-list';
-        
+
         // Loading placeholder
         var loading = document.createElement('div');
         loading.className = 'dtu-library-state-msg';
         loading.textContent = 'Loading...';
         body.appendChild(loading);
-        
+
         container.appendChild(body);
 
         return { container: container, body: body, refreshBtn: refreshBtn, itemEls: [] };
@@ -11080,8 +11358,8 @@
         // Attach refresh handler once.
         if (!section._dtuRefreshHooked && section.refreshBtn) {
             section._dtuRefreshHooked = true;
-            section.refreshBtn.addEventListener('click', function(e) {
-                try { e.preventDefault(); } catch (e0) {}
+            section.refreshBtn.addEventListener('click', function (e) {
+                try { e.preventDefault(); } catch (e0) { }
                 // Re-render loading state quickly.
                 while (body.firstChild) body.removeChild(body.firstChild);
                 var loading = document.createElement('div');
@@ -11090,11 +11368,11 @@
                 body.appendChild(loading);
 
                 if (type === 'events') {
-                    requestLibraryEvents(function(r) {
+                    requestLibraryEvents(function (r) {
                         renderLibraryFeedItems(section, r, type);
                     }, true);
                 } else {
-                    requestLibraryNews(function(r) {
+                    requestLibraryNews(function (r) {
                         renderLibraryFeedItems(section, r, type);
                     }, true);
                 }
@@ -11109,7 +11387,7 @@
         if (resp && resp.ok === false) {
             var err = document.createElement('div');
             err.className = 'dtu-library-state-msg';
-            
+
             var suffix = '';
             if (resp.error === 'http' && resp.status) suffix = ' (HTTP ' + resp.status + ')';
             else if (resp.error) suffix = ' (' + String(resp.error) + ')';
@@ -11135,7 +11413,7 @@
 
         // Create item elements
         var itemEls = [];
-        items.forEach(function(item) {
+        items.forEach(function (item) {
             var row = document.createElement('a');
             row.className = 'dtu-library-feed-item';
             row.href = item.url;
@@ -11158,26 +11436,26 @@
                 }
                 if (!dayText) dayText = '--';
                 if (!monthText) monthText = 'TBA';
-                
+
                 var dayEl = document.createElement('div');
                 dayEl.className = 'dtu-library-date-day';
                 dayEl.textContent = dayText;
-                
+
                 var monthEl = document.createElement('div');
                 monthEl.className = 'dtu-library-date-month';
                 monthEl.textContent = monthText;
-                
+
                 badge.appendChild(dayEl);
                 badge.appendChild(monthEl);
                 row.appendChild(badge);
             } else {
                 // Badge tag for news
                 if (item.badge) {
-                     // We'll prepend this to the title or content if needed, 
-                     // but for now let's just create it. 
-                     // Actually, the new styling might not explicitly support a separate badge column
-                     // effectively unless we just put it in the content.
-                     // The CSS had dtu-library-news-badge.
+                    // We'll prepend this to the title or content if needed, 
+                    // but for now let's just create it. 
+                    // Actually, the new styling might not explicitly support a separate badge column
+                    // effectively unless we just put it in the content.
+                    // The CSS had dtu-library-news-badge.
                 }
             }
 
@@ -11186,10 +11464,10 @@
 
             // News badge inside content if news
             if (type === 'news' && item.badge) {
-                 var tag = document.createElement('div');
-                 tag.className = 'dtu-library-news-badge';
-                 tag.textContent = item.badge;
-                 content.appendChild(tag);
+                var tag = document.createElement('div');
+                tag.className = 'dtu-library-news-badge';
+                tag.textContent = item.badge;
+                content.appendChild(tag);
             }
 
             var titleEl = document.createElement('div');
@@ -11235,7 +11513,7 @@
         const label = document.createElement('label');
         label.style.cssText = darkModeEnabled
             ? 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; '
-                + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
+            + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
             : 'display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;';
 
         const toggle = document.createElement('input');
@@ -11244,7 +11522,7 @@
         toggle.checked = isDeadlinesEnabled();
         toggle.style.cssText = 'width: 16px; height: 16px; cursor: pointer; accent-color: var(--dtu-ad-accent);';
 
-        toggle.addEventListener('change', function() {
+        toggle.addEventListener('change', function () {
             localStorage.setItem(DEADLINES_ENABLED_KEY, toggle.checked.toString());
             insertDeadlinesHomepageWidget();
         });
@@ -11280,7 +11558,7 @@
         const label = document.createElement('label');
         label.style.cssText = darkModeEnabled
             ? 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; '
-                + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
+            + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
             : 'display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;';
 
         const toggle = document.createElement('input');
@@ -11289,7 +11567,7 @@
         toggle.checked = isSearchWidgetEnabled();
         toggle.style.cssText = 'width: 16px; height: 16px; cursor: pointer; accent-color: var(--dtu-ad-accent);';
 
-        toggle.addEventListener('change', function() {
+        toggle.addEventListener('change', function () {
             localStorage.setItem(SEARCH_WIDGET_ENABLED_KEY, toggle.checked.toString());
             insertDeadlinesHomepageWidget();
         });
@@ -11328,7 +11606,7 @@
         const label = document.createElement('label');
         label.style.cssText = darkModeEnabled
             ? 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; '
-                + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
+            + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
             : 'display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;';
 
         const toggle = document.createElement('input');
@@ -11337,7 +11615,7 @@
         toggle.checked = isFeatureFlagEnabled(featureKey);
         toggle.style.cssText = 'width: 16px; height: 16px; cursor: pointer; accent-color: var(--dtu-ad-accent);';
 
-        toggle.addEventListener('change', function() {
+        toggle.addEventListener('change', function () {
             setFeatureFlagEnabled(featureKey, toggle.checked);
 
             // Apply immediately on pages where the feature is visible.
@@ -11346,8 +11624,8 @@
                     insertBookFinderLinks();
                 } else {
                     // Remove any injected bars and reset markers.
-                    document.querySelectorAll('[data-book-finder-bar]').forEach(function(el) { el.remove(); });
-                    document.querySelectorAll('[data-book-finder-injected]').forEach(function(el) {
+                    document.querySelectorAll('[data-book-finder-bar]').forEach(function (el) { el.remove(); });
+                    document.querySelectorAll('[data-book-finder-injected]').forEach(function (el) {
                         el.removeAttribute('data-book-finder-injected');
                     });
                 }
@@ -11468,23 +11746,23 @@
             { id: 'feature-book-finder-toggle', key: FEATURE_BOOK_FINDER_KEY },
             { id: 'feature-content-shortcut-toggle', key: FEATURE_CONTENT_SHORTCUT_KEY },
             { id: 'feature-learn-nav-resource-links-toggle', key: FEATURE_LEARN_NAV_RESOURCE_LINKS_KEY },
-             { id: 'feature-kurser-grade-stats-toggle', key: FEATURE_KURSER_GRADE_STATS_KEY },
-             { id: 'feature-kurser-course-eval-toggle', key: FEATURE_KURSER_COURSE_EVAL_KEY },
-             { id: 'feature-kurser-room-finder-toggle', key: FEATURE_KURSER_ROOM_FINDER_KEY },
-             { id: 'feature-smart-room-linker-toggle', key: FEATURE_SMART_ROOM_LINKER_KEY },
-             { id: 'feature-kurser-textbook-linker-toggle', key: FEATURE_KURSER_TEXTBOOK_LINKER_KEY },
-             { id: 'feature-kurser-schedule-annotation-toggle', key: FEATURE_KURSER_SCHEDULE_ANNOTATION_KEY },
-             { id: 'feature-kurser-myline-badges-toggle', key: FEATURE_KURSER_MYLINE_BADGES_KEY },
-             { id: 'feature-campusnet-gpa-tools-toggle', key: FEATURE_CAMPUSNET_GPA_TOOLS_KEY },
-             { id: 'feature-participant-intel-toggle', key: FEATURE_PARTICIPANT_INTEL_KEY },
-             { id: 'feature-participant-intel-demographics-toggle', key: FEATURE_PARTICIPANT_INTEL_DEMOGRAPHICS_KEY },
+            { id: 'feature-kurser-grade-stats-toggle', key: FEATURE_KURSER_GRADE_STATS_KEY },
+            { id: 'feature-kurser-course-eval-toggle', key: FEATURE_KURSER_COURSE_EVAL_KEY },
+            { id: 'feature-kurser-room-finder-toggle', key: FEATURE_KURSER_ROOM_FINDER_KEY },
+            { id: 'feature-smart-room-linker-toggle', key: FEATURE_SMART_ROOM_LINKER_KEY },
+            { id: 'feature-kurser-textbook-linker-toggle', key: FEATURE_KURSER_TEXTBOOK_LINKER_KEY },
+            { id: 'feature-kurser-schedule-annotation-toggle', key: FEATURE_KURSER_SCHEDULE_ANNOTATION_KEY },
+            { id: 'feature-kurser-myline-badges-toggle', key: FEATURE_KURSER_MYLINE_BADGES_KEY },
+            { id: 'feature-campusnet-gpa-tools-toggle', key: FEATURE_CAMPUSNET_GPA_TOOLS_KEY },
+            { id: 'feature-participant-intel-toggle', key: FEATURE_PARTICIPANT_INTEL_KEY },
+            { id: 'feature-participant-intel-demographics-toggle', key: FEATURE_PARTICIPANT_INTEL_DEMOGRAPHICS_KEY },
             { id: 'feature-participant-intel-shared-history-toggle', key: FEATURE_PARTICIPANT_INTEL_SHARED_HISTORY_KEY },
             { id: 'feature-participant-intel-semester-twins-toggle', key: FEATURE_PARTICIPANT_INTEL_SEMESTER_TWINS_KEY },
             { id: 'feature-participant-intel-retention-toggle', key: FEATURE_PARTICIPANT_INTEL_RETENTION_KEY },
             { id: 'feature-studyplan-exam-cluster-toggle', key: FEATURE_STUDYPLAN_EXAM_CLUSTER_KEY },
             { id: 'library-dropdown-toggle', key: FEATURE_LIBRARY_DROPDOWN_KEY }
         ];
-        mapping.forEach(function(m) {
+        mapping.forEach(function (m) {
             const el = document.querySelector('#' + m.id);
             if (el) el.checked = isFeatureFlagEnabled(m.key);
         });
@@ -11498,8 +11776,8 @@
         if (featureKey === FEATURE_BOOK_FINDER_KEY) {
             if (enabled) { insertBookFinderLinks(); }
             else {
-                document.querySelectorAll('[data-book-finder-bar]').forEach(function(el) { el.remove(); });
-                document.querySelectorAll('[data-book-finder-injected]').forEach(function(el) { el.removeAttribute('data-book-finder-injected'); });
+                document.querySelectorAll('[data-book-finder-bar]').forEach(function (el) { el.remove(); });
+                document.querySelectorAll('[data-book-finder-injected]').forEach(function (el) { el.removeAttribute('data-book-finder-injected'); });
             }
         }
         if (featureKey === FEATURE_CAMPUSNET_GPA_TOOLS_KEY && window.location.hostname === 'campusnet.dtu.dk') {
@@ -11560,7 +11838,7 @@
         try {
             var settingsBtn = document.querySelector('.dtu-settings-nav-item button');
             if (settingsBtn) settingsBtn.setAttribute('aria-expanded', 'false');
-        } catch (e) {}
+        } catch (e) { }
     }
 
     function showSettingsModal() {
@@ -11574,16 +11852,16 @@
         // Each entry: { tid, getState, onChange, hasEdit?, onEdit? }
         var toggleHandlers = {
             'dark-mode-toggle': {
-                getState: function() { return darkModeEnabled; },
-                onChange: function(checked) { saveDarkModePreference(checked); location.reload(); }
+                getState: function () { return darkModeEnabled; },
+                onChange: function (checked) { saveDarkModePreference(checked); location.reload(); }
             },
             'mojangles-toggle': {
-                getState: function() { return isMojanglesEnabled(); },
-                onChange: function(checked) { localStorage.setItem('mojanglesTextEnabled', checked.toString()); insertMojanglesText(); }
+                getState: function () { return isMojanglesEnabled(); },
+                onChange: function (checked) { localStorage.setItem('mojanglesTextEnabled', checked.toString()); insertMojanglesText(); }
             },
             'bus-departures-toggle': {
-                getState: function() { return isBusEnabled(); },
-                onChange: function(checked, input) {
+                getState: function () { return isBusEnabled(); },
+                onChange: function (checked, input) {
                     if (checked && (isApiQuotaExhausted() || isDailyLimitReached())) {
                         input.checked = false;
                         showQuotaExhaustedMessage(isApiQuotaExhausted() ? 'monthly' : 'daily');
@@ -11597,15 +11875,15 @@
                     } else { insertBusDisplay(); }
                 },
                 hasEdit: true,
-                onEdit: function() { hideSettingsModal(); showBusConfigModal(); }
+                onEdit: function () { hideSettingsModal(); showBusConfigModal(); }
             },
             'deadlines-toggle': {
-                getState: function() { return isDeadlinesEnabled(); },
-                onChange: function(checked) { localStorage.setItem(DEADLINES_ENABLED_KEY, checked.toString()); insertDeadlinesHomepageWidget(); }
+                getState: function () { return isDeadlinesEnabled(); },
+                onChange: function (checked) { localStorage.setItem(DEADLINES_ENABLED_KEY, checked.toString()); insertDeadlinesHomepageWidget(); }
             },
             'search-widget-toggle': {
-                getState: function() { return isSearchWidgetEnabled(); },
-                onChange: function(checked) { localStorage.setItem(SEARCH_WIDGET_ENABLED_KEY, checked.toString()); insertDeadlinesHomepageWidget(); }
+                getState: function () { return isSearchWidgetEnabled(); },
+                onChange: function (checked) { localStorage.setItem(SEARCH_WIDGET_ENABLED_KEY, checked.toString()); insertDeadlinesHomepageWidget(); }
             }
         };
 
@@ -11630,51 +11908,63 @@
             { id: 'feature-smart-room-linker-toggle', key: FEATURE_SMART_ROOM_LINKER_KEY },
             { id: 'feature-kurser-schedule-annotation-toggle', key: FEATURE_KURSER_SCHEDULE_ANNOTATION_KEY }
         ];
-        featureFlagToggles.forEach(function(ft) {
+        featureFlagToggles.forEach(function (ft) {
             toggleHandlers[ft.id] = {
-                getState: function() { return isFeatureFlagEnabled(ft.key); },
-                onChange: function(checked) { setFeatureFlagEnabled(ft.key, checked); applyFeatureToggleImmediately(ft.key, checked); }
+                getState: function () { return isFeatureFlagEnabled(ft.key); },
+                onChange: function (checked) { setFeatureFlagEnabled(ft.key, checked); applyFeatureToggleImmediately(ft.key, checked); }
             };
         });
 
         // -- Category definitions --
         var categories = [
-            { id: 'appearance', label: 'Appearance', desc: 'Theme and visual settings', items: [
-                { tid: 'dark-mode-toggle',    title: 'Dark Mode',       desc: 'Global dark theme for all DTU sites' },
-                { kind: 'accent-theme',       title: 'Accent Color',    desc: 'Official DTU color presets plus custom (default: DTU Corporate Red)' },
-                { tid: 'mojangles-toggle',    title: 'Mojangles Font',  desc: 'Use the Minecraft font for headers' }
-            ]},
-            { id: 'interface', label: 'Interface', desc: 'Navigation and UI helpers', items: [
-                { tid: 'feature-learn-nav-resource-links-toggle', title: 'Navigation Quick Links', desc: 'Adds Panopto and CampusNet to the Student Resources menu' }
-            ]},
-            { id: 'dashboard', label: 'Dashboard', desc: 'DTU Learn homepage widgets', items: [
-                { tid: 'bus-departures-toggle',           title: 'Bus Departures',    desc: 'Show live bus departure times around campus' },
-                { tid: 'deadlines-toggle',                title: 'Deadlines Widget',  desc: 'Timeline of upcoming assignments' },
-                { tid: 'search-widget-toggle',            title: 'Course Search',     desc: 'Quick course search on the dashboard' },
-                { tid: 'feature-content-shortcut-toggle', title: 'Content Shortcut',  desc: 'Direct link to course content from cards' },
-                { tid: 'library-dropdown-toggle',         title: 'Library',           desc: 'Quick links and live events/news from DTU Library' }
-            ]},
-            { id: 'study-tools', label: 'Study Tools', desc: 'Academic planning features', items: [
-                { tid: 'feature-campusnet-gpa-tools-toggle',      title: 'GPA Calculator',        desc: 'Weighted grade average on CampusNet' },
-                { tid: 'feature-studyplan-exam-cluster-toggle',   title: 'Exam Cluster Warning',  desc: 'Highlight exam schedule conflicts' }
-            ]},
-            { id: 'social', label: 'Social', desc: 'Participant intelligence tools', items: [
-                { tid: 'feature-participant-intel-toggle',                title: 'Participant Intelligence', desc: 'Master switch for the whole suite' },
-                { tid: 'feature-participant-intel-demographics-toggle',   title: 'Course Composition',      desc: 'Program breakdown on CampusNet participant pages' },
-                { tid: 'feature-participant-intel-shared-history-toggle', title: 'Shared Course History',    desc: 'Badges on participant lists + profile history card' },
-                { tid: 'feature-participant-intel-semester-twins-toggle', title: 'Semester Twins',           desc: 'Widget on the CampusNet frontpage' },
-                { tid: 'feature-participant-intel-retention-toggle',      title: 'Retention Radar',          desc: 'Tracks Users enrollment count over time' }
-            ]},
-            { id: 'course-catalog', label: 'Course Catalog', desc: 'Enhancements for kurser.dtu.dk', items: [
-                { tid: 'feature-kurser-grade-stats-toggle',          title: 'Grade Statistics',     desc: 'Show pass rates and grade histograms' },
-                { tid: 'feature-book-finder-toggle',                 title: 'Book Finder',          desc: 'Find textbooks from DTU Learn pages' },
-                { tid: 'feature-kurser-textbook-linker-toggle',      title: 'Textbook Links',       desc: 'Direct links to textbooks on DTU FindIt' },
-                { tid: 'feature-kurser-course-eval-toggle',          title: 'Course Evaluation',    desc: 'Show evaluation scores on course pages' },
-                { tid: 'feature-kurser-myline-badges-toggle',        title: 'MyLine Curriculum Badges', desc: 'Mark courses as Mandatory/Core/Elective pool based on your study line' },
-                { tid: 'feature-kurser-room-finder-toggle',          title: 'Room Finder',          desc: 'Clickable room numbers with locations' },
-                { tid: 'feature-smart-room-linker-toggle',           title: 'Smart Room Links',     desc: 'Turn room mentions into MazeMap links (click-to-resolve)' },
-                { tid: 'feature-kurser-schedule-annotation-toggle',  title: 'Schedule Annotation',  desc: 'Enhanced schedule view on course pages' }
-            ]}
+            {
+                id: 'appearance', label: 'Appearance', desc: 'Theme and visual settings', items: [
+                    { tid: 'dark-mode-toggle', title: 'Dark Mode', desc: 'Global dark theme for all DTU sites' },
+                    { kind: 'accent-theme', title: 'Accent Color', desc: 'Official DTU color presets plus custom (default: DTU Corporate Red)' },
+                    { tid: 'mojangles-toggle', title: 'Mojangles Font', desc: 'Use the Minecraft font for headers' }
+                ]
+            },
+            {
+                id: 'interface', label: 'Interface', desc: 'Navigation and UI helpers', items: [
+                    { tid: 'feature-learn-nav-resource-links-toggle', title: 'Navigation Quick Links', desc: 'Adds Panopto and CampusNet to the Student Resources menu' }
+                ]
+            },
+            {
+                id: 'dashboard', label: 'Dashboard', desc: 'DTU Learn homepage widgets', items: [
+                    { tid: 'bus-departures-toggle', title: 'Bus Departures', desc: 'Show live bus departure times around campus' },
+                    { tid: 'deadlines-toggle', title: 'Deadlines Widget', desc: 'Timeline of upcoming assignments' },
+                    { tid: 'search-widget-toggle', title: 'Course Search', desc: 'Quick course search on the dashboard' },
+                    { tid: 'feature-content-shortcut-toggle', title: 'Content Shortcut', desc: 'Direct link to course content from cards' },
+                    { tid: 'library-dropdown-toggle', title: 'Library', desc: 'Quick links and live events/news from DTU Library' }
+                ]
+            },
+            {
+                id: 'study-tools', label: 'Study Tools', desc: 'Academic planning features', items: [
+                    { tid: 'feature-campusnet-gpa-tools-toggle', title: 'GPA Calculator', desc: 'Weighted grade average on CampusNet' },
+                    { tid: 'feature-studyplan-exam-cluster-toggle', title: 'Exam Cluster Warning', desc: 'Highlight exam schedule conflicts' }
+                ]
+            },
+            {
+                id: 'social', label: 'Social', desc: 'Participant intelligence tools', items: [
+                    { tid: 'feature-participant-intel-toggle', title: 'Participant Intelligence', desc: 'Master switch for the whole suite' },
+                    { tid: 'feature-participant-intel-demographics-toggle', title: 'Course Composition', desc: 'Program breakdown on CampusNet participant pages' },
+                    { tid: 'feature-participant-intel-shared-history-toggle', title: 'Shared Course History', desc: 'Badges on participant lists + profile history card' },
+                    { tid: 'feature-participant-intel-semester-twins-toggle', title: 'Semester Twins', desc: 'Widget on the CampusNet frontpage' },
+                    { tid: 'feature-participant-intel-retention-toggle', title: 'Retention Radar', desc: 'Tracks Users enrollment count over time' }
+                ]
+            },
+            {
+                id: 'course-catalog', label: 'Course Catalog', desc: 'Enhancements for kurser.dtu.dk', items: [
+                    { tid: 'feature-kurser-grade-stats-toggle', title: 'Grade Statistics', desc: 'Show pass rates and grade histograms' },
+                    { tid: 'feature-book-finder-toggle', title: 'Book Finder', desc: 'Find textbooks from DTU Learn pages' },
+                    { tid: 'feature-kurser-textbook-linker-toggle', title: 'Textbook Links', desc: 'Direct links to textbooks on DTU FindIt' },
+                    { tid: 'feature-kurser-course-eval-toggle', title: 'Course Evaluation', desc: 'Show evaluation scores on course pages' },
+                    { tid: 'feature-kurser-myline-badges-toggle', title: 'MyLine Curriculum Badges', desc: 'Mark courses as Mandatory/Core/Elective pool based on your study line' },
+                    { tid: 'feature-kurser-room-finder-toggle', title: 'Room Finder', desc: 'Clickable room numbers with locations' },
+                    { tid: 'feature-smart-room-linker-toggle', title: 'Smart Room Links', desc: 'Turn room mentions into MazeMap links (click-to-resolve)' },
+                    { tid: 'feature-kurser-schedule-annotation-toggle', title: 'Schedule Annotation', desc: 'Enhanced schedule view on course pages' }
+                ]
+            }
         ];
 
         // -- Inject CSS (reuse existing styles or create) --
@@ -11687,62 +11977,62 @@
         styleEl.textContent = ''
             + '.dtu-am-root,.dtu-am-root *{box-sizing:border-box}'
             + '.dtu-am-root{display:flex;width:100%;max-width:100%;height:600px;max-height:calc(100vh - 140px);'
-                + 'overflow:hidden;border-radius:8px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;'
-                + 'background:var(--dtu-am-content-bg) !important;color:var(--dtu-am-text) !important}'
+            + 'overflow:hidden;border-radius:8px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;'
+            + 'background:var(--dtu-am-content-bg) !important;color:var(--dtu-am-text) !important}'
             + '.dtu-am-sidebar{width:170px;min-width:170px;overflow-x:hidden;overflow-y:auto;'
-                + 'padding:14px 0;display:flex;flex-direction:column;gap:1px;'
-                + 'background:var(--dtu-am-sidebar-bg) !important;border-right:1px solid var(--dtu-am-border) !important}'
+            + 'padding:14px 0;display:flex;flex-direction:column;gap:1px;'
+            + 'background:var(--dtu-am-sidebar-bg) !important;border-right:1px solid var(--dtu-am-border) !important}'
             + '.dtu-am-content{flex:1;min-width:0;min-height:0;height:100%;display:flex;flex-direction:column;'
-                + 'overflow-x:hidden;overflow-y:auto;padding:20px 34px 20px 24px;'
-                + 'background:var(--dtu-am-content-bg) !important}'
+            + 'overflow-x:hidden;overflow-y:auto;padding:20px 34px 20px 24px;'
+            + 'background:var(--dtu-am-content-bg) !important}'
             + '.dtu-am-content::-webkit-scrollbar,.dtu-am-sidebar::-webkit-scrollbar{width:0;height:0}'
             + '.dtu-am-content,.dtu-am-sidebar{-ms-overflow-style:none;scrollbar-width:none}'
             + '.dtu-am-sidebar-hd{padding:0 14px 10px;border-bottom:1px solid var(--dtu-am-border) !important;margin-bottom:6px}'
             + '.dtu-am-brand{font-size:14px;font-weight:700;color:var(--dtu-am-text) !important}'
             + '.dtu-am-sub{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;'
-                + 'color:var(--dtu-am-muted) !important;margin-top:2px}'
+            + 'color:var(--dtu-am-muted) !important;margin-top:2px}'
             + '.dtu-am-panel{display:none !important}'
             + '.dtu-am-panel.dtu-active{display:block !important}'
             + '.dtu-am-panel-title{font-size:18px;font-weight:600;color:var(--dtu-am-text) !important;margin:0 0 2px}'
             + '.dtu-am-panel-desc{font-size:12px;color:var(--dtu-am-muted) !important;margin-bottom:16px}'
             + '.dtu-nav-i{padding:8px 14px;cursor:pointer;border-radius:6px;margin:2px 6px;transition:background .15s;user-select:none;-webkit-user-select:none;'
-                + 'font-size:13px;color:var(--dtu-am-text) !important;border-left:3px solid transparent}'
+            + 'font-size:13px;color:var(--dtu-am-text) !important;border-left:3px solid transparent}'
             + '.dtu-nav-i:hover{background:var(--dtu-am-hover) !important}'
             + '.dtu-nav-i.dtu-active{background:var(--dtu-am-active-bg) !important;border-left-color:var(--dtu-am-accent) !important;'
-                + 'color:var(--dtu-am-active-text) !important;font-weight:600}'
+            + 'color:var(--dtu-am-active-text) !important;font-weight:600}'
             + '.dtu-set-row{display:flex;align-items:center;justify-content:space-between;gap:16px;'
-                + 'padding:12px 0;border-bottom:1px solid var(--dtu-am-border) !important}'
+            + 'padding:12px 0;border-bottom:1px solid var(--dtu-am-border) !important}'
             + '.dtu-set-row:last-child{border-bottom:none}'
             + '.dtu-am-info{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}'
             + '.dtu-am-title{font-size:13px;font-weight:600;color:var(--dtu-am-text) !important;'
-                + 'white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}'
+            + 'white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}'
             + '.dtu-am-desc{font-size:11px;color:var(--dtu-am-muted) !important;line-height:1.25;'
-                + 'white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}'
+            + 'white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}'
             + '.dtu-am-link{font-size:11px;line-height:1.25;color:var(--dtu-am-action) !important;'
-                + 'text-decoration:none !important;margin-top:1px}'
+            + 'text-decoration:none !important;margin-top:1px}'
             + '.dtu-am-link:hover{text-decoration:underline !important;color:var(--dtu-am-accent) !important}'
             + '.dtu-am-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}'
             + '.dtu-am-edit{background:transparent;border:1px solid var(--dtu-am-border) !important;'
-                + 'color:var(--dtu-am-action) !important;padding:6px 10px;border-radius:8px;cursor:pointer;'
-                + 'font-size:12px;font-weight:700;line-height:1;white-space:nowrap}'
+            + 'color:var(--dtu-am-action) !important;padding:6px 10px;border-radius:8px;cursor:pointer;'
+            + 'font-size:12px;font-weight:700;line-height:1;white-space:nowrap}'
             + '.dtu-am-swatch{width:14px;height:14px;border-radius:999px;flex:0 0 auto;'
-                + 'background:var(--dtu-am-accent) !important;border:1px solid var(--dtu-am-border) !important}'
+            + 'background:var(--dtu-am-accent) !important;border:1px solid var(--dtu-am-border) !important}'
             + '.dtu-am-select{min-width:140px;width:200px;max-width:240px;flex:0 1 auto;padding:6px 10px;border-radius:10px;'
-                + 'background:var(--dtu-am-input-bg) !important;background-color:var(--dtu-am-input-bg) !important;'
-                + 'color:var(--dtu-am-text) !important;border:1px solid var(--dtu-am-border) !important;'
-                + 'font-size:12px;font-weight:700;cursor:pointer}'
+            + 'background:var(--dtu-am-input-bg) !important;background-color:var(--dtu-am-input-bg) !important;'
+            + 'color:var(--dtu-am-text) !important;border:1px solid var(--dtu-am-border) !important;'
+            + 'font-size:12px;font-weight:700;cursor:pointer}'
             + '.dtu-am-select:focus{outline:none;border-color:var(--dtu-am-accent) !important;'
-                + 'box-shadow:0 0 0 3px var(--dtu-am-accent-ring) !important}'
+            + 'box-shadow:0 0 0 3px var(--dtu-am-accent-ring) !important}'
             + '.dtu-am-color{width:36px;height:30px;padding:0;border-radius:8px;cursor:pointer;'
-                + 'border:1px solid var(--dtu-am-border) !important;'
-                + 'background:var(--dtu-am-input-bg) !important;background-color:var(--dtu-am-input-bg) !important}'
+            + 'border:1px solid var(--dtu-am-border) !important;'
+            + 'background:var(--dtu-am-input-bg) !important;background-color:var(--dtu-am-input-bg) !important}'
             + '.dtu-tog{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0}'
             + '.dtu-tog input{opacity:0;width:0;height:0;position:absolute}'
             + '.dtu-tog-sl{position:absolute;cursor:pointer;inset:0;'
-                + 'background:var(--dtu-am-toggle-off) !important;background-color:var(--dtu-am-toggle-off) !important;'
-                + 'border-radius:22px;transition:background .2s}'
+            + 'background:var(--dtu-am-toggle-off) !important;background-color:var(--dtu-am-toggle-off) !important;'
+            + 'border-radius:22px;transition:background .2s}'
             + '.dtu-tog-sl::before{content:"";position:absolute;height:16px;width:16px;left:3px;bottom:3px;'
-                + 'background:#fff !important;border-radius:50%;transition:transform .2s}'
+            + 'background:#fff !important;border-radius:50%;transition:transform .2s}'
             + '.dtu-tog input:checked+.dtu-tog-sl{background:var(--dtu-am-accent) !important;background-color:var(--dtu-am-accent) !important}'
             + '.dtu-tog input:checked+.dtu-tog-sl::before{transform:translateX(18px)}';
 
@@ -11755,7 +12045,7 @@
             + 'backdrop-filter:blur(4px) !important;-webkit-backdrop-filter:blur(4px) !important;';
 
         // Click outside to close
-        overlay.addEventListener('mousedown', function(e) {
+        overlay.addEventListener('mousedown', function (e) {
             if (e.target === overlay) hideSettingsModal();
         });
 
@@ -11806,7 +12096,7 @@
         var navItems = [];
         var firstCat = null;
 
-        categories.forEach(function(cat) {
+        categories.forEach(function (cat) {
             if (!firstCat) firstCat = cat.id;
 
             // Nav item
@@ -11836,7 +12126,7 @@
             panel.appendChild(panelDesc);
 
             // Setting rows
-            cat.items.forEach(function(item) {
+            cat.items.forEach(function (item) {
                 if (item && item.kind === 'accent-theme') {
                     var row0 = document.createElement('div');
                     markExt(row0);
@@ -11884,10 +12174,10 @@
                     sel.setAttribute('data-dtu-accent-theme-select', '1');
 
                     var ordered = ACCENT_THEME_ORDER.slice();
-                    Object.keys(ACCENT_THEMES).forEach(function(k) {
+                    Object.keys(ACCENT_THEMES).forEach(function (k) {
                         if (ordered.indexOf(k) === -1) ordered.push(k);
                     });
-                    ordered.forEach(function(k) {
+                    ordered.forEach(function (k) {
                         var t = ACCENT_THEMES[k];
                         if (!t) return;
                         var opt = document.createElement('option');
@@ -11895,9 +12185,9 @@
                         opt.textContent = t.label || k;
                         sel.appendChild(opt);
                     });
-                    try { sel.value = _accentThemeId; } catch (eSel) {}
+                    try { sel.value = _accentThemeId; } catch (eSel) { }
 
-                    sel.addEventListener('change', function() {
+                    sel.addEventListener('change', function () {
                         setAccentThemeId(sel.value);
                     });
 
@@ -11906,7 +12196,7 @@
                     color.type = 'color';
                     color.className = 'dtu-am-color';
                     color.setAttribute('data-dtu-accent-custom-input', '1');
-                    try { color.value = _accentCustomHex || ACCENT_CUSTOM_DEFAULT; } catch (eC0) {}
+                    try { color.value = _accentCustomHex || ACCENT_CUSTOM_DEFAULT; } catch (eC0) { }
                     color.style.display = (_accentThemeId === 'custom') ? '' : 'none';
                     function onPickCustomColor() {
                         // Important: store/apply the picked hex BEFORE switching theme.
@@ -11916,7 +12206,7 @@
                         try { picked = color.value; } catch (eV0) { picked = ''; }
                         if (picked) setAccentCustomHex(picked);
                         setAccentThemeId('custom');
-                        try { sel.value = 'custom'; } catch (eS1) {}
+                        try { sel.value = 'custom'; } catch (eS1) { }
                     }
                     // Firefox can fire `change` (not `input`) for the color picker dialog.
                     color.addEventListener('input', onPickCustomColor);
@@ -11972,7 +12262,7 @@
                 togLabel.appendChild(input);
                 togLabel.appendChild(slider);
 
-                input.addEventListener('change', function() {
+                input.addEventListener('change', function () {
                     handler.onChange(input.checked, input);
                 });
 
@@ -11983,9 +12273,9 @@
                     editBtn.type = 'button';
                     editBtn.textContent = 'Edit';
                     editBtn.className = 'dtu-am-edit';
-                    editBtn.addEventListener('click', function(e) {
-                        try { e.preventDefault(); } catch (e0) {}
-                        try { e.stopPropagation(); } catch (e1) {}
+                    editBtn.addEventListener('click', function (e) {
+                        try { e.preventDefault(); } catch (e0) { }
+                        try { e.stopPropagation(); } catch (e1) { }
                         if (handler.onEdit) handler.onEdit();
                     });
                     function syncEditVis() { editBtn.style.display = handler.getState() ? 'inline-flex' : 'none'; }
@@ -12007,21 +12297,21 @@
         // Sidebar navigation
         function showCat(catId) {
             if (!catId) return;
-            navItems.forEach(function(n) { n.classList.remove('dtu-active'); });
-            navItems.forEach(function(n) { if (n.getAttribute('data-cat') === catId) n.classList.add('dtu-active'); });
-            Object.keys(panels).forEach(function(id) {
+            navItems.forEach(function (n) { n.classList.remove('dtu-active'); });
+            navItems.forEach(function (n) { if (n.getAttribute('data-cat') === catId) n.classList.add('dtu-active'); });
+            Object.keys(panels).forEach(function (id) {
                 var p = panels[id];
                 if (!p) return;
-                try { p.style.display = ''; } catch (e0) {}
+                try { p.style.display = ''; } catch (e0) { }
                 p.classList.toggle('dtu-active', id === catId);
             });
-            try { contentArea.scrollTop = 0; } catch (e1) {}
+            try { contentArea.scrollTop = 0; } catch (e1) { }
         }
 
-        navItems.forEach(function(navItem) {
+        navItems.forEach(function (navItem) {
             function activate(e) {
-                try { if (e) e.preventDefault(); } catch (e0) {}
-                try { if (e) e.stopPropagation(); } catch (e1) {}
+                try { if (e) e.preventDefault(); } catch (e0) { }
+                try { if (e) e.stopPropagation(); } catch (e1) { }
                 showCat(navItem.getAttribute('data-cat'));
             }
             navItem.addEventListener('pointerdown', activate);
@@ -12091,7 +12381,7 @@
             mainWrapper.appendChild(navItem);
         }
 
-        openerBtn.addEventListener('click', function(e) {
+        openerBtn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
             var existing = document.querySelector('.dtu-settings-modal-overlay');
@@ -12118,11 +12408,11 @@
                 adminToolsDbg('restructure_skip_not_visible', {
                     placeholderRect: safeRect(placeholder),
                     dropdownRect: safeRect(dd0),
-                    sinceGearMs: (function(){ try { return Date.now() - (_adminToolsLastGearInteractionTs || 0); } catch(e){ return null; } })()
+                    sinceGearMs: (function () { try { return Date.now() - (_adminToolsLastGearInteractionTs || 0); } catch (e) { return null; } })()
                 });
                 return;
             }
-        } catch (eVis) {}
+        } catch (eVis) { }
         adminToolsDbg('restructure_enter', {
             marker: placeholder.getAttribute ? placeholder.getAttribute('data-dtu-restructured') : null
         });
@@ -12142,21 +12432,21 @@
                 if (existingRoot) {
                     applyAdminMenuThemeVars(existingRoot);
                     // Keep dropdown sizing stable across open/close cycles.
-                    try { setTimeout(applyFixedAdminToolsDropdownSizing, 0); } catch (e1) {}
+                    try { setTimeout(applyFixedAdminToolsDropdownSizing, 0); } catch (e1) { }
                     adminToolsDbg('restructure_already_done', { hasRoot: true });
                     return;
                 }
-            } catch (e0) {}
+            } catch (e0) { }
             // Marker was set but the UI is gone (Brightspace can re-render the dropdown).
             // Clear it so we rebuild.
-            try { placeholder.removeAttribute('data-dtu-restructured'); } catch (e2) {}
+            try { placeholder.removeAttribute('data-dtu-restructured'); } catch (e2) { }
             adminToolsDbg('restructure_marker_cleared_rebuild', null);
         }
 
         // Find the DTU After Dark column
         var afterDarkCol = null;
         var orgCol = null;
-        placeholder.querySelectorAll('.d2l-admin-tools-column').forEach(function(col) {
+        placeholder.querySelectorAll('.d2l-admin-tools-column').forEach(function (col) {
             var h2 = col.querySelector('h2');
             if (!h2) return;
             var txt = normalizeWhitespace(h2.textContent || '');
@@ -12166,27 +12456,27 @@
 
         if (!afterDarkCol) {
             adminToolsDbg('restructure_skip_no_after_dark_col', {
-                colCount: (function(){ try { return placeholder.querySelectorAll('.d2l-admin-tools-column').length; } catch(e){ return null; } })()
+                colCount: (function () { try { return placeholder.querySelectorAll('.d2l-admin-tools-column').length; } catch (e) { return null; } })()
             });
             return;
         }
 
         // Collect existing toggle elements by ID (input elements directly)
         var toggleMap = {};
-        afterDarkCol.querySelectorAll('input[type="checkbox"]').forEach(function(input) {
+        afterDarkCol.querySelectorAll('input[type="checkbox"]').forEach(function (input) {
             if (input.id) toggleMap[input.id] = input;
         });
 
         var isDark = darkModeEnabled;
-        var sidebarBg  = isDark ? '#2d2d2d' : '#f3f4f6';
-        var contentBg  = isDark ? '#2d2d2d' : '#ffffff';
-        var textColor  = isDark ? '#e0e0e0' : '#1f2937';
-        var mutedColor = isDark ? '#888'     : '#6b7280';
-        var borderClr  = isDark ? '#333'     : '#e5e7eb';
-        var hoverBg    = isDark ? '#333'     : '#e5e7eb';
-        var activeText = isDark ? '#ff6b6b'  : '#990000';
-        var activeBg   = isDark ? 'rgba(153,0,0,0.13)' : 'rgba(153,0,0,0.07)';
-        var toggleOff  = isDark ? '#555'     : '#ccc';
+        var sidebarBg = isDark ? '#2d2d2d' : '#f3f4f6';
+        var contentBg = isDark ? '#2d2d2d' : '#ffffff';
+        var textColor = isDark ? '#e0e0e0' : '#1f2937';
+        var mutedColor = isDark ? '#888' : '#6b7280';
+        var borderClr = isDark ? '#333' : '#e5e7eb';
+        var hoverBg = isDark ? '#333' : '#e5e7eb';
+        var activeText = isDark ? '#ff6b6b' : '#990000';
+        var activeBg = isDark ? 'rgba(153,0,0,0.13)' : 'rgba(153,0,0,0.07)';
+        var toggleOff = isDark ? '#555' : '#ccc';
 
         // Inject / update admin menu styles (class-based; theme is controlled by CSS variables on .dtu-am-root).
         var styleEl = document.querySelector('#dtu-settings-styles');
@@ -12198,103 +12488,115 @@
         styleEl.textContent = ''
             + '.dtu-am-root,.dtu-am-root *{box-sizing:border-box}'
             + '.dtu-am-root{display:flex;width:100%;max-width:100%;height:var(--dtu-am-height,600px);max-height:calc(100vh - 140px);'
-                + 'overflow:hidden;border-radius:8px;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;'
-                + 'background:var(--dtu-am-content-bg) !important;color:var(--dtu-am-text) !important}'
+            + 'overflow:hidden;border-radius:8px;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;'
+            + 'background:var(--dtu-am-content-bg) !important;color:var(--dtu-am-text) !important}'
             + '.dtu-am-sidebar{width:170px;min-width:170px;overflow-x:hidden;overflow-y:auto;'
-                + 'padding:14px 0;display:flex;flex-direction:column;gap:1px;'
-                + 'background:var(--dtu-am-sidebar-bg) !important;border-right:1px solid var(--dtu-am-border) !important}'
+            + 'padding:14px 0;display:flex;flex-direction:column;gap:1px;'
+            + 'background:var(--dtu-am-sidebar-bg) !important;border-right:1px solid var(--dtu-am-border) !important}'
             + '.dtu-am-content{flex:1;min-width:0;min-height:0;height:100%;'
-                + 'overflow-x:hidden;overflow-y:auto;padding:20px 34px 20px 24px;'
-                + 'background:var(--dtu-am-content-bg) !important}'
+            + 'overflow-x:hidden;overflow-y:auto;padding:20px 34px 20px 24px;'
+            + 'background:var(--dtu-am-content-bg) !important}'
             + '.dtu-am-content::-webkit-scrollbar,.dtu-am-sidebar::-webkit-scrollbar{width:0;height:0}'
             + '.dtu-am-content,.dtu-am-sidebar{-ms-overflow-style:none;scrollbar-width:none}'
             + '.dtu-am-sidebar-hd{padding:0 14px 10px;border-bottom:1px solid var(--dtu-am-border) !important;margin-bottom:6px}'
             + '.dtu-am-brand{font-size:14px;font-weight:700;color:var(--dtu-am-text) !important}'
             + '.dtu-am-sub{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;'
-                + 'color:var(--dtu-am-muted) !important;margin-top:2px}'
+            + 'color:var(--dtu-am-muted) !important;margin-top:2px}'
             + '.dtu-am-panel{display:none !important}'
             + '.dtu-am-panel.dtu-active{display:block !important}'
             + '.dtu-am-panel-title{font-size:18px;font-weight:600;color:var(--dtu-am-text) !important;margin:0 0 2px}'
             + '.dtu-am-panel-desc{font-size:12px;color:var(--dtu-am-muted) !important;margin-bottom:16px}'
             + '.dtu-nav-i{padding:8px 14px;cursor:pointer;border-radius:6px;margin:2px 6px;transition:background .15s;user-select:none;-webkit-user-select:none;'
-                + 'font-size:13px;color:var(--dtu-am-text) !important;border-left:3px solid transparent}'
+            + 'font-size:13px;color:var(--dtu-am-text) !important;border-left:3px solid transparent}'
             + '.dtu-nav-i:hover{background:var(--dtu-am-hover) !important}'
             + '.dtu-nav-i.dtu-active{background:var(--dtu-am-active-bg) !important;border-left-color:var(--dtu-am-accent) !important;'
-                + 'color:var(--dtu-am-active-text) !important;font-weight:600}'
+            + 'color:var(--dtu-am-active-text) !important;font-weight:600}'
             + '.dtu-set-row{display:flex;align-items:center;justify-content:space-between;gap:16px;'
-                + 'padding:12px 0;border-bottom:1px solid var(--dtu-am-border) !important}'
+            + 'padding:12px 0;border-bottom:1px solid var(--dtu-am-border) !important}'
             + '.dtu-set-row:last-child{border-bottom:none}'
             + '.dtu-am-info{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}'
             + '.dtu-am-title{font-size:13px;font-weight:600;color:var(--dtu-am-text) !important;'
-                + 'white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}'
+            + 'white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}'
             + '.dtu-am-desc{font-size:11px;color:var(--dtu-am-muted) !important;line-height:1.25;'
-                + 'white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}'
+            + 'white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}'
             + '.dtu-am-link{font-size:11px;line-height:1.25;color:var(--dtu-am-action) !important;'
-                + 'text-decoration:none !important;margin-top:1px}'
+            + 'text-decoration:none !important;margin-top:1px}'
             + '.dtu-am-link:hover{text-decoration:underline !important;color:var(--dtu-am-accent) !important}'
             + '.dtu-am-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}'
             + '.dtu-am-edit{background:transparent;border:1px solid var(--dtu-am-border) !important;'
-                + 'color:var(--dtu-am-action) !important;padding:6px 10px;border-radius:8px;cursor:pointer;'
-                + 'font-size:12px;font-weight:700;line-height:1;white-space:nowrap}'
+            + 'color:var(--dtu-am-action) !important;padding:6px 10px;border-radius:8px;cursor:pointer;'
+            + 'font-size:12px;font-weight:700;line-height:1;white-space:nowrap}'
             + '.dtu-am-swatch{width:14px;height:14px;border-radius:999px;flex:0 0 auto;'
-                + 'background:var(--dtu-am-accent) !important;border:1px solid var(--dtu-am-border) !important}'
+            + 'background:var(--dtu-am-accent) !important;border:1px solid var(--dtu-am-border) !important}'
             + '.dtu-am-select{min-width:140px;width:200px;max-width:240px;flex:0 1 auto;padding:6px 10px;border-radius:10px;'
-                + 'background:var(--dtu-am-input-bg) !important;background-color:var(--dtu-am-input-bg) !important;'
-                + 'color:var(--dtu-am-text) !important;border:1px solid var(--dtu-am-border) !important;'
-                + 'font-size:12px;font-weight:700;cursor:pointer}'
+            + 'background:var(--dtu-am-input-bg) !important;background-color:var(--dtu-am-input-bg) !important;'
+            + 'color:var(--dtu-am-text) !important;border:1px solid var(--dtu-am-border) !important;'
+            + 'font-size:12px;font-weight:700;cursor:pointer}'
             + '.dtu-am-select:focus{outline:none;border-color:var(--dtu-am-accent) !important;'
-                + 'box-shadow:0 0 0 3px var(--dtu-am-accent-ring) !important}'
+            + 'box-shadow:0 0 0 3px var(--dtu-am-accent-ring) !important}'
             + '.dtu-am-color{width:36px;height:30px;padding:0;border-radius:8px;cursor:pointer;'
-                + 'border:1px solid var(--dtu-am-border) !important;'
-                + 'background:var(--dtu-am-input-bg) !important;background-color:var(--dtu-am-input-bg) !important}'
+            + 'border:1px solid var(--dtu-am-border) !important;'
+            + 'background:var(--dtu-am-input-bg) !important;background-color:var(--dtu-am-input-bg) !important}'
             + '.dtu-tog{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0}'
             + '.dtu-tog input{opacity:0;width:0;height:0;position:absolute}'
             + '.dtu-tog-sl{position:absolute;cursor:pointer;inset:0;'
-                + 'background:var(--dtu-am-toggle-off) !important;background-color:var(--dtu-am-toggle-off) !important;'
-                + 'border-radius:22px;transition:background .2s}'
+            + 'background:var(--dtu-am-toggle-off) !important;background-color:var(--dtu-am-toggle-off) !important;'
+            + 'border-radius:22px;transition:background .2s}'
             + '.dtu-tog-sl::before{content:\"\";position:absolute;height:16px;width:16px;left:3px;bottom:3px;'
-                + 'background:#fff !important;border-radius:50%;transition:transform .2s}'
+            + 'background:#fff !important;border-radius:50%;transition:transform .2s}'
             + '.dtu-tog input:checked+.dtu-tog-sl{background:var(--dtu-am-accent) !important;background-color:var(--dtu-am-accent) !important}'
             + '.dtu-tog input:checked+.dtu-tog-sl::before{transform:translateX(18px)}';
 
         // Category definitions with descriptions
         var categories = [
-            { id: 'appearance', label: 'Appearance', desc: 'Theme and visual settings', items: [
-                { tid: 'dark-mode-toggle',    title: 'Dark Mode',       desc: 'Global dark theme for all DTU sites' },
-                { kind: 'accent-theme',       title: 'Accent Color',    desc: 'Official DTU color presets plus custom (default: DTU Corporate Red)' },
-                { tid: 'mojangles-toggle',    title: 'Mojangles Font',  desc: 'Use the Minecraft font for headers' }
-            ]},
-            { id: 'interface', label: 'Interface', desc: 'Navigation and UI helpers', items: [
-                { tid: 'feature-learn-nav-resource-links-toggle', title: 'Navigation Quick Links', desc: 'Adds Panopto and CampusNet to the Student Resources menu' }
-            ]},
-            { id: 'dashboard', label: 'Dashboard', desc: 'DTU Learn homepage widgets', items: [
-                { tid: 'bus-departures-toggle',           title: 'Bus Departures',    desc: 'Show live bus departure times around campus' },
-                { tid: 'deadlines-toggle',                title: 'Deadlines Widget',  desc: 'Timeline of upcoming assignments' },
-                { tid: 'search-widget-toggle',            title: 'Course Search',     desc: 'Quick course search on the dashboard' },
-                { tid: 'feature-content-shortcut-toggle', title: 'Content Shortcut',  desc: 'Direct link to course content from cards' },
-                { tid: 'library-dropdown-toggle',            title: 'Library',           desc: 'Quick links and live events/news from DTU Library' }
-            ]},
-            { id: 'study-tools', label: 'Study Tools', desc: 'Academic planning features', items: [
-                { tid: 'feature-campusnet-gpa-tools-toggle',      title: 'GPA Calculator',        desc: 'Weighted grade average on CampusNet' },
-                { tid: 'feature-studyplan-exam-cluster-toggle',   title: 'Exam Cluster Warning',  desc: 'Highlight exam schedule conflicts' }
-            ]},
-            { id: 'social', label: 'Social', desc: 'Participant intelligence tools', items: [
-                { tid: 'feature-participant-intel-toggle',                title: 'Participant Intelligence', desc: 'Master switch for the whole suite' },
-                { tid: 'feature-participant-intel-demographics-toggle',   title: 'Course Composition',        desc: 'Program breakdown on CampusNet participant pages' },
-                { tid: 'feature-participant-intel-shared-history-toggle', title: 'Shared Course History',      desc: 'Badges on participant lists + profile history card' },
-                { tid: 'feature-participant-intel-semester-twins-toggle', title: 'Semester Twins',             desc: 'Widget on the CampusNet frontpage' },
-                { tid: 'feature-participant-intel-retention-toggle',      title: 'Retention Radar',            desc: 'Tracks Users enrollment count over time' }
-            ]},
-            { id: 'course-catalog', label: 'Course Catalog', desc: 'Enhancements for kurser.dtu.dk', items: [
-                { tid: 'feature-kurser-grade-stats-toggle',          title: 'Grade Statistics',     desc: 'Show pass rates and grade histograms' },
-                { tid: 'feature-book-finder-toggle',                 title: 'Book Finder',          desc: 'Find textbooks from DTU Learn pages' },
-                { tid: 'feature-kurser-textbook-linker-toggle',      title: 'Textbook Links',       desc: 'Direct links to textbooks on DTU FindIt' },
-                { tid: 'feature-kurser-course-eval-toggle',          title: 'Course Evaluation',    desc: 'Show evaluation scores on course pages' },
-                { tid: 'feature-kurser-myline-badges-toggle',        title: 'MyLine Curriculum Badges', desc: 'Mark courses as Mandatory/Core/Elective pool based on your study line' },
-                { tid: 'feature-kurser-room-finder-toggle',          title: 'Room Finder',          desc: 'Clickable room numbers with locations' },
-                { tid: 'feature-smart-room-linker-toggle',           title: 'Smart Room Links',     desc: 'Turn room mentions into MazeMap links (click-to-resolve)' },
-                { tid: 'feature-kurser-schedule-annotation-toggle',  title: 'Schedule Annotation',  desc: 'Enhanced schedule view on course pages' }
-            ]}
+            {
+                id: 'appearance', label: 'Appearance', desc: 'Theme and visual settings', items: [
+                    { tid: 'dark-mode-toggle', title: 'Dark Mode', desc: 'Global dark theme for all DTU sites' },
+                    { kind: 'accent-theme', title: 'Accent Color', desc: 'Official DTU color presets plus custom (default: DTU Corporate Red)' },
+                    { tid: 'mojangles-toggle', title: 'Mojangles Font', desc: 'Use the Minecraft font for headers' }
+                ]
+            },
+            {
+                id: 'interface', label: 'Interface', desc: 'Navigation and UI helpers', items: [
+                    { tid: 'feature-learn-nav-resource-links-toggle', title: 'Navigation Quick Links', desc: 'Adds Panopto and CampusNet to the Student Resources menu' }
+                ]
+            },
+            {
+                id: 'dashboard', label: 'Dashboard', desc: 'DTU Learn homepage widgets', items: [
+                    { tid: 'bus-departures-toggle', title: 'Bus Departures', desc: 'Show live bus departure times around campus' },
+                    { tid: 'deadlines-toggle', title: 'Deadlines Widget', desc: 'Timeline of upcoming assignments' },
+                    { tid: 'search-widget-toggle', title: 'Course Search', desc: 'Quick course search on the dashboard' },
+                    { tid: 'feature-content-shortcut-toggle', title: 'Content Shortcut', desc: 'Direct link to course content from cards' },
+                    { tid: 'library-dropdown-toggle', title: 'Library', desc: 'Quick links and live events/news from DTU Library' }
+                ]
+            },
+            {
+                id: 'study-tools', label: 'Study Tools', desc: 'Academic planning features', items: [
+                    { tid: 'feature-campusnet-gpa-tools-toggle', title: 'GPA Calculator', desc: 'Weighted grade average on CampusNet' },
+                    { tid: 'feature-studyplan-exam-cluster-toggle', title: 'Exam Cluster Warning', desc: 'Highlight exam schedule conflicts' }
+                ]
+            },
+            {
+                id: 'social', label: 'Social', desc: 'Participant intelligence tools', items: [
+                    { tid: 'feature-participant-intel-toggle', title: 'Participant Intelligence', desc: 'Master switch for the whole suite' },
+                    { tid: 'feature-participant-intel-demographics-toggle', title: 'Course Composition', desc: 'Program breakdown on CampusNet participant pages' },
+                    { tid: 'feature-participant-intel-shared-history-toggle', title: 'Shared Course History', desc: 'Badges on participant lists + profile history card' },
+                    { tid: 'feature-participant-intel-semester-twins-toggle', title: 'Semester Twins', desc: 'Widget on the CampusNet frontpage' },
+                    { tid: 'feature-participant-intel-retention-toggle', title: 'Retention Radar', desc: 'Tracks Users enrollment count over time' }
+                ]
+            },
+            {
+                id: 'course-catalog', label: 'Course Catalog', desc: 'Enhancements for kurser.dtu.dk', items: [
+                    { tid: 'feature-kurser-grade-stats-toggle', title: 'Grade Statistics', desc: 'Show pass rates and grade histograms' },
+                    { tid: 'feature-book-finder-toggle', title: 'Book Finder', desc: 'Find textbooks from DTU Learn pages' },
+                    { tid: 'feature-kurser-textbook-linker-toggle', title: 'Textbook Links', desc: 'Direct links to textbooks on DTU FindIt' },
+                    { tid: 'feature-kurser-course-eval-toggle', title: 'Course Evaluation', desc: 'Show evaluation scores on course pages' },
+                    { tid: 'feature-kurser-myline-badges-toggle', title: 'MyLine Curriculum Badges', desc: 'Mark courses as Mandatory/Core/Elective pool based on your study line' },
+                    { tid: 'feature-kurser-room-finder-toggle', title: 'Room Finder', desc: 'Clickable room numbers with locations' },
+                    { tid: 'feature-smart-room-linker-toggle', title: 'Smart Room Links', desc: 'Turn room mentions into MazeMap links (click-to-resolve)' },
+                    { tid: 'feature-kurser-schedule-annotation-toggle', title: 'Schedule Annotation', desc: 'Enhanced schedule view on course pages' }
+                ]
+            }
         ];
 
         // === Build the settings panel ===
@@ -12333,10 +12635,10 @@
         var navItems = [];
         var firstCat = null;
 
-        categories.forEach(function(cat) {
+        categories.forEach(function (cat) {
             // Skip categories with no available toggles
             var hasAny = false;
-            cat.items.forEach(function(item) { if (toggleMap[item.tid]) hasAny = true; });
+            cat.items.forEach(function (item) { if (toggleMap[item.tid]) hasAny = true; });
             if (!hasAny) return;
             if (!firstCat) firstCat = cat.id;
 
@@ -12368,7 +12670,7 @@
             panel.appendChild(panelDesc);
 
             // Setting rows
-            cat.items.forEach(function(item) {
+            cat.items.forEach(function (item) {
                 if (item && item.kind === 'accent-theme') {
                     var row0 = document.createElement('div');
                     markExt(row0);
@@ -12418,10 +12720,10 @@
                     sel.setAttribute('data-dtu-accent-theme-select', '1');
 
                     var ordered = ACCENT_THEME_ORDER.slice();
-                    Object.keys(ACCENT_THEMES).forEach(function(k) {
+                    Object.keys(ACCENT_THEMES).forEach(function (k) {
                         if (ordered.indexOf(k) === -1) ordered.push(k);
                     });
-                    ordered.forEach(function(k) {
+                    ordered.forEach(function (k) {
                         var t = ACCENT_THEMES[k];
                         if (!t) return;
                         var opt = document.createElement('option');
@@ -12429,9 +12731,9 @@
                         opt.textContent = t.label || k;
                         sel.appendChild(opt);
                     });
-                    try { sel.value = _accentThemeId; } catch (eSel) {}
+                    try { sel.value = _accentThemeId; } catch (eSel) { }
 
-                    sel.addEventListener('change', function() {
+                    sel.addEventListener('change', function () {
                         setAccentThemeId(sel.value);
                     });
 
@@ -12440,7 +12742,7 @@
                     color.type = 'color';
                     color.className = 'dtu-am-color';
                     color.setAttribute('data-dtu-accent-custom-input', '1');
-                    try { color.value = _accentCustomHex || ACCENT_CUSTOM_DEFAULT; } catch (eC0) {}
+                    try { color.value = _accentCustomHex || ACCENT_CUSTOM_DEFAULT; } catch (eC0) { }
                     color.style.display = (_accentThemeId === 'custom') ? '' : 'none';
                     function onPickCustomColor() {
                         // Important: store/apply the picked hex BEFORE switching theme.
@@ -12450,7 +12752,7 @@
                         try { picked = color.value; } catch (eV0) { picked = ''; }
                         if (picked) setAccentCustomHex(picked);
                         setAccentThemeId('custom');
-                        try { sel.value = 'custom'; } catch (eS1) {}
+                        try { sel.value = 'custom'; } catch (eS1) { }
                     }
                     // Firefox can fire `change` (not `input`) for the color picker dialog.
                     color.addEventListener('input', onPickCustomColor);
@@ -12499,7 +12801,7 @@
                 markExt(togLabel);
                 togLabel.className = 'dtu-tog';
                 // Old versions used inline styles to hide the input; the new CSS handles it.
-                try { input.removeAttribute('style'); } catch (e0) {}
+                try { input.removeAttribute('style'); } catch (e0) { }
                 togLabel.appendChild(input);
                 var slider = document.createElement('span');
                 markExt(slider);
@@ -12513,21 +12815,21 @@
                     editBtn.type = 'button';
                     editBtn.textContent = 'Edit';
                     editBtn.className = 'dtu-am-edit';
-                    editBtn.addEventListener('click', function(e) {
-                        try { e.preventDefault(); } catch (e0) {}
-                        try { e.stopPropagation(); } catch (e00) {}
+                    editBtn.addEventListener('click', function (e) {
+                        try { e.preventDefault(); } catch (e0) { }
+                        try { e.stopPropagation(); } catch (e00) { }
 
                         // Close Admin Tools dropdown first so only the modal remains in focus.
                         try {
                             var gearBtn = document.querySelector('button[aria-label="Admin Tools"]');
                             if (gearBtn) gearBtn.click();
-                        } catch (e01) {}
+                        } catch (e01) { }
                         try {
                             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-                        } catch (e02) {}
+                        } catch (e02) { }
 
-                        setTimeout(function() {
-                            try { showBusConfigModal(); } catch (e1) {}
+                        setTimeout(function () {
+                            try { showBusConfigModal(); } catch (e1) { }
                         }, 60);
                     });
 
@@ -12537,7 +12839,7 @@
                         editBtn.style.display = enabled ? 'inline-flex' : 'none';
                     }
                     syncEditVisibility();
-                    input.addEventListener('change', function() { syncEditVisibility(); });
+                    input.addEventListener('change', function () { syncEditVisibility(); });
 
                     actions.appendChild(editBtn);
                 }
@@ -12555,25 +12857,25 @@
 
         function showSettingsCategory(catId) {
             if (!catId) return;
-            navItems.forEach(function(n) { n.classList.remove('dtu-active'); });
-            navItems.forEach(function(n) {
+            navItems.forEach(function (n) { n.classList.remove('dtu-active'); });
+            navItems.forEach(function (n) {
                 if (n.getAttribute('data-cat') === catId) n.classList.add('dtu-active');
             });
-            Object.keys(panels).forEach(function(id) {
+            Object.keys(panels).forEach(function (id) {
                 var p = panels[id];
                 if (!p) return;
-                try { p.style.display = ''; } catch (e0) {}
+                try { p.style.display = ''; } catch (e0) { }
                 p.classList.toggle('dtu-active', id === catId);
             });
-            try { contentArea.scrollTop = 0; } catch (e1) {}
-            try { contentArea.scrollLeft = 0; } catch (e2) {}
+            try { contentArea.scrollTop = 0; } catch (e1) { }
+            try { contentArea.scrollLeft = 0; } catch (e2) { }
         }
 
         // Nav handlers: some D2L dropdown setups can swallow "click" events, so also listen on pointer/mouse down.
-        navItems.forEach(function(navItem) {
+        navItems.forEach(function (navItem) {
             function activate(e) {
-                try { if (e) e.preventDefault(); } catch (e0) {}
-                try { if (e) e.stopPropagation(); } catch (e1) {}
+                try { if (e) e.preventDefault(); } catch (e0) { }
+                try { if (e) e.stopPropagation(); } catch (e1) { }
                 showSettingsCategory(navItem.getAttribute('data-cat'));
             }
             navItem.addEventListener('pointerdown', activate);
@@ -12617,11 +12919,11 @@
                 try {
                     var leftRaw = String(dd.style.left || '').trim();
                     if (leftRaw === 'auto') dd.style.setProperty('left', margin + 'px', 'important');
-                } catch (e0) {}
+                } catch (e0) { }
                 try {
                     var rightRaw = String(dd.style.right || '').trim();
                     if (rightRaw && rightRaw !== 'auto') dd.style.setProperty('right', 'auto', 'important');
-                } catch (e1) {}
+                } catch (e1) { }
 
                 // Ensure it doesn't spill off-screen (only adjust position when it is actually open).
                 try {
@@ -12637,8 +12939,8 @@
                         dd.style.setProperty('left', margin + 'px', 'important');
                         dd.style.setProperty('right', 'auto', 'important');
                     }
-                } catch (e2) {}
-            } catch (e) {}
+                } catch (e2) { }
+            } catch (e) { }
         }
 
         function measureTextWidthFromEl(measureRoot, el) {
@@ -12658,11 +12960,11 @@
                     span.style.letterSpacing = cs.letterSpacing;
                     span.style.textTransform = cs.textTransform;
                 }
-            } catch (e) {}
+            } catch (e) { }
             measureRoot.appendChild(span);
             var w = 0;
-            try { w = span.getBoundingClientRect().width || 0; } catch (e2) {}
-            try { span.remove(); } catch (e3) {}
+            try { w = span.getBoundingClientRect().width || 0; } catch (e2) { }
+            try { span.remove(); } catch (e3) { }
             return w;
         }
 
@@ -12678,19 +12980,19 @@
                 document.body.appendChild(meas);
 
                 var maxHeaderW = 0;
-                contentArea.querySelectorAll('div').forEach(function(el) {
+                contentArea.querySelectorAll('div').forEach(function (el) {
                     // Only consider our panel headers (big title + small subtitle) to avoid measuring whole DOM.
                     if (!el || !el.isConnected) return;
                     if (el.getAttribute && el.getAttribute('data-dtu-ext') !== '1') return;
                     var fs = '';
-                    try { fs = String(getComputedStyle(el).fontSize || ''); } catch (e0) {}
+                    try { fs = String(getComputedStyle(el).fontSize || ''); } catch (e0) { }
                     if (fs !== '18px' && fs !== '12px') return;
                     var w = measureTextWidthFromEl(meas, el);
                     if (w > maxHeaderW) maxHeaderW = w;
                 });
 
                 var maxInfoW = 0;
-                contentArea.querySelectorAll('.dtu-set-row').forEach(function(row) {
+                contentArea.querySelectorAll('.dtu-set-row').forEach(function (row) {
                     if (!row || !row.isConnected) return;
                     var titleEl = row.querySelector('div > div'); // title in info block
                     var w1 = measureTextWidthFromEl(meas, titleEl);
@@ -12698,7 +13000,7 @@
                 });
 
                 var maxActionsW = 0;
-                contentArea.querySelectorAll('.dtu-set-row').forEach(function(row) {
+                contentArea.querySelectorAll('.dtu-set-row').forEach(function (row) {
                     if (!row || !row.isConnected) return;
                     var actions = row.querySelector('div[style*=\"gap:10px\"], div[style*=\"gap: 10px\"], div');
                     // Prefer our actions container: last child in the row.
@@ -12708,20 +13010,20 @@
                     try {
                         var w = actions.getBoundingClientRect().width || 0;
                         if (w > maxActionsW) maxActionsW = w;
-                    } catch (e1) {}
+                    } catch (e1) { }
                 });
 
-                try { meas.remove(); } catch (e2) {}
+                try { meas.remove(); } catch (e2) { }
 
                 var sidebarW = 170;
-                try { sidebarW = Math.ceil(sidebar.getBoundingClientRect().width || sidebarW); } catch (e3) {}
+                try { sidebarW = Math.ceil(sidebar.getBoundingClientRect().width || sidebarW); } catch (e3) { }
 
                 var padL = 24, padR = 34;
                 try {
                     var csA = getComputedStyle(contentArea);
                     padL = parseFloat(csA.paddingLeft) || padL;
                     padR = parseFloat(csA.paddingRight) || padR;
-                } catch (e4) {}
+                } catch (e4) { }
 
                 // Row needs enough space for info + actions + breathing room.
                 var rowNeed = maxInfoW + maxActionsW + 44;
@@ -12750,27 +13052,27 @@
                             dd.style.setProperty('right', margin + 'px', 'important');
                             dd.style.setProperty('left', 'auto', 'important');
                         }
-                    } catch (e0) {}
+                    } catch (e0) { }
                     try {
                         var r2 = dd.getBoundingClientRect();
                         if (r2 && r2.left < margin) {
                             dd.style.setProperty('left', margin + 'px', 'important');
                             dd.style.setProperty('right', 'auto', 'important');
                         }
-                    } catch (e1) {}
+                    } catch (e1) { }
                 }
 
                 function freezeAdminToolsPanelHeight() {
                     try {
                         var csCA = null;
-                        try { csCA = getComputedStyle(contentArea); } catch (e2) {}
+                        try { csCA = getComputedStyle(contentArea); } catch (e2) { }
                         var padT = csCA ? (parseFloat(csCA.paddingTop) || 0) : 0;
                         var padB = csCA ? (parseFloat(csCA.paddingBottom) || 0) : 0;
                         var areaW = 0;
                         try { areaW = Math.max(420, Math.floor(contentArea.getBoundingClientRect().width || 0)); } catch (e3) { areaW = 420; }
 
                         var maxPanelH = 0;
-                        Object.keys(panels).forEach(function(id) {
+                        Object.keys(panels).forEach(function (id) {
                             var p = panels[id];
                             if (!p) return;
 
@@ -12817,14 +13119,14 @@
                             container.style.setProperty('min-height', targetH + 'px', 'important');
                             container.style.setProperty('height', targetH + 'px', 'important');
                         }
-                    } catch (e) {}
+                    } catch (e) { }
                 }
 
                 function patchDropdownShadowScrolling() {
                     try {
                         dd.style.setProperty('max-height', 'none', 'important');
                         dd.style.setProperty('overflow-y', 'visible', 'important');
-                    } catch (e6) {}
+                    } catch (e6) { }
 
                     var sr = null;
                     try { sr = dd.shadowRoot; } catch (e7) { sr = null; }
@@ -12840,7 +13142,7 @@
                                 + '*::-webkit-scrollbar{width:0 !important;height:0 !important;}';
                             sr.appendChild(st);
                         }
-                    } catch (e8) {}
+                    } catch (e8) { }
 
                     try {
                         var slot = sr.querySelector('slot');
@@ -12866,19 +13168,19 @@
                             }
                             el = el.parentElement;
                         }
-                    } catch (e10) {}
+                    } catch (e10) { }
                 }
 
                 function finalizeAdminToolsDropdownLayout() {
-                    try { freezeAdminToolsPanelHeight(); } catch (e11) {}
-                    try { clampDropdownPositionWithinViewport(); } catch (e13) {}
+                    try { freezeAdminToolsPanelHeight(); } catch (e11) { }
+                    try { clampDropdownPositionWithinViewport(); } catch (e13) { }
                 }
 
                 // Shadow DOM patches are very invasive (modify dropdown internal elements).
                 // Defer them well past the initial render to avoid triggering Brightspace auto-close.
                 function deferredShadowPatches() {
-                    try { patchDropdownShadowScrolling(); } catch (e12) {}
-                    try { clampDropdownPositionWithinViewport(); } catch (e15) {}
+                    try { patchDropdownShadowScrolling(); } catch (e12) { }
+                    try { clampDropdownPositionWithinViewport(); } catch (e15) { }
                 }
 
                 try { requestAnimationFrame(finalizeAdminToolsDropdownLayout); } catch (e14) { setTimeout(finalizeAdminToolsDropdownLayout, 0); }
@@ -12897,7 +13199,7 @@
         if (list) {
             // Hide existing children instead of removing them to avoid focusout events
             // that cause Brightspace to auto-close the dropdown.
-            Array.prototype.forEach.call(list.children, function(child) {
+            Array.prototype.forEach.call(list.children, function (child) {
                 child.style.setProperty('display', 'none', 'important');
             });
             list.style.cssText = 'list-style:none;padding:0;margin:0;max-width:100%;overflow-x:hidden;box-sizing:border-box;';
@@ -12958,18 +13260,18 @@
         }
 
         // Grade rows with blue/white graph bars should keep a dark-1 row background.
-        root.querySelectorAll('tr').forEach(function(row) {
+        root.querySelectorAll('tr').forEach(function (row) {
             if (!row.querySelector('img[src*="Framework.GraphBar"]')) return;
 
-            row.querySelectorAll('td.d_tl.d_tm.d_tn, td.d_tr.d_tm.d_tn').forEach(function(td) { forceDark1(td); });
-            row.querySelectorAll('.d2l-grades-score, .dco, .dco_c').forEach(function(el) {
+            row.querySelectorAll('td.d_tl.d_tm.d_tn, td.d_tr.d_tm.d_tn').forEach(function (td) { forceDark1(td); });
+            row.querySelectorAll('.d2l-grades-score, .dco, .dco_c').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background-color', '#1a1a1a', 'important');
                 el.style.setProperty('background', '#1a1a1a', 'important');
                 el.style.setProperty('color', '#e0e0e0', 'important');
                 el.style.setProperty('background-image', 'none', 'important');
             });
-            row.querySelectorAll('label').forEach(function(label) {
+            row.querySelectorAll('label').forEach(function (label) {
                 if (!label || !label.style) return;
                 label.style.setProperty('color', '#e0e0e0', 'important');
                 label.style.setProperty('background-color', '#1a1a1a', 'important');
@@ -13037,7 +13339,7 @@
         if (toggle) {
             toggle.checked = false;
             // Keep any settings UI in sync (e.g. Bus "Edit" button visibility).
-            try { toggle.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+            try { toggle.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) { }
         }
     }
 
@@ -13054,7 +13356,7 @@
         var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
         var timeoutId = null;
         if (controller) {
-            timeoutId = setTimeout(function() {
+            timeoutId = setTimeout(function () {
                 controller.abort();
             }, BUS_FETCH_TIMEOUT_MS);
         }
@@ -13148,7 +13450,7 @@
             var toggle = document.querySelector('#bus-departures-toggle');
             if (toggle) {
                 toggle.checked = false;
-                try { toggle.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+                try { toggle.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) { }
             }
         }
 
@@ -13158,11 +13460,11 @@
             + 'border: 1px solid rgba(255,255,255,0.3); padding: 6px 16px; border-radius: 6px; '
             + 'cursor: pointer; font-size: 12px; font-weight: 600;';
         dismiss.textContent = 'Got it';
-        dismiss.addEventListener('click', function() {
+        dismiss.addEventListener('click', function () {
             if (countdownInterval) clearInterval(countdownInterval);
             notice.style.transition = 'opacity 0.3s';
             notice.style.opacity = '0';
-            setTimeout(function() { notice.remove(); }, 300);
+            setTimeout(function () { notice.remove(); }, 300);
         });
 
         notice.appendChild(title);
@@ -13236,10 +13538,10 @@
         const seen = new Set();
         // Track how many departures we have per line
         const lineCounts = {};
-        config.lines.forEach(function(l) { lineCounts[l.line] = 0; });
+        config.lines.forEach(function (l) { lineCounts[l.line] = 0; });
 
         function hasEnough() {
-            return config.lines.every(function(l) { return lineCounts[l.line] >= DEPS_PER_LINE; });
+            return config.lines.every(function (l) { return lineCounts[l.line] >= DEPS_PER_LINE; });
         }
 
         try {
@@ -13247,11 +13549,11 @@
             for (var i = 0; i < config.stopIds.length; i++) {
                 if (hasEnough()) break;
                 var deps = await getDepartures(config.stopIds[i]);
-                deps.forEach(function(dep) {
-                    var configLine = config.lines.find(function(l) { return l.line === dep.line; });
+                deps.forEach(function (dep) {
+                    var configLine = config.lines.find(function (l) { return l.line === dep.line; });
                     if (!configLine) return;
                     if (lineCounts[dep.line] >= DEPS_PER_LINE) return;
-                    var matchesDir = configLine.directions.some(function(d) {
+                    var matchesDir = configLine.directions.some(function (d) {
                         return dep.direction && dep.direction.includes(d);
                     });
                     if (!matchesDir) return;
@@ -13278,7 +13580,7 @@
         }
 
         _busFetchInProgress = false;
-        allDeps.sort(function(a, b) { return (a.minutes || 999) - (b.minutes || 999); });
+        allDeps.sort(function (a, b) { return (a.minutes || 999) - (b.minutes || 999); });
         return allDeps;
     }
 
@@ -13329,19 +13631,19 @@
 
         // Group departures by line, sort each group earliest-first
         var lineGroups = {};
-        _cachedDepartures.forEach(function(dep) {
+        _cachedDepartures.forEach(function (dep) {
             if (!lineGroups[dep.line]) lineGroups[dep.line] = [];
             lineGroups[dep.line].push(dep);
         });
         // Fixed alphabetical order so columns never swap
         var lineOrder = Object.keys(lineGroups).sort();
         // Sort departures within each line: earliest first
-        lineOrder.forEach(function(line) {
-            lineGroups[line].sort(function(a, b) { return (a.minutes != null ? a.minutes : 999) - (b.minutes != null ? b.minutes : 999); });
+        lineOrder.forEach(function (line) {
+            lineGroups[line].sort(function (a, b) { return (a.minutes != null ? a.minutes : 999) - (b.minutes != null ? b.minutes : 999); });
         });
 
         // One column per line, side by side
-        lineOrder.forEach(function(line, li) {
+        lineOrder.forEach(function (line, li) {
             var col = document.createElement('div');
             col.style.cssText = 'display: flex; flex-direction: column; gap: 2px; min-width: 0;'
                 + (li < lineOrder.length - 1 ? ' padding-right: 12px; border-right: 1px solid ' + (darkModeEnabled ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.1)') + ';' : '');
@@ -13356,7 +13658,7 @@
             col.appendChild(badge);
 
             // Departure rows
-            lineGroups[line].forEach(function(dep) {
+            lineGroups[line].forEach(function (dep) {
                 var row = document.createElement('div');
                 row.style.cssText = 'display: flex; align-items: center; gap: 6px; white-space: nowrap;';
 
@@ -13392,7 +13694,7 @@
     function getSmartPollInterval() {
         if (_cachedDepartures.length === 0) return 60000; // 60s default
         var soonest = Infinity;
-        _cachedDepartures.forEach(function(dep) {
+        _cachedDepartures.forEach(function (dep) {
             if (dep.minutes != null && dep.minutes < soonest) soonest = dep.minutes;
         });
         if (soonest <= 15) return 60000;  // â‰¤15 min away: poll every 60s (minimum)
@@ -13427,7 +13729,7 @@
     }
 
     // Visibility API: pause when tab is hidden, resume when visible
-    document.addEventListener('visibilitychange', function() {
+    document.addEventListener('visibilitychange', function () {
         if (!IS_TOP_WINDOW) return;
         if (document.hidden) {
             stopBusPolling();
@@ -13580,7 +13882,7 @@
             + '-webkit-backdrop-filter: blur(16px) brightness(2.5); '
             + 'display: flex; align-items: center; justify-content: center; '
             + 'font-family: sans-serif; opacity: 0; transition: opacity 0.3s;';
-        requestAnimationFrame(function() { overlay.style.opacity = '1'; });
+        requestAnimationFrame(function () { overlay.style.opacity = '1'; });
 
         var modal = document.createElement('div');
         modal.style.cssText = 'background: ' + modalTheme.background + '; border-radius: 14px; padding: 28px; max-width: 480px; '
@@ -13595,14 +13897,14 @@
                 var toggle = document.querySelector('#bus-departures-toggle');
                 if (toggle) {
                     toggle.checked = false;
-                    try { toggle.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+                    try { toggle.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) { }
                 }
             }
             overlay.style.opacity = '0';
-            setTimeout(function() { overlay.remove(); }, 200);
+            setTimeout(function () { overlay.remove(); }, 200);
         }
 
-        overlay.addEventListener('click', function(e) {
+        overlay.addEventListener('click', function (e) {
             if (e.target === overlay) dismissModal();
         });
 
@@ -13625,7 +13927,7 @@
 
             // Show each configured line as a card
             if (config && config.lines) {
-                config.lines.forEach(function(lineCfg, idx) {
+                config.lines.forEach(function (lineCfg, idx) {
                     var color = LINE_COLORS[lineCfg.line] || '#1565c0';
                     var card = document.createElement('div');
                     card.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 12px 14px; '
@@ -13645,10 +13947,10 @@
                         + 'width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; '
                         + 'display: flex; align-items: center; justify-content: center; transition: all 0.15s;';
                     delBtn.textContent = '\u00D7';
-                    delBtn.addEventListener('mouseenter', function() { delBtn.style.borderColor = 'var(--dtu-ad-accent)'; delBtn.style.color = '#ef5350'; });
-                    delBtn.addEventListener('mouseleave', function() { delBtn.style.borderColor = modalTheme.softBorder; delBtn.style.color = modalTheme.muted; });
-                    (function(capturedIdx) {
-                        delBtn.addEventListener('click', function() {
+                    delBtn.addEventListener('mouseenter', function () { delBtn.style.borderColor = 'var(--dtu-ad-accent)'; delBtn.style.color = '#ef5350'; });
+                    delBtn.addEventListener('mouseleave', function () { delBtn.style.borderColor = modalTheme.softBorder; delBtn.style.color = modalTheme.muted; });
+                    (function (capturedIdx) {
+                        delBtn.addEventListener('click', function () {
                             config.lines.splice(capturedIdx, 1);
                             saveBusConfig(config);
                             _lastBusFetch = 0;
@@ -13672,9 +13974,9 @@
                     + 'padding: 12px; border-radius: 8px; cursor: pointer; font-size: 14px; width: 100%; '
                     + 'margin-top: 4px; transition: border-color 0.15s, color 0.15s;';
                 addBtn.textContent = '+ Add Bus Line';
-                addBtn.addEventListener('mouseenter', function() { addBtn.style.borderColor = '#66b3ff'; });
-                addBtn.addEventListener('mouseleave', function() { addBtn.style.borderColor = modalTheme.softBorder; });
-                addBtn.addEventListener('click', function() { renderAddLineView(); });
+                addBtn.addEventListener('mouseenter', function () { addBtn.style.borderColor = '#66b3ff'; });
+                addBtn.addEventListener('mouseleave', function () { addBtn.style.borderColor = modalTheme.softBorder; });
+                addBtn.addEventListener('click', function () { renderAddLineView(); });
                 modal.appendChild(addBtn);
             } else {
                 var capNote = document.createElement('div');
@@ -13690,9 +13992,9 @@
             doneBtn.style.cssText = 'background: #1565c0; color: #fff; border: none; padding: 8px 24px; '
                 + 'border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;';
             doneBtn.textContent = 'Done';
-            doneBtn.addEventListener('click', function() {
+            doneBtn.addEventListener('click', function () {
                 overlay.style.opacity = '0';
-                setTimeout(function() { overlay.remove(); }, 200);
+                setTimeout(function () { overlay.remove(); }, 200);
             });
             btnRow.appendChild(doneBtn);
             modal.appendChild(btnRow);
@@ -13703,7 +14005,7 @@
             while (modal.firstChild) modal.removeChild(modal.firstChild);
             var config = getBusConfig() || { stopIds: DTU_AREA_STOP_IDS.slice(), lines: [] };
             if (config.lines.length >= MAX_LINES) { renderManageView(); return; }
-            var configuredLineNames = config.lines.map(function(l) { return l.line; });
+            var configuredLineNames = config.lines.map(function (l) { return l.line; });
 
             var titleEl = document.createElement('h2');
             titleEl.style.cssText = 'margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: ' + modalTheme.heading + '; letter-spacing: -0.3px;';
@@ -13718,16 +14020,16 @@
             var grid = document.createElement('div');
             grid.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 10px;';
 
-            var availableLines = DTU_BUS_LINES.filter(function(bus) { return configuredLineNames.indexOf(bus.line) === -1; });
+            var availableLines = DTU_BUS_LINES.filter(function (bus) { return configuredLineNames.indexOf(bus.line) === -1; });
 
-            availableLines.forEach(function(bus) {
+            availableLines.forEach(function (bus) {
                 var color = LINE_COLORS[bus.line] || '#1565c0';
                 var card = document.createElement('button');
                 card.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 14px 16px; '
                     + 'cursor: pointer; border-radius: 8px; border: 2px solid ' + modalTheme.border + '; background: transparent; '
                     + 'transition: border-color 0.15s, background 0.15s; text-align: left;';
-                card.addEventListener('mouseenter', function() { card.style.borderColor = color; card.style.backgroundColor = modalTheme.hoverAddCard; });
-                card.addEventListener('mouseleave', function() { card.style.borderColor = modalTheme.border; card.style.backgroundColor = 'transparent'; });
+                card.addEventListener('mouseenter', function () { card.style.borderColor = color; card.style.backgroundColor = modalTheme.hoverAddCard; });
+                card.addEventListener('mouseleave', function () { card.style.borderColor = modalTheme.border; card.style.backgroundColor = 'transparent'; });
 
                 var badge = document.createElement('span');
                 badge.style.cssText = 'background-color: ' + color + '; color: #fff; padding: 6px 0; '
@@ -13743,7 +14045,7 @@
                 card.appendChild(label);
                 grid.appendChild(card);
 
-                card.addEventListener('click', function() { renderDirectionView(bus.line); });
+                card.addEventListener('click', function () { renderDirectionView(bus.line); });
             });
 
             modal.appendChild(grid);
@@ -13755,7 +14057,7 @@
             backBtn.style.cssText = 'background: transparent; color: ' + modalTheme.muted + '; border: 1px solid ' + modalTheme.softBorder + '; '
                 + 'padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 13px;';
             backBtn.textContent = config.lines.length > 0 ? 'Back' : 'Cancel';
-            backBtn.addEventListener('click', function() {
+            backBtn.addEventListener('click', function () {
                 var c = getBusConfig();
                 if (c && c.lines && c.lines.length > 0) { renderManageView(); }
                 else { dismissModal(); }
@@ -13800,7 +14102,7 @@
             }
 
             var dirSet = new Map();
-            allDepartures.forEach(function(d) {
+            allDepartures.forEach(function (d) {
                 if (d.line === selectedLine && d.direction && !dirSet.has(d.direction)) {
                     dirSet.set(d.direction, d.direction);
                 }
@@ -13817,12 +14119,12 @@
             }
 
             var dirCheckboxes = [];
-            directions.forEach(function(direction) {
+            directions.forEach(function (direction) {
                 var row = document.createElement('label');
                 row.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 8px 12px; '
                     + 'cursor: pointer; border-radius: 6px; margin-bottom: 2px; transition: background 0.15s;';
-                row.addEventListener('mouseenter', function() { row.style.backgroundColor = modalTheme.hoverRow; });
-                row.addEventListener('mouseleave', function() { row.style.backgroundColor = 'transparent'; });
+                row.addEventListener('mouseenter', function () { row.style.backgroundColor = modalTheme.hoverRow; });
+                row.addEventListener('mouseleave', function () { row.style.backgroundColor = 'transparent'; });
 
                 var cb = document.createElement('input');
                 cb.type = 'checkbox';
@@ -13857,15 +14159,15 @@
             backBtn.style.cssText = 'background: transparent; color: ' + modalTheme.muted + '; border: 1px solid ' + modalTheme.softBorder + '; '
                 + 'padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 13px;';
             backBtn.textContent = 'Back';
-            backBtn.addEventListener('click', function() { renderAddLineView(); });
+            backBtn.addEventListener('click', function () { renderAddLineView(); });
 
             var saveBtn = document.createElement('button');
             saveBtn.style.cssText = 'background: #1565c0; color: #fff; border: none; padding: 8px 20px; '
                 + 'border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;';
             saveBtn.textContent = 'Add Line';
 
-            saveBtn.addEventListener('click', function() {
-                var selectedDirs = dirCheckboxes.filter(function(dc) { return dc.cb.checked; }).map(function(dc) { return dc.direction; });
+            saveBtn.addEventListener('click', function () {
+                var selectedDirs = dirCheckboxes.filter(function (dc) { return dc.cb.checked; }).map(function (dc) { return dc.direction; });
                 if (selectedDirs.length === 0) {
                     errorEl.textContent = 'Please select at least one direction.';
                     errorEl.style.display = 'block';
@@ -13930,7 +14232,7 @@
         const label = document.createElement('label');
         label.style.cssText = darkModeEnabled
             ? 'display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; '
-                + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
+            + 'font-size: 14px; background-color: #2d2d2d !important; background: #2d2d2d !important;'
             : 'display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;';
 
         const toggle = document.createElement('input');
@@ -14045,11 +14347,11 @@
         bar.setAttribute('data-book-finder-bar', 'true');
         bar.style.cssText = darkModeEnabled
             ? 'display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; margin: 4px 0; '
-              + 'background-color: #2d2d2d !important; border: 1px solid #404040; border-radius: 4px; '
-              + 'font-size: 12px; line-height: 1.4; color: #e0e0e0;'
+            + 'background-color: #2d2d2d !important; border: 1px solid #404040; border-radius: 4px; '
+            + 'font-size: 12px; line-height: 1.4; color: #e0e0e0;'
             : 'display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; margin: 4px 0; '
-              + 'background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; '
-              + 'font-size: 12px; line-height: 1.4; color: #333;';
+            + 'background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; '
+            + 'font-size: 12px; line-height: 1.4; color: #333;';
 
         var label = document.createElement('span');
         label.textContent = '\uD83D\uDCD6 ';
@@ -14111,8 +14413,8 @@
         if (!IS_TOP_WINDOW) return;
         if (!isDTULearnCoursePage()) return;
         if (!isFeatureFlagEnabled(FEATURE_BOOK_FINDER_KEY)) {
-            document.querySelectorAll('[data-book-finder-bar]').forEach(function(el) { el.remove(); });
-            document.querySelectorAll('[data-book-finder-injected]').forEach(function(el) {
+            document.querySelectorAll('[data-book-finder-bar]').forEach(function (el) { el.remove(); });
+            document.querySelectorAll('[data-book-finder-injected]').forEach(function (el) {
                 el.removeAttribute('data-book-finder-injected');
             });
             return;
@@ -14146,7 +14448,7 @@
             BARE_ISBN13_REGEX.lastIndex = 0;
             while ((match = BARE_ISBN13_REGEX.exec(text)) !== null) {
                 var rawBare = normalizeISBN(match[1]);
-                if (isValidISBN13(rawBare) && !isbnHits.some(function(h) { return h.isbn === rawBare; })) {
+                if (isValidISBN13(rawBare) && !isbnHits.some(function (h) { return h.isbn === rawBare; })) {
                     isbnHits.push({ node: textNode, isbn: rawBare, title: null });
                 }
             }
@@ -14176,7 +14478,7 @@
                     .trim();
                 // Remove trailing period
                 bookInfo = bookInfo.replace(/\.\s*$/, '').trim();
-                if (bookInfo.length >= 10 && !titleHits.some(function(h) { return h.title === bookInfo; })) {
+                if (bookInfo.length >= 10 && !titleHits.some(function (h) { return h.title === bookInfo; })) {
                     titleHits.push({ element: container, title: bookInfo, isbn: null });
                 }
             }
@@ -14187,7 +14489,7 @@
                 var qMatch;
                 while ((qMatch = QUOTED_TITLE_REGEX.exec(cText)) !== null) {
                     var candidateTitle = qMatch[1].trim();
-                    if (isTitleCase(candidateTitle) && !titleHits.some(function(h) { return h.title === candidateTitle; })) {
+                    if (isTitleCase(candidateTitle) && !titleHits.some(function (h) { return h.title === candidateTitle; })) {
                         titleHits.push({ element: container, title: candidateTitle, isbn: null });
                     }
                 }
@@ -14197,7 +14499,7 @@
                 for (var e = 0; e < emEls.length; e++) {
                     var emText = emEls[e].textContent.trim();
                     if (isTitleCase(emText) && emText.split(/\s+/).length >= 3
-                        && !titleHits.some(function(h) { return h.title === emText; })) {
+                        && !titleHits.some(function (h) { return h.title === emText; })) {
                         titleHits.push({ element: container, title: emText, isbn: null });
                     }
                 }
@@ -14290,7 +14592,7 @@
         }
 
         // Table layout: [label][content]
-        document.querySelectorAll('tr').forEach(function(tr) {
+        document.querySelectorAll('tr').forEach(function (tr) {
             var cells = tr.querySelectorAll('th, td');
             if (cells.length < 2) return;
             var label = (cells[0].textContent || '').replace(/\s+/g, ' ').trim();
@@ -14299,7 +14601,7 @@
         });
 
         // Definition list layout: <dt>label</dt><dd>content</dd>
-        document.querySelectorAll('dt').forEach(function(dt) {
+        document.querySelectorAll('dt').forEach(function (dt) {
             if (!isKurserLiteratureLabel((dt.textContent || '').trim())) return;
             var dd = dt.nextElementSibling;
             while (dd && dd.tagName && dd.tagName.toLowerCase() !== 'dd') dd = dd.nextElementSibling;
@@ -14307,7 +14609,7 @@
         });
 
         // Generic heading/label layout.
-        document.querySelectorAll('h1, h2, h3, h4, strong, b, label, div, span, p').forEach(function(el) {
+        document.querySelectorAll('h1, h2, h3, h4, strong, b, label, div, span, p').forEach(function (el) {
             var label = (el.textContent || '').replace(/\s+/g, ' ').trim();
             if (!isKurserLiteratureLabel(label)) return;
             if (label.length > 50) return;
@@ -14316,13 +14618,13 @@
             if (el.nextElementSibling) {
                 candidate = el.nextElementSibling;
             } else if (el.parentElement) {
-                var siblings = Array.prototype.filter.call(el.parentElement.children, function(ch) {
+                var siblings = Array.prototype.filter.call(el.parentElement.children, function (ch) {
                     return ch !== el && ((ch.innerText || ch.textContent || '').replace(/\s+/g, ' ').trim().length > 0);
                 });
                 if (siblings.length === 1) {
                     candidate = siblings[0];
                 } else if (siblings.length > 1) {
-                    candidate = siblings.reduce(function(best, cur) {
+                    candidate = siblings.reduce(function (best, cur) {
                         var bestLen = (best.innerText || best.textContent || '').length;
                         var curLen = (cur.innerText || cur.textContent || '').length;
                         return curLen > bestLen ? cur : best;
@@ -14333,7 +14635,7 @@
         });
 
         // Inline layout: "Course literature: [1] ...".
-        document.querySelectorAll('p, div, td, dd, span, li').forEach(function(el) {
+        document.querySelectorAll('p, div, td, dd, span, li').forEach(function (el) {
             var txt = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
             if (!txt || txt.length < 20 || txt.length > 3000) return;
             if (!/\b(course\s+literature|literature|kursuslitteratur|litteratur)\b\s*:/i.test(txt)) return;
@@ -14381,7 +14683,7 @@
                 } else if (node.tagName && /^(UL|OL)$/i.test(node.tagName)) {
                     flushCurrent();
                     var listItems = node.querySelectorAll('li');
-                    listItems.forEach(function(li) {
+                    listItems.forEach(function (li) {
                         var liTxt = normalizeFragment(li.innerText || li.textContent || '');
                         if (liTxt) collected.push(liTxt);
                     });
@@ -14402,8 +14704,8 @@
         flushCurrent();
 
         var lines = [];
-        collected.forEach(function(line) {
-            splitKurserLiteratureText(line).forEach(function(part) {
+        collected.forEach(function (line) {
+            splitKurserLiteratureText(line).forEach(function (part) {
                 var txt = (part || '').trim();
                 if (!txt) return;
                 if (/^recommended\s*:?\s*$/i.test(txt)) return;
@@ -14437,10 +14739,10 @@
 
         // Normalize multiple spaces but keep line boundaries for merge heuristics.
         txt = txt.replace(/[ \t]{2,}/g, ' ');
-        var lines = txt.split(/\r?\n+/).map(function(s) { return s.trim(); }).filter(Boolean);
+        var lines = txt.split(/\r?\n+/).map(function (s) { return s.trim(); }).filter(Boolean);
         if (lines.length > 1) {
             var merged = [];
-            lines.forEach(function(line) {
+            lines.forEach(function (line) {
                 if (!merged.length) {
                     merged.push(line);
                     return;
@@ -14454,10 +14756,10 @@
             });
 
             var expanded = [];
-            merged.forEach(function(line) {
-                var bracketParts = line.split(/(?=\[\s*\d+\s*\])/g).map(function(s) { return s.trim(); }).filter(Boolean);
+            merged.forEach(function (line) {
+                var bracketParts = line.split(/(?=\[\s*\d+\s*\])/g).map(function (s) { return s.trim(); }).filter(Boolean);
                 if (bracketParts.length > 1) {
-                    bracketParts.forEach(function(p) { expanded.push(p); });
+                    bracketParts.forEach(function (p) { expanded.push(p); });
                     return;
                 }
                 expanded.push(line);
@@ -14467,13 +14769,13 @@
 
         // Single-line fallbacks: split on citation markers.
         var one = txt.replace(/\s+/g, ' ').trim();
-        var splitByBracket = one.split(/(?=\[\s*\d+\s*\])/g).map(function(s) { return s.trim(); }).filter(Boolean);
+        var splitByBracket = one.split(/(?=\[\s*\d+\s*\])/g).map(function (s) { return s.trim(); }).filter(Boolean);
         if (splitByBracket.length > 1) return splitByBracket;
 
-        var splitByNumber = one.split(/(?=\b\d+\s*[.)]\s*[A-Z])/g).map(function(s) { return s.trim(); }).filter(Boolean);
+        var splitByNumber = one.split(/(?=\b\d+\s*[.)]\s*[A-Z])/g).map(function (s) { return s.trim(); }).filter(Boolean);
         if (splitByNumber.length > 1) return splitByNumber;
 
-        var splitBySemicolon = one.split(/\s*;\s*/g).map(function(s) { return s.trim(); }).filter(Boolean);
+        var splitBySemicolon = one.split(/\s*;\s*/g).map(function (s) { return s.trim(); }).filter(Boolean);
         if (splitBySemicolon.length > 1) return splitBySemicolon;
 
         return [one];
@@ -14671,13 +14973,13 @@
         }
 
         _finditAvailabilityCache[url] = { pending: true, callbacks: [cb] };
-        sendRuntimeMessage({ type: 'dtu-findit-availability', url: url }, function(response) {
+        sendRuntimeMessage({ type: 'dtu-findit-availability', url: url }, function (response) {
             var onlineAccess = !!(response && response.ok && response.onlineAccess);
             var pending = _finditAvailabilityCache[url];
             _finditAvailabilityCache[url] = { done: true, onlineAccess: onlineAccess };
             if (pending && Array.isArray(pending.callbacks)) {
-                pending.callbacks.forEach(function(fn) {
-                    try { fn(onlineAccess); } catch (e) {}
+                pending.callbacks.forEach(function (fn) {
+                    try { fn(onlineAccess); } catch (e) { }
                 });
             }
         });
@@ -14702,11 +15004,11 @@
         badge.textContent = 'Check Library';
         badge.style.cssText = darkModeEnabled
             ? 'display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; '
-              + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
-              + 'background: rgba(102,179,255,0.14); color: #7cc0ff; border: 1px solid rgba(102,179,255,0.55);'
+            + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
+            + 'background: rgba(102,179,255,0.14); color: #7cc0ff; border: 1px solid rgba(102,179,255,0.55);'
             : 'display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; '
-              + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
-              + 'background: #eef6ff; color: #1a73e8; border: 1px solid #9dc7ff;';
+            + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
+            + 'background: #eef6ff; color: #1a73e8; border: 1px solid #9dc7ff;';
         return badge;
     }
 
@@ -14721,11 +15023,11 @@
         badge.textContent = 'Google Books';
         badge.style.cssText = darkModeEnabled
             ? 'display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; '
-              + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
-              + 'background: rgba(255,183,77,0.14); color: #ffcc80; border: 1px solid rgba(255,183,77,0.55);'
+            + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
+            + 'background: rgba(255,183,77,0.14); color: #ffcc80; border: 1px solid rgba(255,183,77,0.55);'
             : 'display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; '
-              + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
-              + 'background: #fff6e8; color: #8a4b00; border: 1px solid #f0c07a;';
+            + 'font-size: 11px; line-height: 1.3; font-weight: 600; text-decoration: none; '
+            + 'background: #fff6e8; color: #8a4b00; border: 1px solid #f0c07a;';
         return badge;
     }
 
@@ -14734,22 +15036,22 @@
         var blockCandidates = container.querySelectorAll('li, p');
 
         if (blockCandidates.length) {
-            blockCandidates.forEach(function(node) {
+            blockCandidates.forEach(function (node) {
                 var raw = (node.innerText || node.textContent || '');
-                splitKurserLiteratureText(raw).forEach(function(txt) {
+                splitKurserLiteratureText(raw).forEach(function (txt) {
                     if (!txt) return;
                     items.push({ text: txt, anchor: node });
                 });
             });
         } else {
             var raw = (container.innerText || container.textContent || '');
-            splitKurserLiteratureText(raw).forEach(function(txt) {
+            splitKurserLiteratureText(raw).forEach(function (txt) {
                 items.push({ text: txt, anchor: container });
             });
         }
 
         var seen = Object.create(null);
-        return items.filter(function(item) {
+        return items.filter(function (item) {
             if (!item.text || seen[item.text]) return false;
             seen[item.text] = true;
             return true;
@@ -14761,7 +15063,7 @@
         var injected = 0;
         var seenKeys = Object.create(null);
 
-        lines.forEach(function(item) {
+        lines.forEach(function (item) {
             var parsed = parseKurserCitationLine(item.text);
             if (!parsed) return;
             var libraryUrl = buildKurserFinditUrl(parsed);
@@ -14777,7 +15079,7 @@
             var googleBadge = null;
             if (libraryUrl) {
                 libraryBadge = createKurserLibraryBadge(libraryUrl);
-                checkFinditOnlineAccess(libraryUrl, function(hasOnlineAccess) {
+                checkFinditOnlineAccess(libraryUrl, function (hasOnlineAccess) {
                     if (hasOnlineAccess) styleLibraryBadgeAsOnline(libraryBadge);
                 });
             }
@@ -14833,7 +15135,7 @@
         var bars = document.querySelectorAll('.bar');
         if (!bars.length) return;
 
-        bars.forEach(function(bar) {
+        bars.forEach(function (bar) {
             var label = (bar.textContent || '').replace(/\s+/g, ' ').trim();
             if (!isKurserLiteratureLabel(label)) return;
             if (bar.getAttribute('data-dtu-textbook-linker-scanned') === '1') return;
@@ -14861,7 +15163,7 @@
             // Deduplicate lines
             var seenLines = Object.create(null);
             var uniqueLines = [];
-            section.lines.forEach(function(line) {
+            section.lines.forEach(function (line) {
                 var key = line.toLowerCase().replace(/\s+/g, ' ').trim();
                 if (seenLines[key]) return;
                 seenLines[key] = true;
@@ -14885,7 +15187,7 @@
                 originalWrap.setAttribute('data-dtu-textbook-original', '1');
                 markExt(originalWrap);
                 bar.insertAdjacentElement('afterend', originalWrap);
-                toHide.forEach(function(n) { originalWrap.appendChild(n); });
+                toHide.forEach(function (n) { originalWrap.appendChild(n); });
             }
 
             // Build structured literature container
@@ -14914,7 +15216,7 @@
             var injectedCount = 0;
             var seenKeys = Object.create(null);
 
-            uniqueLines.forEach(function(lineText) {
+            uniqueLines.forEach(function (lineText) {
                 var parsed = parseKurserCitationLine(lineText);
                 if (!parsed) return;
                 var libraryUrl = buildKurserFinditUrl(parsed);
@@ -14966,7 +15268,7 @@
                         + 'background: ' + (darkModeEnabled ? 'rgba(var(--dtu-ad-accent-deep-rgb),0.18)' : 'rgba(var(--dtu-ad-accent-deep-rgb),0.05)') + ';';
                     actions.appendChild(finditLink);
 
-                    checkFinditOnlineAccess(libraryUrl, function(hasOnlineAccess) {
+                    checkFinditOnlineAccess(libraryUrl, function (hasOnlineAccess) {
                         if (hasOnlineAccess) {
                             finditLink.textContent = 'Free PDF';
                             finditLink.style.setProperty('color', darkModeEnabled ? '#81c784' : '#2e7d32', 'important');
@@ -15001,7 +15303,7 @@
     }
 
     function restoreKurserLiteratureOriginals() {
-        document.querySelectorAll('[data-dtu-textbook-original]').forEach(function(wrapper) {
+        document.querySelectorAll('[data-dtu-textbook-original]').forEach(function (wrapper) {
             var parent = wrapper.parentNode;
             if (!parent) { wrapper.remove(); return; }
             while (wrapper.firstChild) {
@@ -15014,11 +15316,11 @@
     function insertKurserTextbookLinks() {
         if (!IS_TOP_WINDOW) return;
         if (!isFeatureFlagEnabled(FEATURE_KURSER_TEXTBOOK_LINKER_KEY)) {
-            document.querySelectorAll('[data-dtu-textbook-linker], [data-dtu-textbook-linker-bar-host], [data-dtu-textbook-linker-fallback]').forEach(function(el) {
+            document.querySelectorAll('[data-dtu-textbook-linker], [data-dtu-textbook-linker-bar-host], [data-dtu-textbook-linker-fallback]').forEach(function (el) {
                 el.remove();
             });
             restoreKurserLiteratureOriginals();
-            document.querySelectorAll('[data-dtu-textbook-linker-scanned], [data-dtu-textbook-linker-attempts]').forEach(function(el) {
+            document.querySelectorAll('[data-dtu-textbook-linker-scanned], [data-dtu-textbook-linker-attempts]').forEach(function (el) {
                 el.removeAttribute('data-dtu-textbook-linker-scanned');
                 el.removeAttribute('data-dtu-textbook-linker-attempts');
             });
@@ -15032,7 +15334,7 @@
         var containers = findKurserLiteratureContainers();
         if (!containers.length) return;
 
-        containers.forEach(function(container) {
+        containers.forEach(function (container) {
             if (!container || container.getAttribute('data-dtu-textbook-linker-scanned') === '1') return;
             var attempts = parseInt(container.getAttribute('data-dtu-textbook-linker-attempts') || '0', 10);
             if (attempts >= 5) return;
@@ -15065,18 +15367,18 @@
         if (!IS_TOP_WINDOW) return;
         if (window.location.hostname !== 'kurser.dtu.dk') return;
         if (!isFeatureFlagEnabled(FEATURE_KURSER_TEXTBOOK_LINKER_KEY)) {
-            document.querySelectorAll('[data-dtu-textbook-linker], [data-dtu-textbook-linker-bar-host], [data-dtu-textbook-linker-fallback]').forEach(function(el) {
+            document.querySelectorAll('[data-dtu-textbook-linker], [data-dtu-textbook-linker-bar-host], [data-dtu-textbook-linker-fallback]').forEach(function (el) {
                 el.remove();
             });
             restoreKurserLiteratureOriginals();
-            document.querySelectorAll('[data-dtu-textbook-linker-scanned], [data-dtu-textbook-linker-attempts]').forEach(function(el) {
+            document.querySelectorAll('[data-dtu-textbook-linker-scanned], [data-dtu-textbook-linker-attempts]').forEach(function (el) {
                 el.removeAttribute('data-dtu-textbook-linker-scanned');
                 el.removeAttribute('data-dtu-textbook-linker-attempts');
             });
             return;
         }
         if (_kurserTextbookLinkerTimer) return;
-        _kurserTextbookLinkerTimer = setTimeout(function() {
+        _kurserTextbookLinkerTimer = setTimeout(function () {
             _kurserTextbookLinkerTimer = null;
             insertKurserTextbookLinks();
         }, delayMs || 550);
@@ -15143,7 +15445,7 @@
             if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.sendMessage) {
                 var p = browser.runtime.sendMessage(msg);
                 if (p && typeof p.then === 'function') {
-                    p.then(cb).catch(function() { cb(null); });
+                    p.then(cb).catch(function () { cb(null); });
                     return;
                 }
                 cb(p);
@@ -15176,11 +15478,11 @@
             return;
         }
         if (_mylineInFlight) {
-            setTimeout(function() { getMyLineCurriculum(cb, forceRefresh); }, 120);
+            setTimeout(function () { getMyLineCurriculum(cb, forceRefresh); }, 120);
             return;
         }
         _mylineInFlight = true;
-        sendRuntimeMessage({ type: 'dtu-sdb-myline', forceRefresh: !!forceRefresh }, function(resp) {
+        sendRuntimeMessage({ type: 'dtu-sdb-myline', forceRefresh: !!forceRefresh }, function (resp) {
             _mylineInFlight = false;
             _mylineCache = resp || null;
             _mylineCacheTs = Date.now();
@@ -15275,7 +15577,7 @@
         // Place directly under the course title.
         titleEl.insertAdjacentElement('afterend', host);
 
-        getMyLineCurriculum(function(plan) {
+        getMyLineCurriculum(function (plan) {
             if (!host.isConnected) return;
             while (host.firstChild) host.removeChild(host.firstChild);
 
@@ -15359,9 +15661,9 @@
         markExt(container);
         container.style.cssText = darkModeEnabled
             ? 'margin: 10px 0 12px 0; padding: 12px 14px; border-radius: 6px; width: 100%; max-width: none; box-sizing: border-box; '
-              + 'background-color: #2d2d2d; border: 1px solid #404040; color: #e0e0e0; font-family: inherit;'
+            + 'background-color: #2d2d2d; border: 1px solid #404040; color: #e0e0e0; font-family: inherit;'
             : 'margin: 10px 0 12px 0; padding: 12px 14px; border-radius: 6px; width: 100%; max-width: none; box-sizing: border-box; '
-              + 'background-color: #ffffff; border: 1px solid #e0e0e0; color: #222; font-family: inherit;';
+            + 'background-color: #ffffff; border: 1px solid #e0e0e0; color: #222; font-family: inherit;';
 
         var title = document.createElement('div');
         markExt(title);
@@ -15385,7 +15687,7 @@
             type: 'dtu-grade-stats',
             courseCode: courseCode,
             semesters: buildGradeStatsSemesters()
-        }, function(response) {
+        }, function (response) {
             var iterations = [];
             if (response && response.ok && Array.isArray(response.iterations) && response.iterations.length) {
                 iterations = response.iterations;
@@ -15489,7 +15791,7 @@
                 historyTitle.style.cssText = 'font-size: 12px; font-weight: 600; margin-bottom: 5px;';
                 historyCard.appendChild(historyTitle);
 
-                iterations.slice(0, 3).forEach(function(iter, idx) {
+                iterations.slice(0, 3).forEach(function (iter, idx) {
                     if (!iter || !iter.data) return;
                     var iterRow = document.createElement('div');
                     markExt(iterRow);
@@ -15579,7 +15881,7 @@
                     { key: 'noshow', label: 'No-show', count: pf.noShow || 0, color: darkModeEnabled ? '#90a4ae' : '#607d8b' }
                 ];
             } else {
-                series = grades.map(function(g) {
+                series = grades.map(function (g) {
                     var isPass = (g === '02' || g === '4' || g === '7' || g === '10' || g === '12');
                     return {
                         key: g,
@@ -15591,12 +15893,12 @@
             }
 
             var maxCount = 0;
-            series.forEach(function(s) {
+            series.forEach(function (s) {
                 var c = s.count || 0;
                 if (c > maxCount) maxCount = c;
             });
 
-            series.forEach(function(s) {
+            series.forEach(function (s) {
                 var count = s.count || 0;
                 var height = maxCount ? Math.round((count / maxCount) * 88) : 0;
                 if (count > 0 && height < 4) height = 4;
@@ -15686,9 +15988,9 @@
 
         var baseStyle = darkModeEnabled
             ? 'margin: 10px 0 12px 0; padding: 12px 14px; border-radius: 6px; width: 100%; max-width: none; box-sizing: border-box; '
-              + 'background-color: #2d2d2d; border: 1px solid #404040; color: #e0e0e0; font-family: inherit;'
+            + 'background-color: #2d2d2d; border: 1px solid #404040; color: #e0e0e0; font-family: inherit;'
             : 'margin: 10px 0 12px 0; padding: 12px 14px; border-radius: 6px; width: 100%; max-width: none; box-sizing: border-box; '
-              + 'background-color: #ffffff; border: 1px solid #e0e0e0; color: #222; font-family: inherit;';
+            + 'background-color: #ffffff; border: 1px solid #e0e0e0; color: #222; font-family: inherit;';
 
         if (!container) {
             // Find insert anchor: after grade stats panel if it exists, else after title
@@ -15744,14 +16046,14 @@
         function scheduleCourseEvalRetry(ms) {
             _courseEvalRequested = false;
             var delay = ms || 5000;
-            try { container.setAttribute('data-dtu-course-eval-nexttry', String(Date.now() + delay)); } catch (e) {}
+            try { container.setAttribute('data-dtu-course-eval-nexttry', String(Date.now() + delay)); } catch (e) { }
 
             // startHostFeatureBootstrap() stops once the container exists, so ensure we retry even if the page becomes static.
             try {
                 if (_courseEvalRetryTimer) clearTimeout(_courseEvalRetryTimer);
-                _courseEvalRetryTimer = setTimeout(function() {
+                _courseEvalRetryTimer = setTimeout(function () {
                     _courseEvalRetryTimer = null;
-                    try { insertKurserCourseEvaluation(); } catch (e) {}
+                    try { insertKurserCourseEvaluation(); } catch (e) { }
                 }, delay + 30);
             } catch (e) {
                 // ignore
@@ -15769,7 +16071,7 @@
             sendRuntimeMessage({
                 type: 'dtu-course-evaluation',
                 url: latestEvalUrl
-            }, function(response) {
+            }, function (response) {
                 if (!response || !response.ok || !response.data) {
                     var reason = (response && response.error) ? response.error : 'unknown';
                     status.textContent = 'No evaluation data available';
@@ -15807,7 +16109,7 @@
             }
 
             if (domLinks.length) {
-                domLinks.sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
+                domLinks.sort(function (a, b) { return (b.id || 0) - (a.id || 0); });
                 var bestDom = domLinks[0];
                 console.log('[DTU After Dark] Course eval: found eval URL in DOM', bestDom.url);
                 fetchAndRenderEvaluation(bestDom.url, bestDom.text || 'Evaluation results');
@@ -15850,14 +16152,14 @@
         }
 
         var infoFetchOpts = { credentials: infoFetchCreds, cache: 'no-store' };
-        try { infoFetchOpts.headers = { 'Accept': 'text/html' }; } catch (e) {}
+        try { infoFetchOpts.headers = { 'Accept': 'text/html' }; } catch (e) { }
 
         fetch(infoUrl, infoFetchOpts)
-            .then(function(res) {
+            .then(function (res) {
                 if (!res.ok) throw new Error('info_http_' + res.status);
                 return res.text();
             })
-            .then(function(infoHtml) {
+            .then(function (infoHtml) {
                 // Parse evaluation links from the info page.
                 // DTU has changed the kurser.dtu.dk markup before, so keep this robust.
                 function normalizeEvalHref(href) {
@@ -15983,10 +16285,10 @@
                 var latestEvalUrl = bestEval.url;
                 var latestEvalLabel = bestEval.text;
                 console.log('[DTU After Dark] Course eval: found eval URL', latestEvalUrl);
-                try { container.removeAttribute('data-dtu-course-eval-info-cred'); } catch (e) {}
+                try { container.removeAttribute('data-dtu-course-eval-info-cred'); } catch (e) { }
                 fetchAndRenderEvaluation(latestEvalUrl, latestEvalLabel);
             })
-            .catch(function(err) {
+            .catch(function (err) {
                 status.textContent = 'Could not load evaluation data';
                 console.log('[DTU After Dark] Course eval error:', err && err.message || err);
                 scheduleCourseEvalRetry(8000);
@@ -16013,7 +16315,7 @@
         var satisfactionQuestions = [];
         if (data && Array.isArray(data.questions) && data.questions.length) {
             var byKey = {};
-            data.questions.forEach(function(q) {
+            data.questions.forEach(function (q) {
                 if (!q) return;
                 var key = normalizeEvalQuestionNumber(q.number);
                 if (EVAL_SATISFACTION_KEYS.indexOf(key) === -1) return;
@@ -16025,7 +16327,7 @@
                     average: Number(q.average) || 0
                 };
             });
-            EVAL_SATISFACTION_KEYS.forEach(function(key) {
+            EVAL_SATISFACTION_KEYS.forEach(function (key) {
                 if (byKey[key]) satisfactionQuestions.push(byKey[key]);
             });
         }
@@ -16095,7 +16397,7 @@
         if (overallQuestions && overallQuestions.length) {
             var overallSum = 0;
             var overallCount = 0;
-            overallQuestions.forEach(function(q) {
+            overallQuestions.forEach(function (q) {
                 if (q.average > 0) {
                     overallSum += q.average;
                     overallCount++;
@@ -16145,7 +16447,7 @@
             qTitle.style.cssText = 'font-size: 12px; font-weight: 600; margin-bottom: 8px;';
             questionsCard.appendChild(qTitle);
 
-            questionsForUi.forEach(function(q, idx) {
+            questionsForUi.forEach(function (q, idx) {
                 var row = document.createElement('div');
                 markExt(row);
                 row.style.cssText = 'display: grid; grid-template-columns: minmax(130px, 1fr) 1fr auto; gap: 8px; align-items: center; padding: 4px 0;'
@@ -16211,7 +16513,7 @@
             var scaleLabels = document.createElement('div');
             markExt(scaleLabels);
             scaleLabels.style.cssText = 'display: flex; justify-content: space-between; font-size: 10px; color: ' + mutedText + '; margin-bottom: 4px;';
-            ['Much less', 'Less', 'As expected', 'More', 'Much more'].forEach(function(lbl) {
+            ['Much less', 'Less', 'As expected', 'More', 'Much more'].forEach(function (lbl) {
                 var sp = document.createElement('span');
                 sp.textContent = lbl;
                 scaleLabels.appendChild(sp);
@@ -16370,7 +16672,7 @@
         if (_smartRoomLinkerGlobalClickBound) return;
         _smartRoomLinkerGlobalClickBound = true;
 
-        document.addEventListener('click', function(ev) {
+        document.addEventListener('click', function (ev) {
             try {
                 if (!isFeatureFlagEnabled(FEATURE_SMART_ROOM_LINKER_KEY)) return;
                 var a = null;
@@ -16407,7 +16709,7 @@
                         var u = new URL(href, window.location.origin);
                         var q = u.searchParams.get('search') || '';
                         parsed = parseBuildingRoomFromTextOrQuery(q);
-                    } catch (e1) {}
+                    } catch (e1) { }
                     if (!parsed) parsed = parseBuildingRoomFromTextOrQuery(a.textContent || '');
                     if (parsed) {
                         b = parsed.building;
@@ -16422,13 +16724,13 @@
                 var query = r ? (b + '-' + r) : ('Bygning ' + b);
                 showMazemapTooltip(a, 'Locating ' + query + '...', 'info');
 
-                resolveMazemapRoom(b, r, function(res) {
+                resolveMazemapRoom(b, r, function (res) {
                     if (res && res.ok && typeof res.poiId === 'number') {
                         var url = buildMazemapSharePoiUrl(res.poiId);
                         removeMazemapTooltip();
                         showMazemapTooltip(a, 'Opening MazeMap...', 'info');
                         setTimeout(removeMazemapTooltip, 900);
-                        try { window.open(url, '_blank', 'noopener,noreferrer'); } catch (e2) {}
+                        try { window.open(url, '_blank', 'noopener,noreferrer'); } catch (e2) { }
                         return;
                     }
 
@@ -16436,7 +16738,7 @@
                     removeMazemapTooltip();
                     showMazemapTooltip(a, (r ? 'Room not found. Opening search...' : 'Building not found. Opening search...'), 'error');
                     setTimeout(removeMazemapTooltip, 1400);
-                    try { window.open(fallbackUrl, '_blank', 'noopener,noreferrer'); } catch (e3) {}
+                    try { window.open(fallbackUrl, '_blank', 'noopener,noreferrer'); } catch (e3) { }
                 });
             } catch (e) {
                 // ignore
@@ -16588,7 +16890,7 @@
             return;
         }
 
-        sendRuntimeMessage({ type: 'dtu-mazemap-resolve', building: b, room: r }, function(resp) {
+        sendRuntimeMessage({ type: 'dtu-mazemap-resolve', building: b, room: r }, function (resp) {
             var out = null;
             if (resp && resp.ok && typeof resp.poiId === 'number') {
                 out = {
@@ -16636,9 +16938,9 @@
         applyMazemapSmartIconInlineStyle(icon);
         a.appendChild(icon);
 
-        a.addEventListener('click', function(ev) {
+        a.addEventListener('click', function (ev) {
             // Respect normal browser gestures (open in new tab etc.) but always resolve before navigating.
-            try { ev.preventDefault(); } catch (e1) {}
+            try { ev.preventDefault(); } catch (e1) { }
 
             var link = a;
             if (link.getAttribute('data-dtu-mazemap-loading') === '1') return;
@@ -16646,7 +16948,7 @@
             setMazemapLinkLoading(link, true);
             showMazemapTooltip(link, 'Locating ' + query + '...', 'info');
 
-            resolveMazemapRoom(b, r, function(res) {
+            resolveMazemapRoom(b, r, function (res) {
                 setMazemapLinkLoading(link, false);
                 if (res && res.ok && typeof res.poiId === 'number') {
                     var url = buildMazemapSharePoiUrl(res.poiId);
@@ -16804,7 +17106,7 @@
         }
 
         if (!matches.length) return [];
-        matches.sort(function(a, b) {
+        matches.sort(function (a, b) {
             if (a.start !== b.start) return a.start - b.start;
             return b.end - a.end;
         });
@@ -16985,7 +17287,7 @@
         try {
             block.setAttribute('html', out);
             // Also set the property when available (some D2L components react to it).
-            try { block.html = out; } catch (eProp) {}
+            try { block.html = out; } catch (eProp) { }
             return true;
         } catch (e) {
             return false;
@@ -17031,7 +17333,7 @@
             if (window.location.hostname === 'learn.inside.dtu.dk' && !isShadow) {
                 linkifyD2lHtmlBlocksInRoot(root);
             }
-        } catch (ePatch) {}
+        } catch (ePatch) { }
 
         // Tight budgets for full-page scans; more generous for Shadow DOM fragments / HTML block renderers.
         var isHtmlBlockRendered = (!isShadow && root.nodeType === 1 && root.classList && root.classList.contains('d2l-html-block-rendered'));
@@ -17041,7 +17343,7 @@
         var processed = 0;
 
         var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-            acceptNode: function(node) {
+            acceptNode: function (node) {
                 try {
                     if (!node || node.nodeType !== 3) return NodeFilter.FILTER_REJECT;
                     var p = node.parentElement;
@@ -17075,11 +17377,11 @@
             return;
         }
         _smartRoomLinkerPendingRoot = rootNode || null;
-        _smartRoomLinkerTimer = setTimeout(function() {
+        _smartRoomLinkerTimer = setTimeout(function () {
             _smartRoomLinkerTimer = null;
             var pending = _smartRoomLinkerPendingRoot;
             _smartRoomLinkerPendingRoot = null;
-            try { runSmartRoomLinkerScan(pending); } catch (e) {}
+            try { runSmartRoomLinkerScan(pending); } catch (e) { }
         }, delayMs || 420);
     }
 
@@ -17096,8 +17398,8 @@
         try {
             var targets = [];
             if (shadowRoot.querySelectorAll) {
-                shadowRoot.querySelectorAll('.d2l-html-block-rendered').forEach(function(el) { targets.push(el); });
-                shadowRoot.querySelectorAll('.d2l-datalist, .vui-list, .d2l-datalist-no-padding').forEach(function(el) { targets.push(el); });
+                shadowRoot.querySelectorAll('.d2l-html-block-rendered').forEach(function (el) { targets.push(el); });
+                shadowRoot.querySelectorAll('.d2l-datalist, .vui-list, .d2l-datalist-no-padding').forEach(function (el) { targets.push(el); });
             }
             if (targets.length) {
                 for (var i = 0; i < targets.length && i < 12; i++) {
@@ -17106,13 +17408,13 @@
                 // Also do a light shadow-root scan as a fallback.
                 scheduleSmartRoomLinkerScan(shadowRoot, 820);
                 // And seed any nested open shadow roots under this one (d2l-html-block etc.).
-                try { seedSmartRoomLinkerNestedShadowRoots(shadowRoot); } catch (eNest0) {}
+                try { seedSmartRoomLinkerNestedShadowRoots(shadowRoot); } catch (eNest0) { }
                 return;
             }
-        } catch (e1) {}
+        } catch (e1) { }
 
         scheduleSmartRoomLinkerScan(shadowRoot, 650);
-        try { seedSmartRoomLinkerNestedShadowRoots(shadowRoot); } catch (eNest1) {}
+        try { seedSmartRoomLinkerNestedShadowRoots(shadowRoot); } catch (eNest1) { }
     }
 
     function seedSmartRoomLinkerNestedShadowRoots(shadowRoot) {
@@ -17139,7 +17441,7 @@
         if (window.location.hostname !== 'learn.inside.dtu.dk') return;
         if (!shouldRunSmartRoomLinkerInThisWindow()) return;
         if (_smartRoomLinkerShadowSweepTimer) return;
-        _smartRoomLinkerShadowSweepTimer = setTimeout(function() {
+        _smartRoomLinkerShadowSweepTimer = setTimeout(function () {
             _smartRoomLinkerShadowSweepTimer = null;
             try {
                 var base = document.body || document.documentElement;
@@ -17160,7 +17462,7 @@
                     if ((Date.now() - start) > 55) break;
                     node = walker.nextNode();
                 }
-            } catch (e) {}
+            } catch (e) { }
         }, delayMs || 900);
     }
 
@@ -17168,28 +17470,28 @@
         if (window.location.hostname !== 'learn.inside.dtu.dk') return;
         if (!shouldRunSmartRoomLinkerInThisWindow()) return;
         if (_smartRoomLinkerHtmlBlockProbeTimer) return;
-        _smartRoomLinkerHtmlBlockProbeTimer = setTimeout(function() {
+        _smartRoomLinkerHtmlBlockProbeTimer = setTimeout(function () {
             _smartRoomLinkerHtmlBlockProbeTimer = null;
             try {
                 var blocks = document.querySelectorAll('d2l-html-block');
                 for (var i = 0; i < blocks.length && i < 80; i++) {
                     var b = blocks[i];
-                    try { linkifyD2lHtmlBlockAttribute(b); } catch (eLinkify) {}
+                    try { linkifyD2lHtmlBlockAttribute(b); } catch (eLinkify) { }
                     if (b && b.shadowRoot) {
                         seedSmartRoomLinkerShadowRoot(b.shadowRoot);
                     }
                 }
-            } catch (e) {}
+            } catch (e) { }
         }, delayMs || 650);
     }
 
     function removeSmartRoomLinks() {
         removeMazemapTooltip();
-        document.querySelectorAll('[data-dtu-mazemap-link]').forEach(function(a) {
+        document.querySelectorAll('[data-dtu-mazemap-link]').forEach(function (a) {
             try {
                 var txt = a.getAttribute('data-dtu-mazemap-text') || (a.textContent || '');
                 a.replaceWith(document.createTextNode(txt));
-            } catch (e) {}
+            } catch (e) { }
         });
     }
 
@@ -17235,33 +17537,33 @@
 
         if (!jsonUrl) {
             _roomFinderDataLoading = false;
-            _roomFinderDataCallbacks.forEach(function(fn) { fn(null); });
+            _roomFinderDataCallbacks.forEach(function (fn) { fn(null); });
             _roomFinderDataCallbacks = [];
             return;
         }
 
         fetch(jsonUrl)
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
                 _roomFinderDataCache = data;
                 _roomFinderDataLoading = false;
-                _roomFinderDataCallbacks.forEach(function(fn) { fn(data); });
+                _roomFinderDataCallbacks.forEach(function (fn) { fn(data); });
                 _roomFinderDataCallbacks = [];
             })
-            .catch(function() {
+            .catch(function () {
                 _roomFinderDataLoading = false;
-                _roomFinderDataCallbacks.forEach(function(fn) { fn(null); });
+                _roomFinderDataCallbacks.forEach(function (fn) { fn(null); });
                 _roomFinderDataCallbacks = [];
             });
     }
 
     var ROOM_TYPE_LABELS = {
         'AUD': 'Auditorium',
-        'GR':  'Group Room',
+        'GR': 'Group Room',
         'EPX': 'Exercise Room',
         'EXP': 'Exercise Room',
-        'SA':  'Seminar Room',
-        'ON':  'Online'
+        'SA': 'Seminar Room',
+        'ON': 'Online'
     };
 
     function insertKurserRoomFinder() {
@@ -17318,7 +17620,7 @@
 
         locationRow.insertAdjacentElement('afterend', tr);
 
-        loadRoomFinderData(function(allRooms) {
+        loadRoomFinderData(function (allRooms) {
             if (!allRooms) {
                 tdValue.textContent = 'Room data unavailable.';
                 return;
@@ -17331,13 +17633,13 @@
             }
 
             // Filter out ON (online) entries unless they're the only ones
-            var physicalRooms = rooms.filter(function(r) { return r.type !== 'ON'; });
+            var physicalRooms = rooms.filter(function (r) { return r.type !== 'ON'; });
             if (!physicalRooms.length) physicalRooms = rooms;
 
             // Separate lecture rooms (AUD/SA) from exercise/group rooms
             var lectureRooms = [];
             var exerciseRooms = [];
-            physicalRooms.forEach(function(r) {
+            physicalRooms.forEach(function (r) {
                 if (r.type === 'AUD' || r.type === 'SA') {
                     lectureRooms.push(r);
                 } else {
@@ -17346,7 +17648,7 @@
             });
 
             // Sort each group by building + room number
-            var sortByBldRoom = function(a, b) {
+            var sortByBldRoom = function (a, b) {
                 var bldCmp = parseInt(a.building) - parseInt(b.building);
                 if (bldCmp !== 0) return bldCmp;
                 return a.room.localeCompare(b.room);
@@ -17362,7 +17664,7 @@
             var mutedColor = darkModeEnabled ? '#999' : '#666';
 
             // Lecture rooms: "Building 308, Auditorium 012"
-            lectureRooms.forEach(function(r) {
+            lectureRooms.forEach(function (r) {
                 var line = document.createElement('div');
                 markExt(line);
                 line.style.cssText = 'font-size: 13px; line-height: 1.6; color: ' + textColor + ';';
@@ -17379,12 +17681,12 @@
             // Exercise/group rooms: group by building, then list room numbers
             if (exerciseRooms.length) {
                 var byBuilding = {};
-                exerciseRooms.forEach(function(r) {
+                exerciseRooms.forEach(function (r) {
                     if (!byBuilding[r.building]) byBuilding[r.building] = [];
                     byBuilding[r.building].push(r.room);
                 });
-                var buildings = Object.keys(byBuilding).sort(function(a, b) { return parseInt(a) - parseInt(b); });
-                buildings.forEach(function(bld) {
+                var buildings = Object.keys(byBuilding).sort(function (a, b) { return parseInt(a) - parseInt(b); });
+                buildings.forEach(function (bld) {
                     var roomNums = byBuilding[bld];
                     var line = document.createElement('div');
                     markExt(line);
@@ -17431,7 +17733,7 @@
         if (!IS_TOP_WINDOW) return;
         if (!isFeatureFlagEnabled(FEATURE_KURSER_SCHEDULE_ANNOTATION_KEY)) {
             // Restore original text when feature is disabled
-            document.querySelectorAll('[data-dtu-schedule-annotated]').forEach(function(cell) {
+            document.querySelectorAll('[data-dtu-schedule-annotated]').forEach(function (cell) {
                 var original = cell.getAttribute('data-dtu-schedule-original');
                 if (original !== null) cell.textContent = original;
                 cell.removeAttribute('data-dtu-schedule-annotated');
@@ -17462,7 +17764,7 @@
 
             var text = valueCell.textContent || '';
             // Match slot codes like F3A, E5B -- negative lookahead avoids duplicating if already annotated
-            var annotated = text.replace(/\b([FE]?)([1-5])([AB])\b(?!\s*\()/gi, function(match, season, num, slot) {
+            var annotated = text.replace(/\b([FE]?)([1-5])([AB])\b(?!\s*\()/gi, function (match, season, num, slot) {
                 var key = num + slot.toUpperCase();
                 var dayTime = SCHEDULE_SLOT_MAP[key];
                 if (!dayTime) return match;
@@ -17470,7 +17772,7 @@
             });
 
             // Full-group codes like F3, E5 (both A and B slots)
-            annotated = annotated.replace(/\b([FE])([1-5])\b(?![AB0-9\s]*\()/gi, function(match, season, num) {
+            annotated = annotated.replace(/\b([FE])([1-5])\b(?![AB0-9\s]*\()/gi, function (match, season, num) {
                 var keyA = num + 'A';
                 var keyB = num + 'B';
                 var dayA = SCHEDULE_SLOT_MAP[keyA];
@@ -17492,7 +17794,7 @@
         if (window.location.hostname !== 'evaluering.dtu.dk') return;
 
         // Keep the "text answers" toolbar row compact and transparent.
-        document.querySelectorAll('.mx-s.hide-on-print, .mx-s.hide-on-print .flex.flex--content-between').forEach(function(row) {
+        document.querySelectorAll('.mx-s.hide-on-print, .mx-s.hide-on-print .flex.flex--content-between').forEach(function (row) {
             row.style.setProperty('background', 'transparent', 'important');
             row.style.setProperty('background-color', 'transparent', 'important');
             row.style.setProperty('height', 'auto', 'important');
@@ -17500,11 +17802,11 @@
         });
 
         // Chart scripts wait until legend headers are not pure black before drawing.
-        document.querySelectorAll('.comparison__legend > .legend__header').forEach(function(header) {
+        document.querySelectorAll('.comparison__legend > .legend__header').forEach(function (header) {
             var bg = '';
             try {
                 bg = window.getComputedStyle(header).backgroundColor || '';
-            } catch (e) {}
+            } catch (e) { }
             if (bg === 'rgb(0, 0, 0)') {
                 header.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
                 header.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
@@ -17513,7 +17815,7 @@
         });
 
         // Keep chart canvases and wrappers transparent to avoid giant dark blocks.
-        document.querySelectorAll('canvas[id^="CanvasQuestion_"]').forEach(function(canvas) {
+        document.querySelectorAll('canvas[id^="CanvasQuestion_"]').forEach(function (canvas) {
             canvas.style.setProperty('background', 'transparent', 'important');
             canvas.style.setProperty('background-color', 'transparent', 'important');
 
@@ -17536,27 +17838,30 @@
         if (window.location.hostname !== 'campusnet.dtu.dk') return;
 
         function clearInlineForSelector(selector, props) {
-            document.querySelectorAll(selector).forEach(function(el) {
+            document.querySelectorAll(selector).forEach(function (el) {
                 if (!el || !el.style) return;
-                props.forEach(function(prop) { el.style.removeProperty(prop); });
+                props.forEach(function (prop) { el.style.removeProperty(prop); });
             });
         }
 
         function applyCampusnetAccentElements() {
-            var linkColor = darkModeEnabled ? 'var(--dtu-ad-accent-soft)' : 'var(--dtu-ad-accent-deep)';
-            var linkHoverColor = darkModeEnabled ? 'var(--dtu-ad-accent)' : 'var(--dtu-ad-accent-hover)';
-            var widgetHeaderBg = 'var(--dtu-ad-accent-deep)';
-            var widgetHeaderBorder = 'var(--dtu-ad-accent-deep-hover)';
+            var accentDeepHex = getResolvedAccentDeep();
+            var accentDeepHoverHex = (getAccentThemeById(_accentThemeId) || {}).accentDeepHover || '#990000';
+            var accentHex = (getAccentThemeById(_accentThemeId) || {}).accent || '#990000';
+            var accentHoverHex = (getAccentThemeById(_accentThemeId) || {}).accentHover || '#b30000';
+            var accentSoftHex = (getAccentThemeById(_accentThemeId) || {}).accentSoft || accentHex;
+            var linkColor = darkModeEnabled ? accentSoftHex : accentDeepHex;
+            var linkHoverColor = darkModeEnabled ? accentHex : accentHoverHex;
 
-            document.querySelectorAll('.widget__header').forEach(function(header) {
+            document.querySelectorAll('.widget__header').forEach(function (header) {
                 if (!header || !header.style) return;
-                header.style.setProperty('background', widgetHeaderBg, 'important');
-                header.style.setProperty('background-color', widgetHeaderBg, 'important');
-                header.style.setProperty('border-bottom-color', widgetHeaderBorder, 'important');
+                header.style.setProperty('background', accentDeepHex, 'important');
+                header.style.setProperty('background-color', accentDeepHex, 'important');
+                header.style.setProperty('border-bottom-color', accentDeepHoverHex, 'important');
                 header.style.setProperty('color', '#ffffff', 'important');
             });
 
-            document.querySelectorAll('.widget__header .widget__title, h2.widget__title').forEach(function(title) {
+            document.querySelectorAll('.widget__header .widget__title, h2.widget__title').forEach(function (title) {
                 if (!title || !title.style) return;
                 title.style.setProperty('color', '#ffffff', 'important');
                 title.style.setProperty('background', 'transparent', 'important');
@@ -17565,7 +17870,7 @@
 
             // Widget service icons: accent only the outer circle/background layer.
             // Keep inner glyphs (including chat bubble/user/heart marks) white for readability.
-            document.querySelectorAll('.widget__header .widget__icon, .widget__header .widget__icon .service-icon').forEach(function(wrap) {
+            document.querySelectorAll('.widget__header .widget__icon, .widget__header .widget__icon .service-icon').forEach(function (wrap) {
                 if (!wrap || !wrap.style) return;
                 wrap.style.setProperty('background', 'transparent', 'important');
                 wrap.style.setProperty('background-color', 'transparent', 'important');
@@ -17574,7 +17879,7 @@
                 wrap.style.setProperty('box-shadow', 'none', 'important');
                 wrap.style.setProperty('overflow', 'hidden', 'important');
             });
-            document.querySelectorAll('.widget__header .widget__icon .icon__base').forEach(function(base) {
+            document.querySelectorAll('.widget__header .widget__icon .icon__base').forEach(function (base) {
                 if (!base || !base.style) return;
                 base.style.setProperty('background', 'transparent', 'important');
                 base.style.setProperty('background-color', 'transparent', 'important');
@@ -17582,17 +17887,17 @@
                 base.style.setProperty('border', '0', 'important');
                 base.style.setProperty('opacity', '0', 'important');
             });
-            document.querySelectorAll('.widget__header .widget__icon .icon__content').forEach(function(icon) {
+            document.querySelectorAll('.widget__header .widget__icon .icon__content').forEach(function (icon) {
                 if (!icon || !icon.style) return;
-                icon.style.setProperty('background', 'var(--dtu-ad-accent)', 'important');
-                icon.style.setProperty('background-color', 'var(--dtu-ad-accent)', 'important');
-                icon.style.setProperty('border-color', 'var(--dtu-ad-accent)', 'important');
+                icon.style.setProperty('background', accentHex, 'important');
+                icon.style.setProperty('background-color', accentHex, 'important');
+                icon.style.setProperty('border-color', accentHex, 'important');
                 icon.style.setProperty('border-radius', '999px', 'important');
                 icon.style.setProperty('color', '#ffffff', 'important');
                 icon.style.setProperty('fill', '#ffffff', 'important');
                 icon.style.setProperty('stroke', '#ffffff', 'important');
             });
-            document.querySelectorAll('.widget__header .widget__icon .icon__identifier').forEach(function(icon) {
+            document.querySelectorAll('.widget__header .widget__icon .icon__identifier').forEach(function (icon) {
                 if (!icon || !icon.style) return;
                 icon.style.setProperty('background', 'transparent', 'important');
                 icon.style.setProperty('background-color', 'transparent', 'important');
@@ -17601,15 +17906,15 @@
                 icon.style.setProperty('stroke', '#ffffff', 'important');
             });
 
-            document.querySelectorAll('.nav__icon .fa-circle').forEach(function(icon) {
+            document.querySelectorAll('.nav__icon .fa-circle').forEach(function (icon) {
                 if (!icon || !icon.style) return;
-                icon.style.setProperty('color', 'var(--dtu-ad-accent)', 'important');
+                icon.style.setProperty('color', accentHex, 'important');
             });
-            document.querySelectorAll('.nav__icon .fa-stack-1x, .nav__icon .fa-heart, .nav__icon .fa-user').forEach(function(icon) {
+            document.querySelectorAll('.nav__icon .fa-stack-1x, .nav__icon .fa-heart, .nav__icon .fa-user').forEach(function (icon) {
                 if (!icon || !icon.style) return;
                 icon.style.setProperty('color', '#ffffff', 'important');
             });
-            document.querySelectorAll('.nav__icon, .nav__icon .fa-stack, .nav__icon i').forEach(function(el) {
+            document.querySelectorAll('.nav__icon, .nav__icon .fa-stack, .nav__icon i').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', 'transparent', 'important');
                 el.style.setProperty('background-color', 'transparent', 'important');
@@ -17618,20 +17923,187 @@
                 el.style.setProperty('box-shadow', 'none', 'important');
             });
 
-            document.querySelectorAll('.widget a[href], .widget__body a[href], .widget__content a[href]').forEach(function(a) {
+            // CampusNet course/group burger blocks: accent background.
+            document.querySelectorAll('.group-menu__item, .group-menu__item-burger').forEach(function (el) {
+                if (!el || !el.style) return;
+                var panelBg = accentDeepHex;
+                var panelBorder = accentDeepHex;
+                el.style.setProperty('background', panelBg, 'important');
+                el.style.setProperty('background-color', panelBg, 'important');
+                el.style.setProperty('border-color', panelBorder, 'important');
+            });
+            document.querySelectorAll('.group-menu__item header, .group-menu__item-burger header').forEach(function (el) {
+                if (!el || !el.style) return;
+                var headerBg = accentDeepHex;
+                var headerBorder = darkModeEnabled ? '#404040' : accentDeepHex;
+                el.style.setProperty('background', headerBg, 'important');
+                el.style.setProperty('background-color', headerBg, 'important');
+                el.style.setProperty('border-color', headerBorder, 'important');
+            });
+
+            if (!darkModeEnabled) {
+                // CampusNet light mode only: CN Inside + language + user text black.
+                document.querySelectorAll(
+                    '.header__top a[href*="/cnnet/frontpage"] td span > b, '
+                    + '.header__top a[href*="/cnnet/frontpage"] td span'
+                ).forEach(function (el) {
+                    if (!el || !el.style) return;
+                    el.style.setProperty('color', '#000000', 'important');
+                });
+                document.querySelectorAll('.header__top a[href*="/cnnet/frontpage"]').forEach(function (a) {
+                    if (!a || !a.style) return;
+                    a.querySelectorAll('span, b').forEach(function (el) {
+                        if (!el || !el.style) return;
+                        var txt = '';
+                        try { txt = (el.textContent || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim(); } catch (eTxt0) { txt = ''; }
+                        if (!txt) return;
+                        if (/^cn inside$/i.test(txt)) {
+                            el.style.setProperty('color', '#000000', 'important');
+                        }
+                    });
+                });
+                document.querySelectorAll('section.header .header__top .ml-s, section.header .header__top .ml-s span').forEach(function (el) {
+                    if (!el || !el.style) return;
+                    el.style.setProperty('color', '#000000', 'important');
+                });
+                var headerTop = document.querySelector('section.header .header__top, .header__top');
+                if (headerTop) {
+                    headerTop.querySelectorAll('a, span').forEach(function (el) {
+                        if (!el || !el.style) return;
+                        if (el.closest('.nav__icon, .fa-stack, .service-icon, .icon__content, .icon__identifier')) return;
+                        var txt = '';
+                        try { txt = (el.textContent || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim(); } catch (eTxt) { txt = ''; }
+                        if (!txt) return;
+                        if (/^dansk$/i.test(txt) || /\(s\d{6,}\)/i.test(txt)) {
+                            el.style.setProperty('color', '#000000', 'important');
+                        }
+                    });
+                }
+
+                // CampusNet light mode only: these links/titles should be black, not accent-colored.
+                document.querySelectorAll('.groupLinksTable a.item__link, .groupLinksTable a.item__link .item__title, a.item__link[href*="/participants"] .item__title, a.item__link[href*="/calendar/default.aspx"] .item__title, a.item__link[href*="/mcq"] .item__title').forEach(function (el) {
+                    if (!el || !el.style) return;
+                    el.style.setProperty('color', '#000000', 'important');
+                });
+                document.querySelectorAll('nav#breadcrumb.actualbreadcrumb a[href="/cnnet/"]').forEach(function (el) {
+                    if (!el || !el.style) return;
+                    el.style.setProperty('color', '#000000', 'important');
+                });
+            }
+
+            document.querySelectorAll('.widget a[href], .widget__body a[href], .widget__content a[href]').forEach(function (a) {
                 if (!a || !a.style) return;
                 if (a.closest('nav, #breadcrumb, .nav__dropdown, .group-menu__item, .group-menu__item-burger')) return;
+                if (!darkModeEnabled && (a.matches('.groupLinksTable a.item__link') || a.closest('.groupLinksTable'))) return;
                 var cls = (a.className || '').toString();
                 if (/\barc-button\b/.test(cls)) return;
                 a.style.setProperty('color', linkColor, 'important');
                 if (!a.hasAttribute('data-dtu-accent-link')) {
                     a.setAttribute('data-dtu-accent-link', '1');
-                    a.addEventListener('mouseenter', function() {
-                        try { a.style.setProperty('color', linkHoverColor, 'important'); } catch (e0) {}
+                    a.addEventListener('mouseenter', function () {
+                        try { a.style.setProperty('color', linkHoverColor, 'important'); } catch (e0) { }
                     }, true);
-                    a.addEventListener('mouseleave', function() {
-                        try { a.style.setProperty('color', linkColor, 'important'); } catch (e1) {}
+                    a.addEventListener('mouseleave', function () {
+                        try { a.style.setProperty('color', linkColor, 'important'); } catch (e1) { }
                     }, true);
+                }
+            });
+
+            // Grades table: accent header links and course numbers
+            var gradesTable = document.querySelector('table.gradesList');
+            if (gradesTable) {
+                // Header row: "Number", "Title", "Grade", "ECTS", "Date" links
+                gradesTable.querySelectorAll('tr.gradesListHeader td a').forEach(function (a) {
+                    if (!a || !a.style) return;
+                    a.style.setProperty('color', linkColor, 'important');
+                    if (!a.hasAttribute('data-dtu-accent-link')) {
+                        a.setAttribute('data-dtu-accent-link', '1');
+                        a.addEventListener('mouseenter', function () {
+                            try { a.style.setProperty('color', linkHoverColor, 'important'); } catch (e0) { }
+                        }, true);
+                        a.addEventListener('mouseleave', function () {
+                            try { a.style.setProperty('color', linkColor, 'important'); } catch (e1) { }
+                        }, true);
+                    }
+                });
+                // Course number cells: accent the link or plain text in the first column
+                gradesTable.querySelectorAll('tr.context_direct, tr.context_alternating').forEach(function (row) {
+                    if (!row) return;
+                    var firstTd = row.querySelector('td:first-child');
+                    if (!firstTd) return;
+                    var link = firstTd.querySelector('a');
+                    if (link) {
+                        link.style.setProperty('color', linkColor, 'important');
+                        if (!link.hasAttribute('data-dtu-accent-link')) {
+                            link.setAttribute('data-dtu-accent-link', '1');
+                            link.addEventListener('mouseenter', function () {
+                                try { link.style.setProperty('color', linkHoverColor, 'important'); } catch (e0) { }
+                            }, true);
+                            link.addEventListener('mouseleave', function () {
+                                try { link.style.setProperty('color', linkColor, 'important'); } catch (e1) { }
+                            }, true);
+                        }
+                    } else {
+                        // Plain-text course code (e.g. KU006) -- accent the cell text
+                        firstTd.style.setProperty('color', linkColor, 'important');
+                    }
+                });
+            }
+
+            // Nav dropdown wrapper (article) -- accent border
+            // Override all border-side colors AND the shorthand to beat the site's `border: ... solid #990000`.
+            function forceAccentBorder(el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('border-color', accentDeepHex, 'important');
+                el.style.setProperty('border-top-color', accentDeepHex, 'important');
+                el.style.setProperty('border-right-color', accentDeepHex, 'important');
+                el.style.setProperty('border-bottom-color', accentDeepHex, 'important');
+                el.style.setProperty('border-left-color', accentDeepHex, 'important');
+            }
+            document.querySelectorAll(
+                '.nav__dropdown, article.nav__dropdown, '
+                + '.nav__dropdown--group, article.nav__dropdown--group, '
+                + '.flex--last, .nav__dropdown .flex--last'
+            ).forEach(forceAccentBorder);
+            if (darkModeEnabled) {
+                document.querySelectorAll(
+                    '.nav__dropdown, article.nav__dropdown, '
+                    + '.nav__dropdown--group, article.nav__dropdown--group, '
+                    + '.flex--last, .nav__dropdown .flex--last'
+                ).forEach(function (el) {
+                    if (!el || !el.style) return;
+                    el.style.setProperty('background', '#2d2d2d', 'important');
+                    el.style.setProperty('background-color', '#2d2d2d', 'important');
+                    el.style.setProperty('border-color', '#404040', 'important');
+                });
+                document.querySelectorAll('.group-multi-column').forEach(function (el) {
+                    if (!el || !el.style) return;
+                    el.style.setProperty('background', '#2d2d2d', 'important');
+                    el.style.setProperty('background-color', '#2d2d2d', 'important');
+                });
+            }
+
+            // Nav dropdown section headers ("Courses", "Projects", "Groups", "Shortcuts") -- accent background + border
+            document.querySelectorAll('.group-menu__item-burger').forEach(function (section) {
+                forceAccentBorder(section);
+                var header = section.querySelector(':scope > header');
+                if (header && header.style) {
+                    header.style.setProperty('background-color', accentDeepHex, 'important');
+                    header.style.setProperty('background', accentDeepHex, 'important');
+                }
+                var title = section.querySelector('h2.item__title');
+                if (title && title.style) {
+                    title.style.setProperty('background', 'transparent', 'important');
+                    title.style.setProperty('background-color', 'transparent', 'important');
+                    title.style.setProperty('background-image', 'none', 'important');
+                    title.style.setProperty('color', '#ffffff', 'important');
+                }
+                var icon = section.querySelector('.group-menu__item-burger-expander');
+                if (icon && icon.style) {
+                    icon.style.setProperty('background', 'transparent', 'important');
+                    icon.style.setProperty('background-color', 'transparent', 'important');
+                    icon.style.setProperty('background-image', 'none', 'important');
+                    icon.style.setProperty('color', '#ffffff', 'important');
                 }
             });
         }
@@ -17701,29 +18173,29 @@
         }
 
         // Nav dropdown group links (Courses, Groups, Shortcuts) -- force light text
-        document.querySelectorAll('.nav__dropdown--group a, article.nav__dropdown--group a, .group-menu__item a, .group-menu__item-burger a').forEach(function(link) {
+        document.querySelectorAll('.nav__dropdown--group a, article.nav__dropdown--group a, .group-menu__item a, .group-menu__item-burger a').forEach(function (link) {
             if (!link || !link.style) return;
             link.style.setProperty('color', '#e0e0e0', 'important');
         });
         // Category titles: accent background, white text.
         try {
-            document.querySelectorAll('h4.category__title').forEach(function(el) {
+            document.querySelectorAll('h4.category__title').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
                 el.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
                 el.style.setProperty('color', '#ffffff', 'important');
             });
-            document.querySelectorAll('h4.category__title a, h4.category__title .arc-menu-burger-expander, h4.category__title .toggle-category').forEach(function(el) {
+            document.querySelectorAll('h4.category__title a, h4.category__title .arc-menu-burger-expander, h4.category__title .toggle-category').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('color', '#ffffff', 'important');
             });
-        } catch (eCat) {}
+        } catch (eCat) { }
 
         // Accent service icons: tint the inner icon layer (icon__content), not wrapper/base.
         // CampusNet uses layered <i> elements; avoid recoloring glyph/logo layers.
         try {
             var iconKinds = '.icon--messages, .icon--events, .icon--filesharing, .icon--mcq, .icon--mcq-small, .icon--participants, .icon--participants-small, .icon--calendar, .icon--calendar-small';
-            document.querySelectorAll('span.service-icon, span.item__icon').forEach(function(wrap) {
+            document.querySelectorAll('span.service-icon, span.item__icon').forEach(function (wrap) {
                 if (!wrap || !wrap.querySelector) return;
                 var hasKind = false;
                 try { hasKind = !!wrap.querySelector('.icon__content' + iconKinds + ', .icon__identifier' + iconKinds); } catch (e0) { hasKind = false; }
@@ -17752,7 +18224,7 @@
                     base.style.setProperty('opacity', '0', 'important');
                 }
 
-                wrap.querySelectorAll('.icon__content').forEach(function(icon) {
+                wrap.querySelectorAll('.icon__content').forEach(function (icon) {
                     if (!icon || !icon.style) return;
                     icon.style.setProperty('background', 'var(--dtu-ad-accent)', 'important');
                     icon.style.setProperty('background-color', 'var(--dtu-ad-accent)', 'important');
@@ -17764,7 +18236,7 @@
                     icon.style.removeProperty('filter');
                     icon.style.removeProperty('mix-blend-mode');
                 });
-                wrap.querySelectorAll('.icon__identifier').forEach(function(icon) {
+                wrap.querySelectorAll('.icon__identifier').forEach(function (icon) {
                     if (!icon || !icon.style) return;
                     icon.style.setProperty('background', 'transparent', 'important');
                     icon.style.setProperty('background-color', 'transparent', 'important');
@@ -17775,48 +18247,48 @@
                     icon.style.removeProperty('mix-blend-mode');
                 });
             });
-        } catch (eIco) {}
+        } catch (eIco) { }
 
         // Accent course/group header bars
         try {
-            document.querySelectorAll('.box.mainContentPageTemplate .boxHeader').forEach(function(h) {
+            document.querySelectorAll('.box.mainContentPageTemplate .boxHeader').forEach(function (h) {
                 if (!h || !h.style) return;
                 h.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
                 h.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
                 h.style.setProperty('border-bottom', '2px solid var(--dtu-ad-accent-deep-hover)', 'important');
             });
-            document.querySelectorAll('.box.mainContentPageTemplate .boxHeader h2').forEach(function(h2) {
+            document.querySelectorAll('.box.mainContentPageTemplate .boxHeader h2').forEach(function (h2) {
                 if (!h2 || !h2.style) return;
                 h2.style.setProperty('background-color', 'transparent', 'important');
                 h2.style.setProperty('background', 'transparent', 'important');
                 h2.style.setProperty('color', '#ffffff', 'important');
             });
-            document.querySelectorAll('#afrapporteringWidget .boxHeader').forEach(function(h) {
+            document.querySelectorAll('#afrapporteringWidget .boxHeader').forEach(function (h) {
                 if (!h || !h.style) return;
                 h.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
                 h.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
                 h.style.setProperty('border-bottom', '2px solid var(--dtu-ad-accent-deep-hover)', 'important');
             });
-            document.querySelectorAll('#afrapporteringWidget .boxHeader h2').forEach(function(h2) {
+            document.querySelectorAll('#afrapporteringWidget .boxHeader h2').forEach(function (h2) {
                 if (!h2 || !h2.style) return;
                 h2.style.setProperty('color', '#ffffff', 'important');
             });
-            document.querySelectorAll('#afrapporteringWidget .lessonplan__progressbar .progressbar__percentage').forEach(function(p) {
+            document.querySelectorAll('#afrapporteringWidget .lessonplan__progressbar .progressbar__percentage').forEach(function (p) {
                 if (!p || !p.style) return;
                 p.style.setProperty('background-color', 'var(--dtu-ad-accent)', 'important');
                 p.style.setProperty('background', 'var(--dtu-ad-accent)', 'important');
             });
-            document.querySelectorAll('.box.widget .boxHeader').forEach(function(h) {
+            document.querySelectorAll('.box.widget .boxHeader').forEach(function (h) {
                 if (!h || !h.style) return;
                 h.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
                 h.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
                 h.style.setProperty('border-bottom', '2px solid var(--dtu-ad-accent-deep-hover)', 'important');
             });
-            document.querySelectorAll('.box.widget .boxHeader h2').forEach(function(h2) {
+            document.querySelectorAll('.box.widget .boxHeader h2').forEach(function (h2) {
                 if (!h2 || !h2.style) return;
                 h2.style.setProperty('color', '#ffffff', 'important');
             });
-        } catch (eHdr) {}
+        } catch (eHdr) { }
 
         var breadcrumb = document.querySelector('nav#breadcrumb.actualbreadcrumb');
         if (breadcrumb && breadcrumb.style) {
@@ -17825,7 +18297,7 @@
             breadcrumb.style.setProperty('color', '#e0e0e0', 'important');
         }
 
-        document.querySelectorAll('nav#breadcrumb.actualbreadcrumb a, nav#breadcrumb.actualbreadcrumb a.last').forEach(function(link) {
+        document.querySelectorAll('nav#breadcrumb.actualbreadcrumb a, nav#breadcrumb.actualbreadcrumb a.last').forEach(function (link) {
             if (!link || !link.style) return;
             link.style.setProperty('background', '#2d2d2d', 'important');
             link.style.setProperty('background-color', '#2d2d2d', 'important');
@@ -17850,7 +18322,7 @@
                 + '.arc-toolbar.mb-l .arc-buttongroup--multi, '
                 + '.arc-toolbar.mb-l .arc-dropdown, '
                 + '.arc-toolbar.mb-l .arc-dropdown__text'
-            ).forEach(function(el) {
+            ).forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', '#1a1a1a', 'important');
                 el.style.setProperty('background-color', '#1a1a1a', 'important');
@@ -17863,7 +18335,7 @@
                 + '.arc-toolbar.mb-l .arc-button, '
                 + '.arc-toolbar.mb-l .arc-button--hollow-default, '
                 + '.arc-toolbar.mb-l .arc-button--medium'
-            ).forEach(function(el) {
+            ).forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', '#1a1a1a', 'important');
                 el.style.setProperty('background-color', '#1a1a1a', 'important');
@@ -17871,7 +18343,7 @@
                 el.style.setProperty('color', '#e0e0e0', 'important');
                 el.style.setProperty('border-color', '#404040', 'important');
             });
-            document.querySelectorAll('.arc-toolbar.mb-l .arc-dropdown__list').forEach(function(el) {
+            document.querySelectorAll('.arc-toolbar.mb-l .arc-dropdown__list').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', '#1a1a1a', 'important');
                 el.style.setProperty('background-color', '#1a1a1a', 'important');
@@ -17879,12 +18351,12 @@
                 el.style.setProperty('color', '#e0e0e0', 'important');
                 el.style.setProperty('border-color', '#404040', 'important');
             });
-            document.querySelectorAll('.arc-toolbar.mb-l .arc-dropdown__list-item').forEach(function(el) {
+            document.querySelectorAll('.arc-toolbar.mb-l .arc-dropdown__list-item').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('color', '#e0e0e0', 'important');
                 el.style.setProperty('border-color', '#404040', 'important');
             });
-        } catch (eTb) {}
+        } catch (eTb) { }
 
         // Participants page detail panels: force dark 2 for the expanded info box content.
         try {
@@ -17897,7 +18369,7 @@
                 + '.ui-participants-infolist, '
                 + '.ui-participant-infobox, '
                 + '.ui-participant-infobox .info-header'
-            ).forEach(function(el) {
+            ).forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', dark2, 'important');
                 el.style.setProperty('background-color', dark2, 'important');
@@ -17905,7 +18377,7 @@
                 el.style.setProperty('color', '#e0e0e0', 'important');
                 el.style.setProperty('border-color', border2, 'important');
             });
-        } catch (ePt) {}
+        } catch (ePt) { }
 
         // Grades page main container should be dark 1.
         // Apply inline to beat site CSS and broad form rules.
@@ -17918,7 +18390,7 @@
                 'main.main.arc-row, '
                 + 'main.main.arc-row > section.main__content#koContainer, '
                 + 'main.main.arc-row > section.main__content#koContainer > #ctl00_ContentBox.main__content--box'
-            ).forEach(function(el) {
+            ).forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', '#1a1a1a', 'important');
                 el.style.setProperty('background-color', '#1a1a1a', 'important');
@@ -17930,7 +18402,7 @@
                 + '#ctl00_ContentBox.main__content--box > .gradesPage, '
                 + '#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm, '
                 + '#ctl00_ContentBox.main__content--box > .gradesPage > form#aspnetForm > div'
-            ).forEach(function(el) {
+            ).forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', '#1a1a1a', 'important');
                 el.style.setProperty('background-color', '#1a1a1a', 'important');
@@ -17943,7 +18415,7 @@
                 + '.gradesPdfTitle, '
                 + '.gradesDtuPaperTitle, '
                 + '.gradesPublishedResultsTitle'
-            ).forEach(function(el) {
+            ).forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', '#1a1a1a', 'important');
                 el.style.setProperty('background-color', '#1a1a1a', 'important');
@@ -17956,7 +18428,7 @@
                 '.gradesPoints > table:not(.gradesList), '
                 + '.gradesPoints > table:not(.gradesList) tr, '
                 + '.gradesPoints > table:not(.gradesList) td'
-            ).forEach(function(el) {
+            ).forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', '#1a1a1a', 'important');
                 el.style.setProperty('background-color', '#1a1a1a', 'important');
@@ -17971,21 +18443,21 @@
 
         // Message truncation bars sometimes keep a site gradient despite stylesheet overrides.
         // Set inline styles so CampusNet cannot repaint it back to light.
-        document.querySelectorAll('.messageText').forEach(function(el) {
+        document.querySelectorAll('.messageText').forEach(function (el) {
             if (!el || !el.style) return;
             el.style.setProperty('background', '#1a1a1a', 'important');
             el.style.setProperty('background-color', '#1a1a1a', 'important');
             el.style.setProperty('background-image', 'none', 'important');
         });
 
-        document.querySelectorAll('.messageText .postTeaser').forEach(function(el) {
+        document.querySelectorAll('.messageText .postTeaser').forEach(function (el) {
             if (!el || !el.style) return;
             el.style.setProperty('background', '#1a1a1a', 'important');
             el.style.setProperty('background-color', '#1a1a1a', 'important');
             el.style.setProperty('color', '#e0e0e0', 'important');
         });
 
-        document.querySelectorAll('.messageText .messageTruncatebar, .messageTruncatebar').forEach(function(el) {
+        document.querySelectorAll('.messageText .messageTruncatebar, .messageTruncatebar').forEach(function (el) {
             if (!el || !el.style) return;
             var darkFade = 'linear-gradient(to bottom, rgba(26,26,26,0), rgba(26,26,26,0.95) 65%, #1a1a1a 100%)';
             el.style.setProperty('background', darkFade, 'important');
@@ -17999,6 +18471,66 @@
 
         // Keep accent-critical CampusNet elements themed in both dark and light mode.
         applyCampusnetAccentElements();
+    }
+
+    // ===== KURSER.DTU.DK ACCENT ELEMENTS (light mode) =====
+    function applyKurserAccentElements() {
+        if (window.location.hostname !== 'kurser.dtu.dk') return;
+        if (darkModeEnabled) return;
+
+        var linkColor = 'var(--dtu-ad-accent-deep)';
+        var linkHoverColor = 'var(--dtu-ad-accent-hover)';
+
+        function accentLink(a) {
+            if (!a || !a.style) return;
+            // Skip nav tab links (they sit on an accent-deep background with white text)
+            if (a.closest && a.closest('.mofoclass')) return;
+            a.style.setProperty('color', linkColor, 'important');
+            a.style.setProperty('text-decoration', 'underline', 'important');
+            if (!a.hasAttribute('data-dtu-accent-link')) {
+                a.setAttribute('data-dtu-accent-link', '1');
+                a.addEventListener('mouseenter', function () {
+                    try { a.style.setProperty('color', linkHoverColor, 'important'); } catch (e) { }
+                }, true);
+                a.addEventListener('mouseleave', function () {
+                    try { a.style.setProperty('color', linkColor, 'important'); } catch (e) { }
+                }, true);
+            }
+        }
+
+        // Course info box links: .CourseLink, .menulink, mailto links, schedule/exam links
+        var infoBox = document.querySelector('.box.information');
+        if (infoBox) {
+            infoBox.querySelectorAll('a.CourseLink, a.menulink, a[href^="mailto:"], a[href*="kurser.dtu.dk/schedule"], a[href*="student.dtu.dk/eksamen"], a[href*="kurser.dtu.dk/course"]').forEach(accentLink);
+        }
+
+        // "se flere" expander spans in #studiebox
+        document.querySelectorAll('#studiebox .expander').forEach(function (span) {
+            if (!span || !span.style) return;
+            span.style.setProperty('color', linkColor, 'important');
+            span.style.setProperty('cursor', 'pointer', 'important');
+        });
+
+        // Kursusevalueringer + Karakterhistorik links (evaluering.dtu.dk, karakterer.dtu.dk)
+        document.querySelectorAll('.box a[href*="evaluering.dtu.dk"], .box a[href*="karakterer.dtu.dk"]').forEach(accentLink);
+
+        // External literature / homepage links inside the info box
+        if (infoBox) {
+            infoBox.querySelectorAll('a[href]:not(.CourseLink):not(.menulink):not([href^="mailto:"]):not([data-dtu-accent-link])').forEach(function (a) {
+                if (!a || !a.style) return;
+                var href = a.getAttribute('href') || '';
+                // Skip javascript: links, MazeMap links, and anchors
+                if (/^(javascript:|#)/.test(href)) return;
+                if (a.hasAttribute('data-dtu-mazemap-link')) return;
+                accentLink(a);
+            });
+        }
+
+        // "Ryd søgefelter" link on /search
+        document.querySelectorAll('a[href="/search"]').forEach(accentLink);
+
+        // Top bar (.dturedbackground) accent is now handled by enforceDtuRedBackgroundZoneDark2()
+        // which runs for kurser.dtu.dk in runTopWindowFeatureChecks().
     }
 
     // ===== EXAM CLUSTER OUTLOOK (STUDYPLAN) [START] =====
@@ -18084,7 +18616,7 @@
 
         var col = 0;
         var cells = headerRow.querySelectorAll('th, td');
-        cells.forEach(function(cell) {
+        cells.forEach(function (cell) {
             var txt = normalizeExamClusterText(cell.textContent || '').toLowerCase();
             if (out.placement === -1 && /\b(placering|placement)\b/.test(txt)) out.placement = col;
             if (out.result === -1 && /\b(resultat|result)\b/.test(txt)) out.result = col;
@@ -18161,7 +18693,7 @@
     }
 
     function extractStudyplanExplicitMonthTags(text) {
-        return parseStudyplanMonthTags(text).filter(function(tag) {
+        return parseStudyplanMonthTags(text).filter(function (tag) {
             return studyplanMonthTagToNumber(tag) !== null;
         });
     }
@@ -18231,8 +18763,8 @@
             if (monthTags.length) {
                 var monthNums = monthTags
                     .map(studyplanMonthTagToNumber)
-                    .filter(function(n) { return typeof n === 'number' && isFinite(n); })
-                    .sort(function(a, b) { return a - b; });
+                    .filter(function (n) { return typeof n === 'number' && isFinite(n); })
+                    .sort(function (a, b) { return a - b; });
                 if (monthNums.length) {
                     kind = 'month_range';
                     startMonth = monthNums[0];
@@ -18356,7 +18888,7 @@
         var counts = Object.create(null);
         var bestText = '';
         var bestCount = 0;
-        courses.forEach(function(c) {
+        courses.forEach(function (c) {
             if (!c || !c.periodIsCurrent || !c.periodText) return;
             var key = c.periodText;
             counts[key] = (counts[key] || 0) + 1;
@@ -18368,7 +18900,7 @@
         if (bestText) return bestText;
 
         var nearest = null;
-        courses.forEach(function(c) {
+        courses.forEach(function (c) {
             if (!c || !c.periodText) return;
             var endTs = (typeof c.periodEndTs === 'number') ? c.periodEndTs : null;
             if (endTs !== null && endTs < todayTs) return;
@@ -18442,7 +18974,7 @@
 
         var todayTs = startOfTodayUtcTs();
         var candidateTables = [];
-        document.querySelectorAll('table').forEach(function(table) {
+        document.querySelectorAll('table').forEach(function (table) {
             var idx = getStudyplanExamTableColumnIndexes(table);
             if (idx.placement < 0) return;
 
@@ -18450,7 +18982,7 @@
             var tablePeriodText = getStudyplanTablePeriodText(table);
             var hasCandidate = false;
 
-            table.querySelectorAll('tr').forEach(function(row) {
+            table.querySelectorAll('tr').forEach(function (row) {
                 if (hasCandidate) return;
                 var courseInfo = findStudyplanCourseInRow(row);
                 if (!courseInfo || !courseInfo.code) return;
@@ -18490,7 +19022,7 @@
         if (!candidateTables.length) return [];
 
         var maxSemester = null;
-        candidateTables.forEach(function(c) {
+        candidateTables.forEach(function (c) {
             if (typeof c.semesterNum === 'number' && isFinite(c.semesterNum)) {
                 if (maxSemester === null || c.semesterNum > maxSemester) maxSemester = c.semesterNum;
             }
@@ -18501,19 +19033,19 @@
             selectedTables = [candidateTables[candidateTables.length - 1].table];
         } else {
             selectedTables = candidateTables
-                .filter(function(c) { return c.semesterNum === maxSemester; })
-                .map(function(c) { return c.table; });
+                .filter(function (c) { return c.semesterNum === maxSemester; })
+                .map(function (c) { return c.table; });
         }
 
         var out = [];
         var seen = Object.create(null);
 
-        selectedTables.forEach(function(table) {
+        selectedTables.forEach(function (table) {
             var idx = getStudyplanExamTableColumnIndexes(table);
             var tablePeriodText = getStudyplanTablePeriodText(table);
             var semesterNum = findStudyplanSemesterNumberForTable(table);
 
-            table.querySelectorAll('tr').forEach(function(row) {
+            table.querySelectorAll('tr').forEach(function (row) {
                 var courseInfo = findStudyplanCourseInRow(row);
                 if (!courseInfo || !courseInfo.code) return;
                 var code = courseInfo.code;
@@ -18562,17 +19094,17 @@
             });
         });
 
-        var currentRows = out.filter(function(c) { return !!c.periodIsCurrent; });
+        var currentRows = out.filter(function (c) { return !!c.periodIsCurrent; });
         var anchorTs = null;
         if (currentRows.length) {
-            currentRows.forEach(function(c) {
+            currentRows.forEach(function (c) {
                 if (typeof c.periodStartTs === 'number') {
                     if (anchorTs === null || c.periodStartTs < anchorTs) anchorTs = c.periodStartTs;
                 }
             });
             if (anchorTs === null) anchorTs = todayTs;
         } else {
-            out.forEach(function(c) {
+            out.forEach(function (c) {
                 if (typeof c.periodStartTs === 'number' && c.periodStartTs >= todayTs) {
                     if (anchorTs === null || c.periodStartTs < anchorTs) anchorTs = c.periodStartTs;
                 } else if (typeof c.periodEndTs === 'number' && c.periodEndTs >= todayTs) {
@@ -18583,7 +19115,7 @@
 
         if (anchorTs === null) return out;
 
-        var fromAnchor = out.filter(function(c) {
+        var fromAnchor = out.filter(function (c) {
             if (typeof c.periodStartTs === 'number' && typeof c.periodEndTs === 'number') {
                 return c.periodEndTs >= anchorTs;
             }
@@ -18597,7 +19129,7 @@
 
     function buildStudyplanExamCourseSig(courses) {
         if (!Array.isArray(courses) || !courses.length) return 'none';
-        return courses.map(function(c) {
+        return courses.map(function (c) {
             return [
                 c.code,
                 c.tokens.join(','),
@@ -18613,7 +19145,7 @@
     function arrayIntersects(a, b) {
         if (!Array.isArray(a) || !Array.isArray(b) || !a.length || !b.length) return false;
         var set = Object.create(null);
-        a.forEach(function(v) { set[v] = true; });
+        a.forEach(function (v) { set[v] = true; });
         for (var i = 0; i < b.length; i++) {
             if (set[b[i]]) return true;
         }
@@ -18636,9 +19168,9 @@
             dateLabel: entry.dateLabel || '',
             period: normalizeExamClusterText(entry.period || ''),
             text: normalizeExamClusterText(entry.text || ''),
-            codes: Array.isArray(entry.codes) ? entry.codes.map(function(c) { return String(c || '').toUpperCase(); }) : [],
-            tokens: Array.isArray(entry.tokens) ? entry.tokens.map(function(t) { return normalizeExamSlotToken(t); }).filter(Boolean) : [],
-            tags: Array.isArray(entry.tags) ? entry.tags.map(function(t) { return String(t || '').toLowerCase(); }) : []
+            codes: Array.isArray(entry.codes) ? entry.codes.map(function (c) { return String(c || '').toUpperCase(); }) : [],
+            tokens: Array.isArray(entry.tokens) ? entry.tokens.map(function (t) { return normalizeExamSlotToken(t); }).filter(Boolean) : [],
+            tags: Array.isArray(entry.tags) ? entry.tags.map(function (t) { return String(t || '').toLowerCase(); }) : []
         };
     }
     function chooseExamEntryForCourse(course, entries, todayTs) {
@@ -18655,7 +19187,7 @@
         var strictCandidates = [];
         var fallbackCandidates = [];
 
-        entries.forEach(function(entry) {
+        entries.forEach(function (entry) {
             if (!entry) return;
 
             var score = 0;
@@ -18723,7 +19255,7 @@
         // Hard safety: explicit month placement must not map cross-month.
         if (placementMonthTags.length) {
             if (!strictCandidates.length) return null;
-            strictCandidates.sort(function(a, b) {
+            strictCandidates.sort(function (a, b) {
                 if (a.score !== b.score) return b.score - a.score;
                 if (a.upcoming !== b.upcoming) return a.upcoming ? -1 : 1;
                 if (a.upcoming && b.upcoming) return a.entry.dateTs - b.entry.dateTs;
@@ -18734,7 +19266,7 @@
 
         var candidates = strictCandidates.length ? strictCandidates : fallbackCandidates;
         if (!candidates.length) return null;
-        candidates.sort(function(a, b) {
+        candidates.sort(function (a, b) {
             if (a.score !== b.score) return b.score - a.score;
             if (a.upcoming !== b.upcoming) return a.upcoming ? -1 : 1;
             if (a.upcoming && b.upcoming) return a.entry.dateTs - b.entry.dateTs;
@@ -18750,7 +19282,7 @@
         var entries = (rawEntries || []).map(normalizeExamCalendarEntry).filter(Boolean);
         var mapped = [];
 
-        courses.forEach(function(course) {
+        courses.forEach(function (course) {
             var match = chooseExamEntryForCourse(course, entries, todayTs);
             if (!match || !match.entry) return;
             var dayDelta = diffDaysUtc(todayTs, match.entry.dateTs);
@@ -18769,11 +19301,11 @@
             });
         });
 
-        mapped = mapped.filter(function(item) {
+        mapped = mapped.filter(function (item) {
             return item.dateTs >= todayTs;
         });
 
-        mapped.sort(function(a, b) {
+        mapped.sort(function (a, b) {
             return a.dateTs - b.dateTs;
         });
 
@@ -18789,13 +19321,13 @@
         if (!Array.isArray(mapped) || mapped.length < 2) return warnings;
 
         var byDate = Object.create(null);
-        mapped.forEach(function(item) {
+        mapped.forEach(function (item) {
             if (!item || !item.dateIso) return;
             if (!byDate[item.dateIso]) byDate[item.dateIso] = [];
             byDate[item.dateIso].push(item);
         });
 
-        Object.keys(byDate).forEach(function(iso) {
+        Object.keys(byDate).forEach(function (iso) {
             var items = byDate[iso];
             if (items.length >= 2) {
                 warnings.push({
@@ -18843,7 +19375,7 @@
         };
         if (!Array.isArray(warnings) || !warnings.length) return out;
 
-        warnings.forEach(function(w) {
+        warnings.forEach(function (w) {
             if (!w || !w.text) return;
             if (w.level === 'critical') out.level = 'critical';
             else if (!out.level && w.level === 'high') out.level = 'high';
@@ -18869,15 +19401,15 @@
             markExt(container);
             container.setAttribute('data-dtu-exam-cluster', '1');
             container.style.cssText = darkModeEnabled
-                ? 'margin: 10px 0 12px 0; padding: 12px 14px; border-radius: 6px; width: 100%; box-sizing: border-box; '
-                  + 'background-color: #2d2d2d; border: 1px solid #404040; color: #e0e0e0; font-family: inherit;'
-                : 'margin: 10px 0 12px 0; padding: 12px 14px; border-radius: 6px; width: 100%; box-sizing: border-box; '
-                  + 'background-color: #ffffff; border: 1px solid #e0e0e0; color: #222; font-family: inherit;';
+                ? 'margin: 10px 0 12px 0; padding: 12px 14px; border-radius: 6px; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; '
+                + 'background-color: #2d2d2d; border: 1px solid #404040; color: #e0e0e0; font-family: inherit;'
+                : 'margin: 10px 0 12px 0; padding: 12px 14px; border-radius: 6px; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; '
+                + 'background-color: #ffffff; border: 1px solid #e0e0e0; color: #222; font-family: inherit;';
 
             var title = document.createElement('div');
             markExt(title);
             title.setAttribute('data-dtu-exam-cluster-title', '1');
-            title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;';
+            title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap;';
             var titleText = document.createElement('span');
             markExt(titleText);
             titleText.textContent = 'Exam Timeline and Clash Risk';
@@ -18978,20 +19510,20 @@
                     + '}';
                 document.head.appendChild(st);
             }
-        } catch (eS) {}
+        } catch (eS) { }
 
-        var upcoming = mapped.filter(function(m) { return m.daysUntil >= 0; });
+        var upcoming = mapped.filter(function (m) { return m.daysUntil >= 0; });
         var nextItem = upcoming.length ? upcoming[0] : mapped[0];
         var tightestGap = null;
-        mapped.forEach(function(m) {
+        mapped.forEach(function (m) {
             if (typeof m.gapFromPrev !== 'number') return;
             if (tightestGap === null || m.gapFromPrev < tightestGap) tightestGap = m.gapFromPrev;
         });
 
         function formatShortWeekdayMonthDayUtc(ts) {
             var d = new Date(ts);
-            var weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-            var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            var weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             var wd = weekdays[d.getUTCDay()];
             var mon = months[d.getUTCMonth()];
             var day = d.getUTCDate();
@@ -19111,16 +19643,17 @@
             // Wrapper: centers the pill badge on the rail line
             var row = document.createElement('div');
             markExt(row);
-            row.style.cssText = 'position:relative;z-index:2;display:flex;align-items:center;min-height:' + h + 'px;padding:4px 0;margin:2px 0;';
+            row.style.cssText = 'position:relative;z-index:2;display:flex;align-items:center;'
+                + 'height:' + h + 'px;min-height:' + h + 'px;padding:4px 0;margin:2px 0;';
 
             // Rail segment (colored bar behind the pill)
             var railCol = document.createElement('div');
             markExt(railCol);
-            railCol.style.cssText = 'width:22px;flex:0 0 22px;position:relative;display:flex;justify-content:center;height:100%;';
+            railCol.style.cssText = 'width:22px;flex:0 0 22px;position:relative;display:flex;justify-content:center;align-self:stretch;';
             var seg = document.createElement('div');
             markExt(seg);
             seg.setAttribute('aria-hidden', 'true');
-            seg.style.cssText = 'position:absolute;top:0;bottom:0;width:4px;border-radius:999px;';
+            seg.style.cssText = 'position:absolute;left:9px;top:0;bottom:0;width:4px;border-radius:999px;';
             seg.style.setProperty('background', meta.color, 'important');
             seg.style.setProperty('background-color', meta.color, 'important');
             railCol.appendChild(seg);
@@ -19273,7 +19806,7 @@
 
         var maxItems = 8;
         var timelineItems = mapped.slice(0, maxItems);
-        timelineItems.forEach(function(item, idx) {
+        timelineItems.forEach(function (item, idx) {
             var gapRisk = null;
             if (idx > 0 && typeof item.gapFromPrev === 'number') {
                 timeline.appendChild(buildGapBlock(item.gapFromPrev));
@@ -19315,14 +19848,14 @@
     }
 
     function formatGradeDate(ts) {
-        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         var d = new Date(ts);
         return d.getDate() + ' ' + months[d.getMonth()];
     }
 
     function injectGradeCountdowns(mapped) {
         // Remove old badges
-        document.querySelectorAll('[' + GRADE_COUNTDOWN_ATTR + ']').forEach(function(el) { el.remove(); });
+        document.querySelectorAll('[' + GRADE_COUNTDOWN_ATTR + ']').forEach(function (el) { el.remove(); });
 
         if (!mapped || !mapped.length) return;
 
@@ -19332,12 +19865,12 @@
         // Find all course code links on the page
         var codeLinks = document.querySelectorAll('a.coursecode');
         var codeLinkMap = {};
-        codeLinks.forEach(function(a) {
+        codeLinks.forEach(function (a) {
             var code = (a.textContent || '').trim();
             if (code) codeLinkMap[code] = a;
         });
 
-        mapped.forEach(function(m) {
+        mapped.forEach(function (m) {
             if (!m.dateTs || !m.code) return;
 
             // Exam must be in the past (after 17:00 on exam day)
@@ -19432,7 +19965,7 @@
         var body = container.querySelector('[data-dtu-exam-cluster-body]');
         if (body && !body.firstChild) renderExamClusterStatus(body, 'Loading exam calendar...', false);
 
-        sendRuntimeMessage({ type: 'dtu-exam-calendar' }, function(response) {
+        sendRuntimeMessage({ type: 'dtu-exam-calendar' }, function (response) {
             _studyplanExamClusterRequestInFlight = false;
 
             if (requestedSig !== _studyplanExamClusterLastSig) {
@@ -19465,7 +19998,7 @@
         if (window.location.hostname !== 'studieplan.dtu.dk') return;
         if (!isFeatureFlagEnabled(FEATURE_STUDYPLAN_EXAM_CLUSTER_KEY)) return;
         if (_studyplanExamClusterTimer) return;
-        _studyplanExamClusterTimer = setTimeout(function() {
+        _studyplanExamClusterTimer = setTimeout(function () {
             _studyplanExamClusterTimer = null;
             insertStudyplanExamCluster();
         }, delayMs || 800);
@@ -19474,10 +20007,11 @@
 
     function styleStudyPlannerTabLink(anchor) {
         if (!anchor || !anchor.style) return;
-        anchor.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
-        anchor.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
+        var color = getResolvedAccentDeep();
+        anchor.style.setProperty('background', color, 'important');
+        anchor.style.setProperty('background-color', color, 'important');
         anchor.style.setProperty('color', '#ffffff', 'important');
-        anchor.style.setProperty('border-color', 'var(--dtu-ad-accent-deep)', 'important');
+        anchor.style.setProperty('border-color', color, 'important');
     }
 
     function styleStudyPlannerTabs() {
@@ -19486,21 +20020,21 @@
         if (host !== 'studieplan.dtu.dk' && host !== 'kurser.dtu.dk') return;
 
         // Style all nav tabs inside .mofoclass on both kurser.dtu.dk and studieplan.dtu.dk
-        document.querySelectorAll('.mofoclass li[role="presentation"] > a').forEach(function(a) {
+        document.querySelectorAll('.mofoclass li[role="presentation"] > a').forEach(function (a) {
             styleStudyPlannerTabLink(a);
         });
 
         if (host === 'kurser.dtu.dk') {
-            document.querySelectorAll('li[role="presentation"] > a[href="/search"], li[role="presentation"] > a[href$="/search"]').forEach(function(a) {
+            document.querySelectorAll('li[role="presentation"] > a[href="/search"], li[role="presentation"] > a[href$="/search"]').forEach(function (a) {
                 styleStudyPlannerTabLink(a);
             });
 
-            document.querySelectorAll('li[role="presentation"] > a[href="/course/gotoStudyplanner"], li[role="presentation"] > a[href$="/course/gotoStudyplanner"]').forEach(function(a) {
+            document.querySelectorAll('li[role="presentation"] > a[href="/course/gotoStudyplanner"], li[role="presentation"] > a[href$="/course/gotoStudyplanner"]').forEach(function (a) {
                 styleStudyPlannerTabLink(a);
             });
         }
 
-        document.querySelectorAll('li[role="presentation"] > a[href="#"]').forEach(function(a) {
+        document.querySelectorAll('li[role="presentation"] > a[href="#"]').forEach(function (a) {
             var txt = (a.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
             if (txt === 'studieplanlæggeren' || txt === 'study planner' || txt === 'course search') {
                 styleStudyPlannerTabLink(a);
@@ -19520,7 +20054,7 @@
                 var topLinks = document.querySelectorAll(
                     'a[href*="studieplanlaeggeren"], a[href^="javascript:setLanguage("], a[href^="javascript:setLanguage\\("]'
                 );
-                topLinks.forEach(function(a) {
+                topLinks.forEach(function (a) {
                     if (!a || !a.style) return;
                     a.style.setProperty('color', '#ffffff', 'important');
                     // Make hover readable even if the anchor is inline.
@@ -19547,7 +20081,7 @@
                     // Optional hover polish: best-effort, no handlers if already present.
                     if (!a.hasAttribute('data-dtu-accent-pill')) {
                         a.setAttribute('data-dtu-accent-pill', '1');
-                        a.addEventListener('mouseenter', function() {
+                        a.addEventListener('mouseenter', function () {
                             try {
                                 var sp = a.parentElement && a.parentElement.tagName === 'SPAN' ? a.parentElement : null;
                                 if (sp && sp.style) {
@@ -19555,9 +20089,9 @@
                                     sp.style.setProperty('background', pillBgHover, 'important');
                                     sp.style.setProperty('border-color', pillBgHover, 'important');
                                 }
-                            } catch (e0) {}
+                            } catch (e0) { }
                         }, true);
-                        a.addEventListener('mouseleave', function() {
+                        a.addEventListener('mouseleave', function () {
                             try {
                                 var sp = a.parentElement && a.parentElement.tagName === 'SPAN' ? a.parentElement : null;
                                 if (sp && sp.style) {
@@ -19565,59 +20099,64 @@
                                     sp.style.setProperty('background', pillBg, 'important');
                                     sp.style.setProperty('border-color', pillBg, 'important');
                                 }
-                            } catch (e1) {}
+                            } catch (e1) { }
                         }, true);
                     }
                 });
 
-                document.querySelectorAll('.pull-right .seperator').forEach(function(sep) {
+                document.querySelectorAll('.pull-right .seperator').forEach(function (sep) {
                     if (!sep || !sep.style) return;
                     sep.style.setProperty('color', 'rgba(255,255,255,0.6)', 'important');
+                    sep.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
+                    sep.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
                 });
-                document.querySelectorAll('.pull-right .caret').forEach(function(caret) {
+                document.querySelectorAll('.pull-right .caret').forEach(function (caret) {
                     if (!caret || !caret.style) return;
                     caret.style.setProperty('border-top-color', '#ffffff', 'important');
+                    caret.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
+                    caret.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
                 });
-            } catch (eSp) {}
+            } catch (eSp) { }
         }
 
         // Accent color for .dturedbackground bar
-        document.querySelectorAll('.dturedbackground').forEach(function(el) {
+        document.querySelectorAll('.dturedbackground').forEach(function (el) {
             el.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
             el.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
             el.style.setProperty('color', '#ffffff', 'important');
             el.style.setProperty('border-color', 'var(--dtu-ad-accent-deep)', 'important');
-            // Children: container, row, col, pull-right spans
-            // NOTE: do NOT force `.pull-right > span` here. Those spans contain the Guide/Dansk "pills",
-            // and we want them to be lighter in dark mode.
-            el.querySelectorAll('.container, .row, .col-md-12, .pull-right').forEach(function(child) {
+            // Children: container, row, col, pull-right and all child spans
+            el.querySelectorAll('.container, .row, .col-md-12, .pull-right, .pull-right > span').forEach(function (child) {
                 child.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
                 child.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
                 child.style.setProperty('background-image', 'none', 'important');
+                child.style.setProperty('border-color', 'var(--dtu-ad-accent-deep)', 'important');
             });
-            el.querySelectorAll('.dropdown-toggle.red').forEach(function(btn) {
+            el.querySelectorAll('.dropdown-toggle.red').forEach(function (btn) {
                 btn.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
                 btn.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
                 btn.style.setProperty('color', '#ffffff', 'important');
             });
-            el.querySelectorAll('.dropdown-menu.red').forEach(function(menu) {
+            el.querySelectorAll('.dropdown-menu.red').forEach(function (menu) {
                 menu.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
                 menu.style.setProperty('border-color', 'var(--dtu-ad-accent-deep-hover)', 'important');
             });
-            el.querySelectorAll('a').forEach(function(a) {
+            el.querySelectorAll('a').forEach(function (a) {
                 a.style.setProperty('color', '#ffffff', 'important');
             });
-            // Separators and carets
-            el.querySelectorAll('.seperator').forEach(function(sep) {
+            // Separators and carets -- force accent background to override broken inline styles
+            el.querySelectorAll('.seperator').forEach(function (sep) {
                 sep.style.setProperty('color', 'rgba(255,255,255,0.6)', 'important');
+                sep.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
+                sep.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
             });
-            el.querySelectorAll('.caret').forEach(function(caret) {
+            el.querySelectorAll('.caret').forEach(function (caret) {
                 caret.style.setProperty('border-top-color', '#ffffff', 'important');
             });
         });
 
         // Accent border for semester headings
-        document.querySelectorAll('h3[data-bind*="SemesterNumber"]').forEach(function(h3) {
+        document.querySelectorAll('h3[data-bind*="SemesterNumber"]').forEach(function (h3) {
             h3.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
             h3.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
             h3.style.setProperty('color', '#ffffff', 'important');
@@ -19627,7 +20166,7 @@
         });
 
         // Accent color for course code links
-        document.querySelectorAll('a.coursecode').forEach(function(a) {
+        document.querySelectorAll('a.coursecode').forEach(function (a) {
             a.style.setProperty('color', 'var(--dtu-ad-accent)', 'important');
         });
 
@@ -19635,24 +20174,24 @@
         // Keep basket/sidebar course codes on the primary accent.
         try {
             var plannedCourseLinks = document.querySelectorAll('.inverse .overlayArea a.coursecode');
-            plannedCourseLinks.forEach(function(a) {
+            plannedCourseLinks.forEach(function (a) {
                 if (!a || !a.style) return;
                 a.style.setProperty('color', darkModeEnabled ? 'var(--dtu-ad-accent-soft)' : 'var(--dtu-ad-accent-deep)', 'important');
             });
-        } catch (ePlan) {}
+        } catch (ePlan) { }
 
         // Basket course codes: also use a lighter accent in dark mode for readability.
         try {
-            document.querySelectorAll('a.coursecode[data-bind*="basketCourseGroup"]').forEach(function(a) {
+            document.querySelectorAll('a.coursecode[data-bind*="basketCourseGroup"]').forEach(function (a) {
                 if (!a || !a.style) return;
                 a.style.setProperty('color', darkModeEnabled ? 'var(--dtu-ad-accent-soft)' : 'var(--dtu-ad-accent-deep)', 'important');
             });
-        } catch (eBasket) {}
+        } catch (eBasket) { }
 
         // Exam results tables: use a lighter accent in dark mode for readability against dark UI.
         // Keep basket/planning course codes on the main accent.
         try {
-            document.querySelectorAll('.inverse table.table-bordered').forEach(function(tbl) {
+            document.querySelectorAll('.inverse table.table-bordered').forEach(function (tbl) {
                 if (!tbl || !tbl.querySelectorAll) return;
                 var isExamTable = false;
                 try {
@@ -19662,19 +20201,19 @@
                         var t = th ? (th.textContent || '').toLowerCase() : '';
                         if (t.indexOf('exam') >= 0) isExamTable = true;
                     }
-                } catch (e0) {}
+                } catch (e0) { }
                 if (!isExamTable) return;
 
                 var cc = tbl.querySelectorAll('a.coursecode');
-                cc.forEach(function(a) {
+                cc.forEach(function (a) {
                     if (!a || !a.style) return;
                     a.style.setProperty('color', darkModeEnabled ? 'var(--dtu-ad-accent-soft)' : 'var(--dtu-ad-accent-deep)', 'important');
                 });
             });
-        } catch (eExam) {}
+        } catch (eExam) { }
 
         // Accent color for btn-dtured buttons
-        document.querySelectorAll('.btn-dtured').forEach(function(btn) {
+        document.querySelectorAll('.btn-dtured').forEach(function (btn) {
             btn.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
             btn.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
             btn.style.setProperty('color', '#ffffff', 'important');
@@ -19706,24 +20245,24 @@
                         if (/(^|\/)was(\?|#|$)/.test(h)) return true;
                     }
                 }
-            } catch (eA0) {}
+            } catch (eA0) { }
             try {
                 if (container.querySelector('d2l-html-block[html*="learn.inside.dtu.dk/was"], d2l-html-block[html*="&gt;Accessibility&lt;"]')) return true;
-            } catch (eA1) {}
+            } catch (eA1) { }
             return false;
         }
 
         try {
-            root.querySelectorAll('d2l-labs-navigation-band').forEach(function(el) {
+            root.querySelectorAll('d2l-labs-navigation-band').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
                 el.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
                 el.style.setProperty('color', '#ffffff', 'important');
             });
-        } catch (e0) {}
+        } catch (e0) { }
 
         try {
-            root.querySelectorAll('.d2l-w2d-count, .d2l-w2d-heading-3-count').forEach(function(el) {
+            root.querySelectorAll('.d2l-w2d-count, .d2l-w2d-heading-3-count').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', badgeBg, 'important');
                 el.style.setProperty('background-color', badgeBg, 'important');
@@ -19738,7 +20277,7 @@
                 el.style.setProperty('outline', '0', 'important');
                 el.style.setProperty('box-shadow', 'none', 'important');
             });
-            root.querySelectorAll('.d2l-count-badge-number').forEach(function(el) {
+            root.querySelectorAll('.d2l-count-badge-number').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', badgeBg, 'important');
                 el.style.setProperty('background-color', badgeBg, 'important');
@@ -19748,28 +20287,43 @@
                 el.style.setProperty('outline', '0', 'important');
                 el.style.setProperty('box-shadow', 'none', 'important');
             });
-            root.querySelectorAll('.d2l-count-badge-number > div').forEach(function(el) {
+            root.querySelectorAll('.d2l-count-badge-number > div').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', 'transparent', 'important');
                 el.style.setProperty('background-color', 'transparent', 'important');
                 el.style.setProperty('color', '#ffffff', 'important');
             });
-        } catch (e1) {}
+        } catch (e1) { }
 
         try {
-            root.querySelectorAll('.uw-text').forEach(function(el) {
+            root.querySelectorAll('.uw-text').forEach(function (el) {
                 if (!el || !el.style) return;
                 // Dark mode: use the "soft" accent so it reads like a highlighted title on dark UI.
                 // Light mode: use the primary accent for better contrast on white backgrounds.
                 el.style.setProperty('color', darkModeEnabled ? 'var(--dtu-ad-accent-soft)' : 'var(--dtu-ad-accent)', 'important');
             });
-        } catch (e2) {}
+        } catch (e2) { }
+
+        // DTU Learn light mode: keep key navigation/headline links neutral black
+        // instead of accent-colored blue.
+        try {
+            if (!darkModeEnabled) {
+                root.querySelectorAll(
+                    'a.d2l-homepage-heading-link, '
+                    + 'a.d2l-homepage-heading-link h2, '
+                    + '.d2l-navigation-s-item a.d2l-navigation-s-link'
+                ).forEach(function (el) {
+                    if (!el || !el.style) return;
+                    el.style.setProperty('color', '#000000', 'important');
+                });
+            }
+        } catch (e2b) { }
 
         // DTU Learn accessibility widget block: keep the content padding surface dark 1.
         // Only force background; leave text/link colors to normal rules.
         try {
             if (darkModeEnabled) {
-                root.querySelectorAll('.d2l-widget-content-padding').forEach(function(el) {
+                root.querySelectorAll('.d2l-widget-content-padding').forEach(function (el) {
                     if (!el || !el.style) return;
                     if (!hasAccessibilityWasLink(el)) return;
                     el.style.setProperty('background', dark1, 'important');
@@ -19783,7 +20337,52 @@
                     }
                 });
             }
-        } catch (e3) {}
+        } catch (e3) { }
+    }
+
+    // Inject light-mode accent badge CSS into a shadow root (idempotent).
+    function injectLightAccentBadgeStyles(shadowRoot) {
+        if (!shadowRoot) return;
+        var id = 'dtu-ad-light-accent-badges';
+        if (shadowRoot.getElementById && shadowRoot.getElementById(id)) return;
+        // querySelector fallback (some shadow roots lack getElementById)
+        try { if (shadowRoot.querySelector('#' + id)) return; } catch (e0) { }
+        var style = document.createElement('style');
+        style.id = id;
+        style.textContent = lightAccentBadgeStyles;
+        shadowRoot.appendChild(style);
+    }
+
+    // Recursively walk shadow roots starting from a DOM subtree and apply
+    // accent badge overrides (both inline + injected CSS).
+    function walkShadowRootsForAccent(rootEl, visited, depth) {
+        if (!rootEl || depth > 12) return;
+        if (!visited) visited = new WeakSet();
+        var scope = rootEl;
+        if (scope.nodeType !== 1 && scope.nodeType !== 9 && scope.nodeType !== 11) return;
+
+        // If this is a shadow root, apply inline overrides + inject CSS
+        if (scope.nodeType === 11) {
+            try { forceDTULearnAccentInRoot(scope); } catch (e0) { }
+            if (!darkModeEnabled) {
+                try { injectLightAccentBadgeStyles(scope); } catch (e1) { }
+            }
+        }
+
+        // Walk children looking for shadow hosts via TreeWalker (avoids building a huge NodeList).
+        try {
+            var tw = document.createTreeWalker(scope, NodeFilter.SHOW_ELEMENT, null);
+            var n = tw.nextNode();
+            var steps = 0;
+            while (n && steps < 8000) {
+                steps++;
+                if (n.shadowRoot && !visited.has(n.shadowRoot)) {
+                    visited.add(n.shadowRoot);
+                    walkShadowRootsForAccent(n.shadowRoot, visited, depth + 1);
+                }
+                n = tw.nextNode();
+            }
+        } catch (eWalk) { }
     }
 
     function forceDTULearnAccentElements(root) {
@@ -19792,29 +20391,19 @@
 
         // Always apply to the full document first. In our unified observer pipeline we often
         // call this with a small mutation root that doesn't include the badges.
-        try { forceDTULearnAccentInRoot(document); } catch (eDoc) {}
+        try { forceDTULearnAccentInRoot(document); } catch (eDoc) { }
 
         // Apply in the current root (document, element subtree, or shadow root).
-        try { forceDTULearnAccentInRoot(root); } catch (e0) {}
+        try { forceDTULearnAccentInRoot(root); } catch (e0) { }
 
-        // Then walk into any nested open shadow roots and apply there too.
+        // Recursively walk into open shadow roots and apply accent overrides + CSS.
         try {
-            var walkRoot = (root.nodeType === 11 || root.nodeType === 9) ? root : document;
-            if (!walkRoot || !walkRoot.createTreeWalker) return;
-            var walker = document.createTreeWalker(walkRoot, NodeFilter.SHOW_ELEMENT, null);
-            var node = walker.nextNode();
             var visited = new WeakSet();
-            var steps = 0;
-            var maxSteps = 7000;
-            while (node && steps < maxSteps) {
-                steps++;
-                if (node.shadowRoot && !visited.has(node.shadowRoot)) {
-                    visited.add(node.shadowRoot);
-                    try { forceDTULearnAccentInRoot(node.shadowRoot); } catch (e1) {}
-                }
-                node = walker.nextNode();
+            walkShadowRootsForAccent(document, visited, 0);
+            if (root !== document && root.nodeType === 11) {
+                walkShadowRootsForAccent(root, visited, 0);
             }
-        } catch (eWalk) {}
+        } catch (eWalk) { }
     }
 
     // ===== UNIFIED SCHEDULING =====
@@ -19875,16 +20464,42 @@
         if (!IS_TOP_WINDOW || !isDTULearnCoursePage()) return;
         if (!isFeatureFlagEnabled(FEATURE_BOOK_FINDER_KEY)) return;
         if (_bookFinderTimer) return;
-        _bookFinderTimer = setTimeout(function() {
+        _bookFinderTimer = setTimeout(function () {
             _bookFinderTimer = null;
             insertBookFinderLinks();
         }, delayMs || 800);
+    }
+
+    function removeDTULearnMSTeamsCourseConnector(rootNode) {
+        if (!IS_TOP_WINDOW) return;
+        if (window.location.hostname !== 'learn.inside.dtu.dk') return;
+        if (!isDTULearnCoursePage()) return;
+
+        var scope = (rootNode && rootNode.querySelectorAll) ? rootNode : document;
+        var widgets = [];
+        try {
+            widgets = scope.querySelectorAll('.d2l-widget, .d2l-tile');
+        } catch (e0) {
+            widgets = [];
+        }
+
+        widgets.forEach(function (widget) {
+            if (!widget || !widget.querySelector) return;
+            var heading = widget.querySelector('.d2l-widget-header h2, h2.d2l-heading');
+            var title = '';
+            try { title = (heading ? heading.textContent : '').replace(/\s+/g, ' ').trim(); } catch (e1) { title = ''; }
+            if (!/ms teams course connector/i.test(title)) return;
+            if (widget.remove) widget.remove();
+        });
     }
 
     function runTopWindowFeatureChecks(rootNode, refreshBus) {
         if (!IS_TOP_WINDOW) return;
 
         var host = window.location.hostname;
+        if (host === 'learn.inside.dtu.dk' || host === 'campusnet.dtu.dk' || host === 'studieplan.dtu.dk' || host === 'kurser.dtu.dk' || host === 'sites.dtu.dk') {
+            try { replaceLogoImage(rootNode || document); } catch (eLogoTop) { }
+        }
         if (ENABLE_CONTEXT_CAPTURE_DEV_TOOL) {
             setupContextCaptureHotkey();
             insertContextCaptureHelper();
@@ -19892,7 +20507,8 @@
         styleStudyPlannerTabs();
         fixEvalueringResultCharts();
         fixCampusnetHeaderStyling();
-        if (host === 'studieplan.dtu.dk' || host === 'campusnet.dtu.dk') {
+        applyKurserAccentElements();
+        if (host === 'studieplan.dtu.dk' || host === 'campusnet.dtu.dk' || host === 'kurser.dtu.dk') {
             enforceDtuRedBackgroundZoneDark2();
         }
 
@@ -19904,9 +20520,10 @@
                 removeDTULearnNavResourceLinks();
             }
             // Re-apply accent on key DTU Learn UI elements; global darkening can otherwise flatten these.
-            try { forceDTULearnAccentElements(rootNode || document); } catch (eAcc) {}
+            try { forceDTULearnAccentElements(rootNode || document); } catch (eAcc) { }
             insertLibraryNavDropdown();
             insertSettingsNavItem();
+            removeDTULearnMSTeamsCourseConnector(rootNode || document);
             if (isFeatureFlagEnabled(FEATURE_CONTENT_SHORTCUT_KEY)) {
                 insertContentButtons(rootNode);
                 startContentButtonBootstrap();
@@ -19959,14 +20576,42 @@
     }
 
     var _hostFeatureBootstrapTimer = null;
+    var _campusnetLogoFastTimer = null;
+
+    function startCampusnetLogoFastBootstrap() {
+        if (!IS_TOP_WINDOW) return;
+        if (window.location.hostname !== 'campusnet.dtu.dk') return;
+        if (_campusnetLogoFastTimer) return;
+
+        var attempts = 0;
+        _campusnetLogoFastTimer = setInterval(function () {
+            attempts++;
+            try { replaceLogoImage(); } catch (eLogoFast) { }
+
+            var done = false;
+            try {
+                done = !!document.querySelector('img.header__logo[data-dark-mode-replaced="true"], img[src*="DTULogo_Corp_Red_RGB.png"][data-dark-mode-replaced="true"]');
+            } catch (eDone) { done = false; }
+
+            if (done || attempts >= 45) {
+                clearInterval(_campusnetLogoFastTimer);
+                _campusnetLogoFastTimer = null;
+            }
+        }, 60);
+    }
+
     function startHostFeatureBootstrap() {
         if (!IS_TOP_WINDOW) return;
         if (_hostFeatureBootstrapTimer) return;
         var host = window.location.hostname;
+        if (host === 'campusnet.dtu.dk') {
+            startCampusnetLogoFastBootstrap();
+            return;
+        }
         if (host !== 'studieplan.dtu.dk' && host !== 'kurser.dtu.dk') return;
 
         var attempts = 0;
-        _hostFeatureBootstrapTimer = setInterval(function() {
+        _hostFeatureBootstrapTimer = setInterval(function () {
             attempts++;
             runTopWindowFeatureChecks(null, false);
 
@@ -20002,15 +20647,13 @@
 
     function scheduleHostLightRefresh(delayMs) {
         if (_hostLightRefreshTimer) return;
-        _hostLightRefreshTimer = setTimeout(function() {
+        _hostLightRefreshTimer = setTimeout(function () {
             _hostLightRefreshTimer = null;
             var host = window.location.hostname;
             if (host === 'studieplan.dtu.dk') {
                 scheduleStudyplanExamCluster(110);
                 // Studieplan can re-render its header/logo after initial load; re-apply logo override.
-                if (darkModeEnabled) {
-                    try { replaceLogoImage(); } catch (eLogo1) {}
-                }
+                try { replaceLogoImage(); } catch (eLogo1) { }
                 return;
             }
             if (host === 'kurser.dtu.dk') {
@@ -20021,9 +20664,7 @@
                 insertKurserMyLineBadge();
                 scheduleKurserTextbookLinker(110);
                 // Kurser can also swap logos late; keep it stable in dark mode.
-                if (darkModeEnabled) {
-                    try { replaceLogoImage(); } catch (eLogo2) {}
-                }
+                try { replaceLogoImage(); } catch (eLogo2) { }
             }
         }, delayMs || 180);
     }
@@ -20035,7 +20676,7 @@
         if (_hostLightObserver) return;
         if (!document.documentElement) return;
 
-        _hostLightObserver = new MutationObserver(function(mutations) {
+        _hostLightObserver = new MutationObserver(function (mutations) {
             var shouldRefresh = false;
 
             for (var i = 0; i < mutations.length; i++) {
@@ -20105,7 +20746,7 @@
 
     function dedupeMutationRoots(roots) {
         var unique = [];
-        roots.forEach(function(root) {
+        roots.forEach(function (root) {
             if (!root || root.nodeType !== 1 || !root.isConnected) return;
             var skip = false;
             for (var i = 0; i < unique.length; i++) {
@@ -20131,23 +20772,23 @@
         for (const mutation of mutations) {
             if (darkModeEnabled) {
                 // Style / class attribute changes â€” apply dark overrides immediately
-                    if (mutation.type === 'attributes') {
-                        const el = mutation.target;
-                        if (el && el.hasAttribute && el.hasAttribute('data-dtu-ext')) continue;
-                        if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
-                            try {
-                                if (el && el.closest && el.closest('.navigation-container .navigation-tree')) {
-                                    forceLessonsTocDark1(el);
-                                }
-                            } catch (eTocAttr2) {}
-                            try {
-                                forceD2LActionButtonsDark1(el);
-                            } catch (eActionAttr2) {}
-                            if (el.matches) {
-                                if (el.matches(LIGHTER_DARK_SELECTORS)) {
-                                    applyLighterDarkStyle(el);
-                                } else if (el.matches(DARK_SELECTORS)) {
-                                    applyDarkStyle(el);
+                if (mutation.type === 'attributes') {
+                    const el = mutation.target;
+                    if (el && el.hasAttribute && el.hasAttribute('data-dtu-ext')) continue;
+                    if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
+                        try {
+                            if (el && el.closest && el.closest('.navigation-container .navigation-tree')) {
+                                forceLessonsTocDark1(el);
+                            }
+                        } catch (eTocAttr2) { }
+                        try {
+                            forceD2LActionButtonsDark1(el);
+                        } catch (eActionAttr2) { }
+                        if (el.matches) {
+                            if (el.matches(LIGHTER_DARK_SELECTORS)) {
+                                applyLighterDarkStyle(el);
+                            } else if (el.matches(DARK_SELECTORS)) {
+                                applyDarkStyle(el);
                             }
                         }
                         if (el.matches && el.matches('.dturedbackground')) {
@@ -20182,10 +20823,10 @@
                             if (node.closest && node.closest('.navigation-container .navigation-tree')) {
                                 forceLessonsTocDark1(node);
                             }
-                        } catch (eTocNode2) {}
+                        } catch (eTocNode2) { }
                         try {
                             forceD2LActionButtonsDark1(node);
-                        } catch (eActionNode2) {}
+                        } catch (eActionNode2) { }
                         enqueueMutationRoot(node);
                         if (darkModeEnabled) {
                             if (node.matches && node.matches(DARK_SELECTORS)) applyDarkStyle(node);
@@ -20216,7 +20857,7 @@
 
                 var queueOverflow = _mutationQueueOverflow;
                 _mutationQueueOverflow = false;
-                var roots = _pendingMutationRoots.filter(function(root) {
+                var roots = _pendingMutationRoots.filter(function (root) {
                     return root && root.nodeType === 1 && root.isConnected;
                 });
                 _pendingMutationRoots = [];
@@ -20239,8 +20880,8 @@
                     // Some hosts (CampusNet / Studyplanner) render logos late; apply per-mutation-root
                     // so we catch late-added header DOM without relying on `src` changes.
                     try {
-                        roots.forEach(function(r) { replaceLogoImage(r); });
-                    } catch (eLogoM) {}
+                        roots.forEach(function (r) { replaceLogoImage(r); });
+                    } catch (eLogoM) { }
                 }
                 runTopWindowFeatureChecks(roots[roots.length - 1] || null, false);
             }, 200);
@@ -20276,51 +20917,47 @@
     function runPrimaryBootstrap() {
         if (_didRunPrimaryBootstrap) return;
         _didRunPrimaryBootstrap = true;
-        waitForCustomElements().then(function() {
+        waitForCustomElements().then(function () {
             runDarkModeChecks();
             runTopWindowFeatureChecks(null, true);
             // Logos often appear after initial HTML parsing (or get swapped by site JS).
             // Re-apply after primary bootstrap + a couple delayed passes.
-            if (darkModeEnabled) {
-                try { replaceLogoImage(); } catch (eLogo0) {}
-            }
+            try { replaceLogoImage(); } catch (eLogo0) { }
             startHostFeatureBootstrap();
             startHostLightObserver();
             startContentButtonBootstrap();
-            setTimeout(function() { runDarkModeChecks(); runTopWindowFeatureChecks(null, true); }, 500);
-            setTimeout(function() { runDarkModeChecks(); runTopWindowFeatureChecks(null, true); }, 1500);
-            if (darkModeEnabled) {
-                setTimeout(function() { try { replaceLogoImage(); } catch (eLogoA) {} }, 650);
-                setTimeout(function() { try { replaceLogoImage(); } catch (eLogoB) {} }, 1850);
-            }
+            setTimeout(function () { runDarkModeChecks(); runTopWindowFeatureChecks(null, true); }, 500);
+            setTimeout(function () { runDarkModeChecks(); runTopWindowFeatureChecks(null, true); }, 1500);
+            setTimeout(function () { try { replaceLogoImage(); } catch (eLogoA) { } }, 650);
+            setTimeout(function () { try { replaceLogoImage(); } catch (eLogoB) { } }, 1850);
             setTimeout(showOnboardingHint, 2000);
             setTimeout(showBusSetupPrompt, 2500);
         });
     }
 
     // Page load: run all checks a few times to catch late-loading elements
-    window.addEventListener('load', function() {
+    window.addEventListener('load', function () {
         runPrimaryBootstrap();
     });
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         setTimeout(runPrimaryBootstrap, 0);
     } else {
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             setTimeout(runPrimaryBootstrap, 0);
         });
     }
 
-    window.addEventListener('pageshow', function() {
-        setTimeout(function() {
+    window.addEventListener('pageshow', function () {
+        setTimeout(function () {
             runTopWindowFeatureChecks(null, true);
             startHostFeatureBootstrap();
             startHostLightObserver();
         }, 30);
     });
 
-    window.addEventListener('focus', function() {
-        setTimeout(function() {
+    window.addEventListener('focus', function () {
+        setTimeout(function () {
             runTopWindowFeatureChecks(null, true);
             startHostFeatureBootstrap();
             startHostLightObserver();
@@ -20330,7 +20967,7 @@
     // Re-process when tab becomes visible again
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
-            setTimeout(function() {
+            setTimeout(function () {
                 runDarkModeChecks();
                 runTopWindowFeatureChecks(null, true);
                 startHostFeatureBootstrap();
@@ -20342,7 +20979,7 @@
 
     // Lightweight safety-net for late-created Brightspace shadow roots.
     if (darkModeEnabled && IS_TOP_WINDOW) {
-        setInterval(function() {
+        setInterval(function () {
             if (document.hidden) return;
             sweepForLateShadowRoots();
         }, 15000);

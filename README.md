@@ -15,6 +15,7 @@ DTU After Dark is a comprehensive browser extension that upgrades the DTU digita
 ### Academic Intelligence
 - **Weighted GPA (CampusNet):** Automatically calculates the true ECTS-weighted GPA on CampusNet grade pages, filtering out Pass/Fail courses.
 - **GPA Simulator (CampusNet):** Add hypothetical grades to see a projected weighted GPA (saved locally).
+- **GPA Simulator Safety Note:** The simulator includes an on-panel disclaimer reminding students to verify official grades/GPA in DTU systems.
 - **ECTS Progress Bar (CampusNet):** Visualizes earned ECTS and now follows your selected accent color.
 - **Study Planner Exam Cluster Detection:** Visual timeline of planned exams with a next-exam countdown and colored gap "danger zones" (<3d red, 3-7d yellow, >7d green).
 - **Smart Period Filtering:** Period-aware Study Planner mapping with strict handling for summer placements (`June`/`July`/`August`).
