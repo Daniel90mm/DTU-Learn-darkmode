@@ -2,6 +2,7 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $dist = Join-Path $repoRoot 'dist'
 $tmp = Join-Path $env:TEMP 'dtu-chrome-build'
 $outZip = Join-Path $dist 'dtu-dark-mode-chrome.zip'
+$outUnpacked = Join-Path $dist 'chrome-unpacked'
 
 function New-ZipWithForwardSlashes([string]$SourceDir, [string]$DestZip) {
     Add-Type -AssemblyName System.IO.Compression
@@ -30,6 +31,7 @@ function New-ZipWithForwardSlashes([string]$SourceDir, [string]$DestZip) {
 
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
 Remove-Item -Force $outZip -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force $outUnpacked -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $tmp -Force | Out-Null
 
@@ -45,6 +47,9 @@ foreach ($f in $files) {
 }
 
 Copy-Item -Recurse -Force (Join-Path $repoRoot 'images') (Join-Path $tmp 'images')
+
+New-Item -ItemType Directory -Path $outUnpacked -Force | Out-Null
+Copy-Item -Recurse -Force (Join-Path $tmp '*') $outUnpacked
 
 New-ZipWithForwardSlashes -SourceDir $tmp -DestZip $outZip
 Remove-Item -Recurse -Force $tmp

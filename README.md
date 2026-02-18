@@ -34,6 +34,7 @@ DTU After Dark is a comprehensive browser extension that upgrades the DTU digita
 - **Live Bus Departures (DTU Learn):** Real-time departures for DTU-area stops, embedded on the DTU Learn homepage (Rejseplanen API).
 - **Deadlines Widget (DTU Learn):** Timeline-style deadlines list with caching and manual refresh. Compact view can show 2-3 items when they share the same due day as the next deadline.
 - **Library (DTU Learn):** Nav bar entry that opens a larger settings-style modal with a quick-link grid plus live upcoming events and latest news from DTU Library (bibliotek.dtu.dk). Uses the native DTU page font, shows full fetched lists directly (no show-more toggle), and follows the selected accent in dark mode ON/OFF. Cached for 6 hours.
+- **Course Content Download (DTU Learn):** Compact control under the Lessons search bar to select TOC sections and download child files on the modern `d2l-lessons-toc` structure. The older `.navigation-tree` Lessons layout is currently disabled for this feature (temporarily) to avoid unreliable folder detection/download behavior. In modern structure, the picker shows section labels with topic-page counts. Includes a nested **Bulk Download** sub-toggle in Settings and a **Single ZIP** mode (recommended) that bundles selected files into one archive instead of spawning many separate downloads.
 
 ### Participant Intelligence (CampusNet)
 - **Course Composition:** On CampusNet participant pages, shows a program breakdown for **Users (students)** (ignores Administrators/Authors), with your own program highlighted in DTU red and an outlier warning if you are under 10% of the class. Automatically tries to switch the participant list to `View 1500` for accurate counts. Exchange students (`gæst udl.`) are labeled as `Exchange student`, and the `Other` bucket includes an expandable breakdown.
@@ -44,7 +45,7 @@ DTU After Dark is a comprehensive browser extension that upgrades the DTU digita
 - **Archive Backfill (CampusNet):** On the CampusNet Group Archive page, you can scan archived courses to populate Shared History and Semester Twins automatically (data stays local). Optional weekly auto-scan only fetches newly discovered archived courses.
 - **Semester Twins (CampusNet):** Shows a Semester Twins widget on the CampusNet frontpage, finding students with 50%+ overlap. Supports `Scope: This semester / All time`; in `This semester`, ranking strongly prioritizes overlap in your verified current-semester courses (history is used as a tie-breaker). Current-course seeding on CampusNet frontpage is now restricted to the `Courses` section (ignores `Projects/Groups`) and can auto-upgrade stale archived entries for the same course+semester. Also supports hiding your own study line (filters study-line-specific overlaps to reduce "switched study line" false positives) and a compact view (show 5/10 students).
 - **Retention Radar:** Tracks **Users** enrollment counts over time per course and shows whether the latest snapshot increased or dropped.
-- **Per-Feature Toggles:** Course Composition, Shared History, Semester Twins, and Retention Radar can be enabled/disabled individually under `Settings -> Social`.
+- **Per-Feature Toggles:** Course Composition, Shared History, Semester Twins, and Retention Radar can be enabled/disabled individually under `Settings -> Social` as sub-toggles beneath the `Participant Intelligence` master switch.
 
 ### Interface Enhancements
 - **Global Dark Mode:** Hand-tuned theme using `rgb(26,26,26)` and `rgb(45,45,45)` across supported DTU domains, with a customizable accent color using official DTU design-guide presets + Custom (default: `DTU Corporate Red`). Accent picker includes source link to `https://designguide.dtu.dk/colours`.
@@ -73,7 +74,8 @@ DTU After Dark is a comprehensive browser extension that upgrades the DTU digita
 
 ## Supported Domains
 
-The extension automatically activates on these DTU-related hosts:
+### Content script domains (theme/features run directly on page)
+
 - `learn.inside.dtu.dk` (DTU Learn)
 - `s.brightspace.com` (Brightspace static assets/iframes)
 - `sts.ait.dtu.dk` (DTU login)
@@ -82,18 +84,27 @@ The extension automatically activates on these DTU-related hosts:
 - `evaluering.dtu.dk` (Course evaluations)
 - `campusnet.dtu.dk` (CampusNet)
 - `karakterer.dtu.dk` (Grades)
-- `findit.dtu.dk` (Library search hints)
-- `student.dtu.dk` (Deadlines/exam-related info used by some features)
-- `sdb.dtu.dk` (Study line plan data used by MyLine Curriculum Badges)
 - `sites.dtu.dk` (Department sites)
-- `www.bibliotek.dtu.dk` (Library events and news)
+
+### Data-source/API domains (fetched by extension features)
+
+- `findit.dtu.dk` (FindIt availability checks and library links)
+- `student.dtu.dk` (Deadlines and exam-date sources)
+- `sdb.dtu.dk` (Study line data for MyLine Curriculum Badges)
+- `www.bibliotek.dtu.dk` (Library events/news API)
+- `www.dtu.dk` (exam-date fallback sources)
+- `api.mazemap.com` (Smart Room Links POI resolution)
+- `www.rejseplanen.dk` (bus departure API)
 
 ## Privacy & Security
 
-DTU After Dark does not transmit personal data to third parties.
-- **Local Storage:** Preferences (including GPA simulator entries and bus settings) are stored locally in your browser. If you enable Participant Intelligence, the extension may also store CampusNet participant list metadata (names, s-numbers, programs) and participant-count snapshots locally, depending on which Participant Intelligence components you enable.
-- **Direct Connections:** Requests for bus times go directly to the public Rejseplanen API. Smart Room Links can query the MazeMap search API to resolve room IDs when you click a room link. Some course tools fetch from DTU domains to render summaries. Library events/news are fetched from the DTU Library website.
-- **Open Source:** The full source code is available in this repository for audit.
+Security/privacy audit completed on **February 18, 2026**.
+
+- **Audit Result:** No analytics/telemetry SDKs found. No remote code loading (`eval`/`new Function`) found.
+- **Local Storage:** Preferences and caches are stored locally. If Participant Intelligence is enabled, local participant metadata (names, s-numbers, programs, overlap/snapshot data) may be stored for those features.
+- **Direct Connections:** The extension fetches feature data from DTU domains plus Rejseplanen and MazeMap, and does not send participant metadata to third-party analytics services.
+- **Known Risk (Open):** Rejseplanen uses a bundled API key in release builds. This can be extracted and abused for quota exhaustion; mitigation is tracked in the audit notes.
+- **Open Source:** Full source is available for inspection.
 
 See `docs/PRIVACY.md`.
 
