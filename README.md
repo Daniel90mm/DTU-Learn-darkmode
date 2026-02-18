@@ -1,6 +1,6 @@
 # DTU After Dark
 
-**The unofficial productivity suite for the Technical University of Denmark.**
+The unofficial productivity suite for the Technical University of Denmark.
 
 DTU After Dark is a comprehensive browser extension that upgrades the DTU digital experience. It integrates disparate university systems (grades, schedules, and campus facilities) into a more unified workflow, while providing a consistent two-tier dark theme across DTU domains.
 
@@ -8,7 +8,7 @@ DTU After Dark is a comprehensive browser extension that upgrades the DTU digita
 
 **Firefox Add-ons:** https://addons.mozilla.org/en-US/firefox/addon/dtu-dark-mode/
 
-**Chrome Web Store:** *Coming soon*
+**Chrome Web Store:** https://chromewebstore.google.com/detail/dtu-after-dark/hemonfanogjedclfjhmkhjbkknackiel?authuser=0&hl=da
 
 ## Key Features
 
@@ -110,7 +110,7 @@ See `docs/PRIVACY.md`.
 
 ## Disclaimer
 
-**DTU After Dark is an unofficial, community-built extension. It is not affiliated with, endorsed by, or supported by DTU, Arcanic, D2L/Brightspace, Rejseplanen, MazeMap, or any other service provider.**
+DTU After Dark is an unofficial, community-built extension. It is not affiliated with, endorsed by, or supported by DTU, Arcanic, D2L/Brightspace, Rejseplanen, MazeMap, or any other service provider.
 
 Information displayed by this extension (exam dates, deadlines, grades, GPA calculations, bus times, course evaluations, room locations, library data) is derived from publicly available sources and may be inaccurate, incomplete, or outdated. **Always verify critical information through official DTU channels.** The developer(s) accept no responsibility for missed exams, wrong grades, missed buses, or any other consequences. This extension is provided "as is" without warranty of any kind.
 
