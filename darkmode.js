@@ -4,7 +4,6 @@
 
     // ===== DARK MODE TOGGLE =====
     const DARK_MODE_KEY = 'dtuDarkModeEnabled';
-    const DEV_CONTEXT_CAPTURE_KEY = 'dtuDevContextCapture';
     const IS_TOP_WINDOW = (() => {
         try {
             return window === window.top;
@@ -12,13 +11,9 @@
             return false;
         }
     })();
-    const ENABLE_CONTEXT_CAPTURE_DEV_TOOL = (() => {
-        try {
-            return localStorage.getItem(DEV_CONTEXT_CAPTURE_KEY) === 'true';
-        } catch (e) {
-            return false;
-        }
-    })();
+    // Dev-only feature: hard-disabled in repository/release code.
+    // Keep false unless explicitly enabling in a private local dev build.
+    const ENABLE_CONTEXT_CAPTURE_DEV_TOOL = false;
 
     // Check dark mode preference: cookie (.dtu.dk cross-origin) â†’ localStorage â†’ default true
     function isDarkModeEnabled() {
@@ -10036,12 +10031,6 @@
         return section.unitUrls.every(function (u) { return /\/units\//i.test(String(u || '')); });
     }
 
-    function shouldLegacySectionNeedExpansion(section) {
-        if (!section) return false;
-        if (!/^(legacy\|)/i.test(String(section.key || ''))) return false;
-        return legacySectionHasOnlyUnitUrls(section);
-    }
-
     function getLegacyItemObjectId(itemEl) {
         if (!itemEl || !itemEl.getAttribute) return '';
         var id = String(itemEl.getAttribute('data-objectid') || '').trim();
@@ -10261,50 +10250,6 @@
         return changed;
     }
 
-    async function resolveLegacySectionUnitUrlsViaApiExpansion(section) {
-        if (!section || !Array.isArray(section.unitUrls) || !section.unitUrls.length) return [];
-        var topicUrls = new Set();
-        var unitUrls = Array.from(new Set(section.unitUrls.map(function (u) {
-            return toAbsoluteSamePageUrl(u, window.location.origin);
-        }).filter(Boolean)));
-
-        for (var i = 0; i < unitUrls.length; i++) {
-            var sourceUrl = unitUrls[i];
-            if (/\/topics\//i.test(sourceUrl)) {
-                topicUrls.add(sourceUrl);
-                continue;
-            }
-            if (!/\/units\//i.test(sourceUrl)) continue;
-
-            var fromApi = [];
-            try {
-                fromApi = await fetchUnitTopicUrlsViaApi(sourceUrl);
-            } catch (eApi0) {
-                fromApi = [];
-            }
-            if (!fromApi.length) {
-                try {
-                    fromApi = await fetchUnitTopicUrlsFromUnitPage(sourceUrl);
-                } catch (ePage0) {
-                    fromApi = [];
-                }
-            }
-            (fromApi || []).forEach(function (u) {
-                var abs = toAbsoluteSamePageUrl(u, window.location.origin);
-                if (abs && /\/topics\//i.test(abs) && isValidLessonsContentId(parseLessonsTopicIdFromUrl(abs))) topicUrls.add(abs);
-            });
-            if (i % 4 === 3) await lessonsBulkDelay(24);
-        }
-
-        var resolved = sanitizeLessonsSectionUnitUrls(Array.from(topicUrls));
-        logLessonsBulkDebug('legacy_api_expand_resolve', {
-            sectionKey: section && section.key ? section.key : '',
-            requestedUnits: unitUrls.length,
-            resolvedTopics: resolved.length
-        });
-        return resolved;
-    }
-
     async function resolveLegacySectionUnitUrlsViaHiddenFrame(section, scopeDoc) {
         var hostDoc = scopeDoc || getLessonsRuntimeDocument(document);
         if (!hostDoc || !hostDoc.createElement || !hostDoc.body) return [];
@@ -10451,71 +10396,6 @@
                 finish([]);
             }
         });
-    }
-
-    function maybeStartLegacySectionCountPrefetch(rootEl, scopeDoc) {
-        var doc = scopeDoc || getLessonsRuntimeDocument(document);
-        if (!doc || !rootEl || !rootEl.isConnected) return;
-        if (!_lessonsBulkUiState.sections || !_lessonsBulkUiState.sections.length) return;
-        if (!rootEl.classList || !rootEl.classList.contains('dtu-open')) return;
-        if (!isLegacyLessonsTreeDocument(doc)) return;
-        if (_lessonsBulkUiState.running) return;
-
-        var orgUnitId = getCurrentLessonsOrgUnitId(doc);
-        if (!orgUnitId) return;
-        if (_lessonsLegacyBackgroundResolveState.orgUnitId !== orgUnitId) {
-            _lessonsLegacyBackgroundResolveState.orgUnitId = orgUnitId;
-            _lessonsLegacyBackgroundResolveState.running = false;
-            _lessonsLegacyBackgroundResolveState.token = 0;
-            _lessonsLegacyBackgroundResolveState.resolvedKeys = new Set();
-        }
-        if (_lessonsLegacyBackgroundResolveState.running) return;
-
-        var candidates = (_lessonsBulkUiState.sections || []).filter(function (s) {
-            if (!shouldLegacySectionNeedExpansion(s)) return false;
-            return !_lessonsLegacyBackgroundResolveState.resolvedKeys.has(String(s.key || ''));
-        });
-        if (!candidates.length) return;
-
-        _lessonsLegacyBackgroundResolveState.running = true;
-        var runToken = ++_lessonsLegacyBackgroundResolveState.token;
-        (async function () {
-            try {
-                for (var i = 0; i < candidates.length; i++) {
-                    if (runToken !== _lessonsLegacyBackgroundResolveState.token) return;
-                    if (!rootEl.isConnected) return;
-                    var sec = candidates[i];
-                    if (!sec) continue;
-                    var secKey = String(sec.key || '');
-                    setLessonsBulkStatus(
-                        rootEl,
-                        'Preparing section data (' + (i + 1) + ' / ' + candidates.length + ')...',
-                        'work'
-                    );
-                    var resolved = await resolveLegacySectionUnitUrlsViaApiExpansion(sec);
-                    if (!resolved || !resolved.length) {
-                        resolved = await resolveLegacySectionUnitUrlsViaHiddenFrame(sec, doc);
-                    }
-                    if (resolved && resolved.length) {
-                        _lessonsLegacyBackgroundResolveState.resolvedKeys.add(secKey);
-                        if (applyResolvedUrlsToLegacySections(secKey, resolved)) {
-                            _lessonsBulkUiState.sig = '';
-                            refreshLessonsBulkDownloadUi(rootEl, true);
-                        }
-                    }
-                    await lessonsBulkDelay(120);
-                }
-            } catch (ePref0) {
-                logLessonsBulkDebug('legacy_prefetch_error', { error: String(ePref0 && ePref0.message ? ePref0.message : ePref0) });
-            } finally {
-                if (runToken === _lessonsLegacyBackgroundResolveState.token) {
-                    _lessonsLegacyBackgroundResolveState.running = false;
-                }
-                if (rootEl && rootEl.isConnected && !_lessonsBulkUiState.running && !_lessonsBulkUiState.selectedKeys.size) {
-                    setLessonsBulkStatus(rootEl, 'Select folders and click "Download selected".', '');
-                }
-            }
-        })();
     }
 
     function getNumericIdString(value) {
@@ -13493,10 +13373,21 @@
     const DEADLINES_ENABLED_KEY = 'dtuDarkModeDeadlinesEnabled';
     const DEADLINES_CACHE_KEY = 'dtuDarkModeDeadlinesCacheV1';
     const DEADLINES_CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
+    const BUS_SHARED_CACHE_KEY = 'dtuDarkModeBusSharedCacheV1';
+    const BUS_FETCH_LEASE_KEY = 'dtuDarkModeBusFetchLeaseV1';
+    const BUS_FETCH_LEASE_MS = 25000;
+    const BUS_LEASE_WAIT_RETRY_MS = 2500;
+    const BUS_SHARED_CACHE_MAX_AGE_MS = 1000 * 60 * 3;
+    const BUS_ERROR_BACKOFF_BASE_MS = 30000;
+    const BUS_ERROR_BACKOFF_MAX_MS = 1000 * 60 * 5;
+    const BUS_TAB_ID = 'tab-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
 
     let _lastBusFetch = 0;
     let _cachedDepartures = [];
     let _busFetchInProgress = false;
+    let _busConsecutiveErrors = 0;
+    let _busBackoffUntil = 0;
+    const _busActiveControllers = new Set();
 
     let _deadlinesFetchInProgress = false;
     let _deadlinesLastResponse = null;
@@ -13529,6 +13420,151 @@
 
     function saveBusConfig(config) {
         localStorage.setItem(BUS_CONFIG_KEY, JSON.stringify(config));
+        try { localStorage.removeItem(BUS_SHARED_CACHE_KEY); } catch (e0) { }
+        try { localStorage.removeItem(BUS_FETCH_LEASE_KEY); } catch (e1) { }
+    }
+
+    function registerBusFetchController(controller) {
+        if (!controller) return;
+        _busActiveControllers.add(controller);
+    }
+
+    function unregisterBusFetchController(controller) {
+        if (!controller) return;
+        _busActiveControllers.delete(controller);
+    }
+
+    function abortInFlightBusRequests() {
+        _busActiveControllers.forEach(function (controller) {
+            try { controller.abort(); } catch (e) { }
+        });
+        _busActiveControllers.clear();
+    }
+
+    function getBusBackoffRemainingMs(nowTs) {
+        var now = typeof nowTs === 'number' ? nowTs : Date.now();
+        if (_busBackoffUntil <= now) return 0;
+        return _busBackoffUntil - now;
+    }
+
+    function noteBusFetchOutcome(meta) {
+        if (!meta || typeof meta !== 'object') return;
+        var requestCount = typeof meta.requestCount === 'number' ? meta.requestCount : 0;
+        var successCount = typeof meta.successCount === 'number' ? meta.successCount : 0;
+        var errorCount = typeof meta.errorCount === 'number' ? meta.errorCount : 0;
+        if (requestCount <= 0) return;
+        if (successCount > 0) {
+            _busConsecutiveErrors = 0;
+            _busBackoffUntil = 0;
+            return;
+        }
+        if (errorCount <= 0) return;
+        _busConsecutiveErrors++;
+        var delay = BUS_ERROR_BACKOFF_BASE_MS * Math.pow(2, Math.max(0, _busConsecutiveErrors - 1));
+        delay = Math.min(delay, BUS_ERROR_BACKOFF_MAX_MS);
+        _busBackoffUntil = Date.now() + delay;
+    }
+
+    function getBusSharedCache() {
+        try {
+            var raw = localStorage.getItem(BUS_SHARED_CACHE_KEY);
+            if (!raw) return null;
+            var parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed.ts !== 'number' || !Array.isArray(parsed.departures)) return null;
+            return parsed;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function getBusConfigSignature(config) {
+        if (!config || typeof config !== 'object') return '';
+        var stopIds = Array.isArray(config.stopIds) ? config.stopIds.map(function (id) {
+            return String(id || '').trim();
+        }).filter(Boolean) : [];
+        stopIds.sort();
+
+        var lines = Array.isArray(config.lines) ? config.lines.map(function (lineCfg) {
+            var dirs = Array.isArray(lineCfg && lineCfg.directions) ? lineCfg.directions.map(function (d) {
+                return String(d || '').trim();
+            }).filter(Boolean) : [];
+            dirs.sort();
+            return {
+                line: String(lineCfg && lineCfg.line || '').trim(),
+                directions: dirs
+            };
+        }).filter(function (lineCfg) {
+            return !!lineCfg.line;
+        }) : [];
+        lines.sort(function (a, b) { return a.line.localeCompare(b.line); });
+
+        return JSON.stringify({ stopIds: stopIds, lines: lines });
+    }
+
+    function consumeBusSharedCache(maxAgeMs, expectedConfigSig) {
+        var payload = getBusSharedCache();
+        if (!payload) return false;
+        var now = Date.now();
+        var ttl = (typeof maxAgeMs === 'number' && maxAgeMs > 0) ? maxAgeMs : BUS_SHARED_CACHE_MAX_AGE_MS;
+        if (now - payload.ts > ttl) return false;
+        if (expectedConfigSig && payload.configSig !== expectedConfigSig) return false;
+        if (payload.ts <= _lastBusFetch && _cachedDepartures.length > 0) return false;
+        _cachedDepartures = payload.departures;
+        _lastBusFetch = payload.ts;
+        _busConsecutiveErrors = 0;
+        _busBackoffUntil = 0;
+        return true;
+    }
+
+    function saveBusSharedCache(departures, configSig) {
+        try {
+            localStorage.setItem(BUS_SHARED_CACHE_KEY, JSON.stringify({
+                ts: Date.now(),
+                departures: Array.isArray(departures) ? departures : [],
+                configSig: String(configSig || '')
+            }));
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function readBusFetchLease() {
+        try {
+            var raw = localStorage.getItem(BUS_FETCH_LEASE_KEY);
+            if (!raw) return null;
+            var lease = JSON.parse(raw);
+            if (!lease || typeof lease.owner !== 'string' || typeof lease.expiresAt !== 'number') return null;
+            return lease;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function tryAcquireBusFetchLease() {
+        var now = Date.now();
+        var lease = readBusFetchLease();
+        if (lease && lease.expiresAt > now && lease.owner !== BUS_TAB_ID) return false;
+        try {
+            localStorage.setItem(BUS_FETCH_LEASE_KEY, JSON.stringify({
+                owner: BUS_TAB_ID,
+                expiresAt: now + BUS_FETCH_LEASE_MS
+            }));
+        } catch (e) {
+            // If storage write fails, fail open so one tab can still fetch.
+            return true;
+        }
+        var confirm = readBusFetchLease();
+        return !confirm || confirm.owner === BUS_TAB_ID;
+    }
+
+    function releaseBusFetchLease() {
+        var lease = readBusFetchLease();
+        if (!lease || lease.owner !== BUS_TAB_ID) return;
+        try {
+            localStorage.removeItem(BUS_FETCH_LEASE_KEY);
+        } catch (e) {
+            // ignore
+        }
     }
 
     function isDTULearnHomepage() {
@@ -13697,40 +13733,6 @@
         document.querySelectorAll('[data-dtu-afterdark-nav-link]').forEach(function (el) {
             try { el.remove(); } catch (e) { }
         });
-    }
-
-    function ensureNavWidgetsContainer() {
-        // Deadlines widget lives in the top header right slot.
-        const headerRight = document.querySelector('.d2l-labs-navigation-header-right');
-        if (!headerRight) return null;
-
-        let container = document.querySelector('.dtu-nav-widgets');
-        if (container && container.parentElement !== headerRight) {
-            try {
-                headerRight.insertBefore(container, headerRight.firstChild);
-            } catch (e) {
-                // ignore
-            }
-        }
-
-        if (!container) {
-            container = document.createElement('div');
-            container.className = 'dtu-nav-widgets';
-            container.setAttribute('role', 'listitem');
-            markExt(container);
-            if (headerRight.firstChild) headerRight.insertBefore(container, headerRight.firstChild);
-            else headerRight.appendChild(container);
-        }
-
-        container.style.cssText = 'display: flex; align-items: center; gap: 10px; '
-            + 'margin-right: 12px;';
-        return container;
-    }
-
-    function cleanupNavWidgetsContainer() {
-        const container = document.querySelector('.dtu-nav-widgets');
-        if (!container) return;
-        if (container.children.length === 0) container.remove();
     }
 
     function getDeadlineNextTs(item, todayTs) {
@@ -14424,408 +14426,6 @@
 
         placeDeadlinesHomepageWidget(widget, col3);
         renderDeadlinesHomepageWidget(widget);
-    }
-
-    function hideDeadlinesModal() {
-        const existing = document.querySelector('.dtu-deadlines-modal');
-        if (existing) existing.remove();
-    }
-
-    function showDeadlinesModal(forceRefresh) {
-        if (!IS_TOP_WINDOW) return;
-        if (!isDTULearnHomepage()) return;
-
-        hideDeadlinesModal();
-
-        const isDarkTheme = isDarkModeEnabled();
-        const theme = isDarkTheme
-            ? {
-                overlay: 'rgba(0,0,0,0.25)',
-                background: 'rgba(30,30,30,0.92)',
-                text: '#e0e0e0',
-                heading: '#ffffff',
-                subtle: '#b0b0b0',
-                border: '#404040',
-                chipBg: '#252525',
-                chipBorder: '#3b3b3b',
-                link: '#66b3ff'
-            }
-            : {
-                overlay: 'rgba(15,23,42,0.10)',
-                background: 'rgba(255,255,255,0.96)',
-                text: '#1f2937',
-                heading: '#111827',
-                subtle: '#4b5563',
-                border: '#d1d5db',
-                chipBg: '#f6f8fb',
-                chipBorder: '#dce2ea',
-                link: '#1a73e8'
-            };
-
-        const overlay = document.createElement('div');
-        overlay.className = 'dtu-deadlines-modal';
-        markExt(overlay);
-        overlay.style.cssText = 'position: fixed; inset: 0; z-index: 1000000; '
-            + 'background: ' + theme.overlay + '; backdrop-filter: blur(14px) brightness(1.8); '
-            + '-webkit-backdrop-filter: blur(14px) brightness(1.8); '
-            + 'display: flex; align-items: center; justify-content: center; '
-            + 'font-family: sans-serif; opacity: 0; transition: opacity 0.2s;';
-
-        requestAnimationFrame(function () { overlay.style.opacity = '1'; });
-
-        const modal = document.createElement('div');
-        markExt(modal);
-        modal.style.cssText = 'background: ' + theme.background + '; color: ' + theme.text + '; '
-            + 'border: 1px solid ' + theme.border + '; border-radius: 14px; '
-            + 'width: min(760px, 92vw); max-height: 82vh; overflow: auto; '
-            + 'box-shadow: 0 16px 64px rgba(0,0,0,0.45); padding: 20px 22px;';
-
-        function dismiss() {
-            overlay.style.opacity = '0';
-            setTimeout(function () { overlay.remove(); }, 160);
-        }
-
-        overlay.addEventListener('click', function (e) {
-            if (e.target === overlay) dismiss();
-        });
-
-        const header = document.createElement('div');
-        header.style.cssText = 'display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;';
-
-        const titleWrap = document.createElement('div');
-        const title = document.createElement('div');
-        title.textContent = 'DTU Deadlines';
-        title.style.cssText = 'font-size: 20px; font-weight: 800; color: ' + theme.heading + '; letter-spacing: -0.2px;';
-
-        const subtitle = document.createElement('div');
-        subtitle.style.cssText = 'margin-top: 4px; font-size: 12px; color: ' + theme.subtle + ';';
-        subtitle.textContent = 'Pulls public deadlines from student.dtu.dk (cached).';
-
-        titleWrap.appendChild(title);
-        titleWrap.appendChild(subtitle);
-
-        const actions = document.createElement('div');
-        actions.style.cssText = 'display: flex; gap: 10px; align-items: center;';
-
-        const refreshBtn = document.createElement('button');
-        refreshBtn.type = 'button';
-        refreshBtn.textContent = 'Refresh';
-        refreshBtn.style.cssText = 'border: 1px solid ' + theme.border + '; background: transparent; '
-            + 'color: ' + theme.text + '; padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 12px;';
-        refreshBtn.style.setProperty('background', 'transparent', 'important');
-        refreshBtn.style.setProperty('background-color', 'transparent', 'important');
-        refreshBtn.style.setProperty('color', theme.text, 'important');
-        refreshBtn.style.setProperty('border-color', theme.border, 'important');
-        refreshBtn.addEventListener('click', function () {
-            refreshBtn.disabled = true;
-            refreshBtn.style.opacity = '0.7';
-            renderBody(null, true);
-        });
-
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.textContent = 'Close';
-        closeBtn.style.cssText = 'border: 1px solid ' + theme.border + '; background: transparent; '
-            + 'color: ' + theme.text + '; padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 12px;';
-        closeBtn.style.setProperty('background', 'transparent', 'important');
-        closeBtn.style.setProperty('background-color', 'transparent', 'important');
-        closeBtn.style.setProperty('color', theme.text, 'important');
-        closeBtn.style.setProperty('border-color', theme.border, 'important');
-        closeBtn.addEventListener('click', dismiss);
-
-        actions.appendChild(refreshBtn);
-        actions.appendChild(closeBtn);
-
-        header.appendChild(titleWrap);
-        header.appendChild(actions);
-        modal.appendChild(header);
-
-        const body = document.createElement('div');
-        body.style.cssText = 'margin-top: 16px;';
-        modal.appendChild(body);
-
-        function createSection(titleText, linkUrl, rows) {
-            const card = document.createElement('div');
-            card.style.cssText = 'border: 1px solid ' + theme.border + '; border-radius: 12px; padding: 14px 14px; '
-                + 'background: ' + (isDarkTheme ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.6)') + '; '
-                + 'margin-bottom: 12px;';
-
-            const cardHeader = document.createElement('div');
-            cardHeader.style.cssText = 'display: flex; align-items: baseline; justify-content: space-between; gap: 10px;';
-
-            const h = document.createElement('div');
-            h.textContent = titleText;
-            h.style.cssText = 'font-size: 14px; font-weight: 800; color: ' + theme.heading + ';';
-
-            const a = document.createElement('a');
-            a.href = linkUrl;
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-            a.textContent = 'Open source';
-            a.style.cssText = 'font-size: 12px; color: ' + theme.link + '; text-decoration: none;';
-            a.addEventListener('mouseenter', function () { a.style.textDecoration = 'underline'; });
-            a.addEventListener('mouseleave', function () { a.style.textDecoration = 'none'; });
-
-            cardHeader.appendChild(h);
-            cardHeader.appendChild(a);
-            card.appendChild(cardHeader);
-
-            if (!rows.length) {
-                const empty = document.createElement('div');
-                empty.textContent = 'No upcoming deadlines found.';
-                empty.style.cssText = 'margin-top: 8px; font-size: 12px; color: ' + theme.subtle + '; font-style: italic;';
-                card.appendChild(empty);
-                return card;
-            }
-
-            rows.forEach(function (r, idx) {
-                const row = document.createElement('div');
-                row.style.cssText = 'display: grid; grid-template-columns: 1fr auto; gap: 10px; '
-                    + 'padding: 10px 0; align-items: center;'
-                    + (idx ? (' border-top: 1px solid ' + theme.border + ';') : '');
-
-                const left = document.createElement('div');
-
-                const period = document.createElement('div');
-                period.textContent = r.period || '';
-                period.style.cssText = 'font-size: 11px; color: ' + theme.subtle + '; margin-bottom: 2px;';
-
-                const label = document.createElement('div');
-                label.textContent = r.label || '';
-                label.style.cssText = 'font-size: 13px; font-weight: 750; color: ' + theme.text + ';';
-
-                const dates = document.createElement('div');
-                dates.textContent = formatDeadlineRange(r);
-                dates.style.cssText = 'font-size: 12px; color: ' + theme.subtle + '; margin-top: 2px;';
-
-                left.appendChild(period);
-                left.appendChild(label);
-                left.appendChild(dates);
-
-                const right = document.createElement('div');
-                right.style.cssText = 'display: flex; align-items: center; gap: 8px; justify-content: flex-end;';
-
-                const chip = document.createElement('div');
-                chip.style.cssText = 'padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; '
-                    + 'border: 1px solid ' + theme.chipBorder + '; background: ' + theme.chipBg + ';';
-
-                const today = startOfTodayUtcTs();
-                const nextTs = getDeadlineNextTs(r, today);
-                const days = (nextTs == null) ? null : diffDaysUtc(today, nextTs);
-                const verb = r.state === 'active' ? 'Ends' : 'Starts';
-
-                if (r.endTs == null) {
-                    if (days === 0) chip.textContent = 'Today';
-                    else chip.textContent = (days != null ? ('In ' + days + 'd') : '');
-                } else {
-                    if (days === 0) chip.textContent = (r.state === 'active') ? 'Ends today' : 'Starts today';
-                    else chip.textContent = (days != null ? (verb + ' in ' + days + 'd') : '');
-                }
-
-                const chipColor = r.state === 'active'
-                    ? (isDarkTheme ? '#66bb6a' : '#2e7d32')
-                    : (days != null && days <= 7
-                        ? (isDarkTheme ? '#ffa726' : '#e65100')
-                        : (isDarkTheme ? '#66b3ff' : '#1565c0'));
-                chip.style.setProperty('color', chipColor, 'important');
-                chip.style.setProperty('border-color', chipColor, 'important');
-
-                right.appendChild(chip);
-                row.appendChild(left);
-                row.appendChild(right);
-                card.appendChild(row);
-            });
-
-            return card;
-        }
-
-        function renderBody(resp, force) {
-            while (body.firstChild) body.removeChild(body.firstChild);
-
-            const activeResp = resp || _deadlinesLastResponse;
-            if (!activeResp || !activeResp.ok) {
-                const loading = document.createElement('div');
-                loading.style.cssText = 'font-size: 13px; color: ' + theme.subtle + ';';
-                loading.textContent = _deadlinesFetchInProgress ? 'Loading deadlines...' : 'Loading deadlines...';
-                body.appendChild(loading);
-
-                requestStudentDeadlines(!!force, function (newResp) {
-                    refreshBtn.disabled = false;
-                    refreshBtn.style.opacity = '1';
-                    renderBody(newResp, false);
-                });
-                return;
-            }
-
-            const todayTs = startOfTodayUtcTs();
-            const courseRows = buildUpcomingDeadlineRows(activeResp.course && activeResp.course.groups, todayTs, 8);
-            const examRows = buildUpcomingDeadlineRows(activeResp.exam && activeResp.exam.groups, todayTs, 8);
-
-            const meta = document.createElement('div');
-            meta.style.cssText = 'font-size: 12px; color: ' + theme.subtle + '; margin-bottom: 10px;';
-            const fetchedAt = activeResp.fetchedAt ? new Date(activeResp.fetchedAt) : null;
-            meta.textContent = 'Updated: ' + (fetchedAt ? fetchedAt.toLocaleString() : 'unknown') + (activeResp.cached ? ' (cached)' : '');
-            body.appendChild(meta);
-
-            body.appendChild(createSection(
-                'Course registration',
-                (activeResp.course && activeResp.course.url) ? activeResp.course.url : 'https://student.dtu.dk/en/courses-and-teaching/course-registration/course-registration-deadlines',
-                courseRows
-            ));
-            body.appendChild(createSection(
-                'Exam registration',
-                (activeResp.exam && activeResp.exam.url) ? activeResp.exam.url : 'https://student.dtu.dk/en/exam/exam-registration/-deadlines-for-exams',
-                examRows
-            ));
-
-            refreshBtn.disabled = false;
-            refreshBtn.style.opacity = '1';
-        }
-
-        renderBody(null, !!forceRefresh);
-
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-    }
-
-    function updateDeadlinesWidgetSummary() {
-        if (!IS_TOP_WINDOW) return;
-        if (!isDTULearnHomepage() || !isDeadlinesEnabled()) return;
-
-        const btn = document.querySelector('.dtu-deadlines-widget');
-        if (!btn) return;
-
-        const summary = btn.querySelector('.dtu-deadlines-summary');
-        if (!summary) return;
-
-        const resp = _deadlinesLastResponse;
-        if (!resp || !resp.ok) {
-            summary.textContent = _deadlinesFetchInProgress ? 'Loading...' : 'Open';
-            btn.title = 'Deadlines: click to view course/exam registration deadlines.';
-            return;
-        }
-
-        const todayTs = startOfTodayUtcTs();
-        const rows = buildUpcomingDeadlineRows((resp.course && resp.course.groups) || [], todayTs, 20)
-            .concat(buildUpcomingDeadlineRows((resp.exam && resp.exam.groups) || [], todayTs, 20));
-        if (!rows.length) {
-            summary.textContent = 'None';
-            btn.title = 'Deadlines: no upcoming deadlines found.';
-            return;
-        }
-        rows.sort(function (a, b) { return a.nextTs - b.nextTs; });
-        const next = rows[0];
-        const days = diffDaysUtc(todayTs, next.nextTs);
-        if (days === 0) summary.textContent = 'Today';
-        else summary.textContent = days + 'd';
-
-        const iso = (next.state === 'active' && next.endIso) ? next.endIso : next.startIso;
-        const pretty = iso ? formatIsoDateForDisplay(iso) : '';
-        const verb = next.state === 'active' ? 'ends' : 'starts';
-        const rel = (days === 0) ? 'today' : ('in ' + days + ' day' + (days === 1 ? '' : 's'));
-        const label = next.label ? next.label.replace(/\s+/g, ' ').trim() : 'Next deadline';
-        const period = next.period ? next.period.replace(/\s+/g, ' ').trim() : '';
-        btn.title = 'Next deadline ' + verb + ' ' + rel + ': ' + label
-            + (pretty ? (' (' + pretty + ')') : '')
-            + (period ? (' - ' + period) : '')
-            + '. Click for details.';
-    }
-
-    function insertDeadlinesWidget() {
-        if (!isDTULearnHomepage() || !isDeadlinesEnabled()) {
-            const existing = document.querySelector('.dtu-deadlines-widget');
-            if (existing) existing.remove();
-            hideDeadlinesModal();
-            cleanupNavWidgetsContainer();
-            return;
-        }
-
-        const navWidgets = ensureNavWidgetsContainer();
-        if (!navWidgets) return;
-
-        let btn = navWidgets.querySelector('.dtu-deadlines-widget');
-        if (!btn) {
-            btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'dtu-deadlines-widget';
-            markExt(btn);
-            btn.style.cssText = 'display: inline-flex; align-items: baseline; gap: 8px; padding: 7px 12px; '
-                + 'border-radius: 8px; border-left: 2px solid var(--dtu-ad-accent); border: 1px solid ' + (darkModeEnabled ? '#404040' : '#d1d5db') + '; '
-                + 'background: ' + (darkModeEnabled ? '#2d2d2d' : '#ffffff') + '; '
-                + 'color: ' + (darkModeEnabled ? '#e0e0e0' : '#333') + '; '
-                + 'font-size: 12px; cursor: pointer; line-height: 1.2;';
-
-            // Beat global `button { ... !important }` rules in darkmode.css.
-            btn.style.setProperty('background', darkModeEnabled ? '#2d2d2d' : '#ffffff', 'important');
-            btn.style.setProperty('background-color', darkModeEnabled ? '#2d2d2d' : '#ffffff', 'important');
-            btn.style.setProperty('color', darkModeEnabled ? '#e0e0e0' : '#333', 'important');
-            btn.style.setProperty('border-color', darkModeEnabled ? '#404040' : '#d1d5db', 'important');
-            btn.style.setProperty('border-left', '2px solid var(--dtu-ad-accent)', 'important');
-
-            const title = document.createElement('span');
-            title.className = 'dtu-deadlines-title';
-            title.textContent = 'Deadlines';
-            title.style.cssText = 'font-weight: 800; letter-spacing: 0.2px;';
-            markExt(title);
-
-            const summary = document.createElement('span');
-            summary.className = 'dtu-deadlines-summary';
-            summary.textContent = 'Open';
-            summary.style.cssText = 'font-weight: 700; opacity: 0.9; color: ' + (darkModeEnabled ? '#b0b0b0' : '#666') + ';';
-            summary.style.setProperty('color', darkModeEnabled ? '#b0b0b0' : '#666', 'important');
-            markExt(summary);
-
-            btn.addEventListener('mouseenter', function () {
-                btn.style.boxShadow = darkModeEnabled
-                    ? '0 6px 20px rgba(0,0,0,0.35)'
-                    : '0 8px 22px rgba(15,23,42,0.12)';
-            });
-            btn.addEventListener('mouseleave', function () {
-                btn.style.boxShadow = 'none';
-            });
-
-            btn.addEventListener('click', function () {
-                showDeadlinesModal(false);
-            });
-
-            btn.appendChild(title);
-            btn.appendChild(summary);
-            navWidgets.appendChild(btn);
-        } else {
-            // Update theme when dark mode toggles
-            btn.style.setProperty('border-color', darkModeEnabled ? '#404040' : '#d1d5db', 'important');
-            btn.style.setProperty('border-left', '2px solid var(--dtu-ad-accent)', 'important');
-            btn.style.setProperty('background', darkModeEnabled ? '#2d2d2d' : '#ffffff', 'important');
-            btn.style.setProperty('background-color', darkModeEnabled ? '#2d2d2d' : '#ffffff', 'important');
-            btn.style.setProperty('color', darkModeEnabled ? '#e0e0e0' : '#333', 'important');
-            const summary = btn.querySelector('.dtu-deadlines-summary');
-            if (summary) summary.style.setProperty('color', darkModeEnabled ? '#b0b0b0' : '#666', 'important');
-        }
-
-        // Hydrate from persistent cache for instant render and fewer network requests.
-        if (!_deadlinesLastResponse) {
-            try {
-                const raw = localStorage.getItem(DEADLINES_CACHE_KEY);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (parsed && parsed.ok) _deadlinesLastResponse = parsed;
-                }
-            } catch (e) {
-                // ignore
-            }
-        }
-
-        updateDeadlinesWidgetSummary();
-
-        // Refresh at most once per day (and only if stale/missing).
-        const now = Date.now();
-        const fetchedAt = _deadlinesLastResponse && typeof _deadlinesLastResponse.fetchedAt === 'number'
-            ? _deadlinesLastResponse.fetchedAt
-            : 0;
-        const stale = !fetchedAt || (now - fetchedAt) > DEADLINES_CACHE_TTL_MS;
-        if ((_deadlinesLastResponse == null || stale) && !_deadlinesFetchInProgress) {
-            requestStudentDeadlines(false, function () { updateDeadlinesWidgetSummary(); });
-        }
     }
 
     // ===== LIBRARY NAV DROPDOWN =====
@@ -15726,7 +15326,11 @@
                         var config = getBusConfig();
                         if (!config || !config.lines || config.lines.length === 0) { hideSettingsModal(); showBusConfigModal(); }
                         else { _lastBusFetch = 0; updateBusDepartures(); }
-                    } else { insertBusDisplay(); }
+                    } else {
+                        stopBusPolling();
+                        abortInFlightBusRequests();
+                        insertBusDisplay();
+                    }
                 },
                 hasEdit: true,
                 onEdit: function () { hideSettingsModal(); showBusConfigModal(); }
@@ -16853,254 +16457,6 @@
             } catch (e) { }
         }
 
-        function measureTextWidthFromEl(measureRoot, el) {
-            if (!measureRoot || !el) return 0;
-            var txt = normalizeWhitespace(el.textContent || '');
-            if (!txt) return 0;
-            var span = document.createElement('span');
-            span.textContent = txt;
-            span.style.whiteSpace = 'nowrap';
-            span.style.display = 'inline-block';
-            try {
-                var cs = getComputedStyle(el);
-                if (cs) {
-                    span.style.fontFamily = cs.fontFamily;
-                    span.style.fontSize = cs.fontSize;
-                    span.style.fontWeight = cs.fontWeight;
-                    span.style.letterSpacing = cs.letterSpacing;
-                    span.style.textTransform = cs.textTransform;
-                }
-            } catch (e) { }
-            measureRoot.appendChild(span);
-            var w = 0;
-            try { w = span.getBoundingClientRect().width || 0; } catch (e2) { }
-            try { span.remove(); } catch (e3) { }
-            return w;
-        }
-
-        function autoSizeAdminToolsDropdownToContent() {
-            try {
-                var dd = closestComposed(placeholder, 'd2l-dropdown-content');
-                if (!dd) return;
-
-                // Measurement root (offscreen) to avoid UI flicker.
-                var meas = document.createElement('div');
-                meas.setAttribute('data-dtu-ext', '1');
-                meas.style.cssText = 'position:fixed;left:-10000px;top:-10000px;visibility:hidden;pointer-events:none;';
-                document.body.appendChild(meas);
-
-                var maxHeaderW = 0;
-                contentArea.querySelectorAll('div').forEach(function (el) {
-                    // Only consider our panel headers (big title + small subtitle) to avoid measuring whole DOM.
-                    if (!el || !el.isConnected) return;
-                    if (el.getAttribute && el.getAttribute('data-dtu-ext') !== '1') return;
-                    var fs = '';
-                    try { fs = String(getComputedStyle(el).fontSize || ''); } catch (e0) { }
-                    if (fs !== '18px' && fs !== '12px') return;
-                    var w = measureTextWidthFromEl(meas, el);
-                    if (w > maxHeaderW) maxHeaderW = w;
-                });
-
-                var maxInfoW = 0;
-                contentArea.querySelectorAll('.dtu-set-row').forEach(function (row) {
-                    if (!row || !row.isConnected) return;
-                    var titleEl = row.querySelector('div > div'); // title in info block
-                    var w1 = measureTextWidthFromEl(meas, titleEl);
-                    maxInfoW = Math.max(maxInfoW, w1);
-                });
-
-                var maxActionsW = 0;
-                contentArea.querySelectorAll('.dtu-set-row').forEach(function (row) {
-                    if (!row || !row.isConnected) return;
-                    var actions = row.querySelector('div[style*=\"gap:10px\"], div[style*=\"gap: 10px\"], div');
-                    // Prefer our actions container: last child in the row.
-                    var kids = row.children;
-                    if (kids && kids.length) actions = kids[kids.length - 1];
-                    if (!actions || !actions.getBoundingClientRect) return;
-                    try {
-                        var w = actions.getBoundingClientRect().width || 0;
-                        if (w > maxActionsW) maxActionsW = w;
-                    } catch (e1) { }
-                });
-
-                try { meas.remove(); } catch (e2) { }
-
-                var sidebarW = 170;
-                try { sidebarW = Math.ceil(sidebar.getBoundingClientRect().width || sidebarW); } catch (e3) { }
-
-                var padL = 24, padR = 34;
-                try {
-                    var csA = getComputedStyle(contentArea);
-                    padL = parseFloat(csA.paddingLeft) || padL;
-                    padR = parseFloat(csA.paddingRight) || padR;
-                } catch (e4) { }
-
-                // Row needs enough space for info + actions + breathing room.
-                var rowNeed = maxInfoW + maxActionsW + 44;
-                var innerNeed = Math.max(maxHeaderW, rowNeed);
-                var totalNeed = Math.ceil(sidebarW + padL + padR + innerNeed + 10);
-
-                var margin = 16;
-
-                // Hard bounds so we don't break smaller windows; still try to fit the longest string.
-                var maxFit = Math.max(360, Math.floor(window.innerWidth - margin * 2));
-                var finalW = Math.min(maxFit, Math.max(600, totalNeed));
-
-                // Prefer both attributes (D2L supports them) and inline styles (fallback).
-                dd.setAttribute('min-width', String(finalW));
-                dd.setAttribute('max-width', String(finalW));
-                dd.style.setProperty('min-width', finalW + 'px', 'important');
-                dd.style.setProperty('width', finalW + 'px', 'important');
-                dd.style.setProperty('max-width', finalW + 'px', 'important');
-                dd.style.setProperty('box-sizing', 'border-box', 'important');
-                dd.style.setProperty('overflow-x', 'hidden', 'important');
-
-                function clampDropdownPositionWithinViewport() {
-                    try {
-                        var r = dd.getBoundingClientRect();
-                        if (r && r.right > window.innerWidth - margin) {
-                            dd.style.setProperty('right', margin + 'px', 'important');
-                            dd.style.setProperty('left', 'auto', 'important');
-                        }
-                    } catch (e0) { }
-                    try {
-                        var r2 = dd.getBoundingClientRect();
-                        if (r2 && r2.left < margin) {
-                            dd.style.setProperty('left', margin + 'px', 'important');
-                            dd.style.setProperty('right', 'auto', 'important');
-                        }
-                    } catch (e1) { }
-                }
-
-                function freezeAdminToolsPanelHeight() {
-                    try {
-                        var csCA = null;
-                        try { csCA = getComputedStyle(contentArea); } catch (e2) { }
-                        var padT = csCA ? (parseFloat(csCA.paddingTop) || 0) : 0;
-                        var padB = csCA ? (parseFloat(csCA.paddingBottom) || 0) : 0;
-                        var areaW = 0;
-                        try { areaW = Math.max(420, Math.floor(contentArea.getBoundingClientRect().width || 0)); } catch (e3) { areaW = 420; }
-
-                        var maxPanelH = 0;
-                        Object.keys(panels).forEach(function (id) {
-                            var p = panels[id];
-                            if (!p) return;
-
-                            var prev = {
-                                display: p.style.display,
-                                position: p.style.position,
-                                visibility: p.style.visibility,
-                                left: p.style.left,
-                                top: p.style.top,
-                                width: p.style.width
-                            };
-
-                            var needsTemp = prev.display === 'none';
-                            if (needsTemp) {
-                                p.style.display = 'block';
-                                p.style.position = 'absolute';
-                                p.style.visibility = 'hidden';
-                                p.style.left = '-10000px';
-                                p.style.top = '0';
-                                p.style.width = areaW + 'px';
-                            }
-
-                            var h = 0;
-                            try { h = Math.ceil(p.getBoundingClientRect().height || 0); } catch (e4) { h = 0; }
-                            if (h > maxPanelH) maxPanelH = h;
-
-                            if (needsTemp) {
-                                p.style.display = prev.display;
-                                p.style.position = prev.position;
-                                p.style.visibility = prev.visibility;
-                                p.style.left = prev.left;
-                                p.style.top = prev.top;
-                                p.style.width = prev.width;
-                            }
-                        });
-
-                        var sidebarH = 0;
-                        try { sidebarH = Math.ceil(sidebar.getBoundingClientRect().height || 0); } catch (e5) { sidebarH = 0; }
-                        var targetH = Math.max(sidebarH, Math.ceil(padT + maxPanelH + padB));
-
-                        if (targetH > 0) {
-                            contentArea.style.setProperty('min-height', targetH + 'px', 'important');
-                            contentArea.style.setProperty('height', targetH + 'px', 'important');
-                            container.style.setProperty('min-height', targetH + 'px', 'important');
-                            container.style.setProperty('height', targetH + 'px', 'important');
-                        }
-                    } catch (e) { }
-                }
-
-                function patchDropdownShadowScrolling() {
-                    try {
-                        dd.style.setProperty('max-height', 'none', 'important');
-                        dd.style.setProperty('overflow-y', 'visible', 'important');
-                    } catch (e6) { }
-
-                    var sr = null;
-                    try { sr = dd.shadowRoot; } catch (e7) { sr = null; }
-                    if (!sr) return;
-
-                    // Hide scrollbars inside the dropdown shadow DOM (Firefox + Chromium).
-                    try {
-                        if (!sr.querySelector('#dtu-admin-tools-dd-scrollstyle')) {
-                            var st = document.createElement('style');
-                            st.id = 'dtu-admin-tools-dd-scrollstyle';
-                            st.textContent = ':host{max-height:none !important;overflow:visible !important;}'
-                                + '*{scrollbar-width:none !important;}'
-                                + '*::-webkit-scrollbar{width:0 !important;height:0 !important;}';
-                            sr.appendChild(st);
-                        }
-                    } catch (e8) { }
-
-                    try {
-                        var slot = sr.querySelector('slot');
-                        if (!slot) return;
-
-                        // Walk up from the <slot> and remove internal scroll constraints.
-                        var el = slot.parentElement;
-                        while (el) {
-                            var cs = null;
-                            try { cs = getComputedStyle(el); } catch (e9) { cs = null; }
-                            if (cs) {
-                                if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') {
-                                    el.style.setProperty('overflow-x', 'hidden', 'important');
-                                }
-                                if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') {
-                                    el.style.setProperty('overflow-y', 'visible', 'important');
-                                    el.style.setProperty('max-height', 'none', 'important');
-                                    el.style.setProperty('height', 'auto', 'important');
-                                }
-                                if (cs.maxHeight && cs.maxHeight !== 'none') {
-                                    el.style.setProperty('max-height', 'none', 'important');
-                                }
-                            }
-                            el = el.parentElement;
-                        }
-                    } catch (e10) { }
-                }
-
-                function finalizeAdminToolsDropdownLayout() {
-                    try { freezeAdminToolsPanelHeight(); } catch (e11) { }
-                    try { clampDropdownPositionWithinViewport(); } catch (e13) { }
-                }
-
-                // Shadow DOM patches are very invasive (modify dropdown internal elements).
-                // Defer them well past the initial render to avoid triggering Brightspace auto-close.
-                function deferredShadowPatches() {
-                    try { patchDropdownShadowScrolling(); } catch (e12) { }
-                    try { clampDropdownPositionWithinViewport(); } catch (e15) { }
-                }
-
-                try { requestAnimationFrame(finalizeAdminToolsDropdownLayout); } catch (e14) { setTimeout(finalizeAdminToolsDropdownLayout, 0); }
-                setTimeout(finalizeAdminToolsDropdownLayout, 80);
-                setTimeout(deferredShadowPatches, 400);
-            } catch (e) {
-                // ignore
-            }
-        }
-
         // Replace the old column content with the settings panel
         var heading = afterDarkCol.querySelector('h2');
         if (heading) heading.style.display = 'none';
@@ -17191,7 +16547,7 @@
     }
 
     // ===== API RATE LIMITING =====
-    // Per-user daily limit to protect the shared API key (resets each day)
+    // Per-user daily limit for transit API usage (resets each day)
     var DAILY_API_LIMIT = 200; // max API calls per user per day
     var API_CALLS_KEY = 'dtuDarkModeBusApiCalls';
     var API_QUOTA_KEY = 'dtuDarkModeBusQuotaExhausted';
@@ -17254,17 +16610,21 @@
     }
 
     // Get departures for a specific stop
-    async function getDepartures(stopId) {
-        if (isApiQuotaExhausted()) return [];
+    async function getDepartures(stopId, options) {
+        if (isApiQuotaExhausted()) return { departures: [], ok: false, reason: 'quota' };
         if (isDailyLimitReached()) {
             showQuotaExhaustedMessage('daily');
-            return [];
+            return { departures: [], ok: false, reason: 'daily_limit' };
         }
+        var maxJourneys = parseInt(options && options.maxJourneys, 10);
+        if (!Number.isFinite(maxJourneys) || maxJourneys <= 0) maxJourneys = 18;
         const url = REJSEPLANEN_API + '/departureBoard?accessId=' + encodeURIComponent(REJSEPLANEN_KEY)
-            + '&format=json&id=' + encodeURIComponent(stopId);
+            + '&format=json&id=' + encodeURIComponent(stopId)
+            + '&maxJourneys=' + encodeURIComponent(String(maxJourneys));
 
         var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
         var timeoutId = null;
+        if (controller) registerBusFetchController(controller);
         if (controller) {
             timeoutId = setTimeout(function () {
                 controller.abort();
@@ -17277,9 +16637,9 @@
             if (resp.status === 429 || resp.status === 403) {
                 setApiQuotaExhausted();
                 showQuotaExhaustedMessage('monthly');
-                return [];
+                return { departures: [], ok: false, reason: 'quota' };
             }
-            if (!resp.ok) return [];
+            if (!resp.ok) return { departures: [], ok: false, reason: 'http' };
             const data = await resp.json();
             const deps = data.DepartureBoard ? data.DepartureBoard.Departure : (data.Departure || []);
             const arr = !Array.isArray(deps) ? (deps ? [deps] : []) : deps;
@@ -17290,11 +16650,15 @@
                 }
             });
             incrementApiCount();
-            return arr;
+            return { departures: arr, ok: true, reason: 'ok' };
         } catch (e) {
-            return [];
+            if (e && e.name === 'AbortError') {
+                return { departures: [], ok: false, reason: 'aborted' };
+            }
+            return { departures: [], ok: false, reason: 'network' };
         } finally {
             if (timeoutId) clearTimeout(timeoutId);
+            if (controller) unregisterBusFetchController(controller);
         }
     }
 
@@ -17446,6 +16810,9 @@
         _busFetchInProgress = true;
         const allDeps = [];
         const seen = new Set();
+        var requestCount = 0;
+        var successCount = 0;
+        var errorCount = 0;
         // Track how many departures we have per line
         const lineCounts = {};
         config.lines.forEach(function (l) { lineCounts[l.line] = 0; });
@@ -17458,7 +16825,11 @@
             // Fetch stops one by one, stop early when we have enough
             for (var i = 0; i < config.stopIds.length; i++) {
                 if (hasEnough()) break;
-                var deps = await getDepartures(config.stopIds[i]);
+                var depResult = await getDepartures(config.stopIds[i]);
+                requestCount++;
+                if (depResult && depResult.ok) successCount++;
+                else if (depResult && (depResult.reason === 'http' || depResult.reason === 'network')) errorCount++;
+                var deps = depResult && Array.isArray(depResult.departures) ? depResult.departures : [];
                 deps.forEach(function (dep) {
                     var configLine = config.lines.find(function (l) { return l.line === dep.line; });
                     if (!configLine) return;
@@ -17487,9 +16858,10 @@
             }
         } catch (e) {
             // Silently fail
+        } finally {
+            _busFetchInProgress = false;
         }
-
-        _busFetchInProgress = false;
+        noteBusFetchOutcome({ requestCount: requestCount, successCount: successCount, errorCount: errorCount });
         allDeps.sort(function (a, b) { return (a.minutes || 999) - (b.minutes || 999); });
         return allDeps;
     }
@@ -17611,23 +16983,20 @@
         return 120000;                     // >15 min: every 2 min
     }
 
+    function getNextBusPollInterval(nowTs) {
+        var now = typeof nowTs === 'number' ? nowTs : Date.now();
+        return Math.max(getSmartPollInterval(), getBusBackoffRemainingMs(now));
+    }
+
     var _busPollingTimer = null;
 
     function startBusPolling() {
         stopBusPolling();
-        if (!isDTULearnHomepage() || !isBusEnabled()) return;
-        // Schedule next poll based on how soon the next bus is
-        var interval = getSmartPollInterval();
-        _busPollingTimer = setTimeout(async function pollCycle() {
+        if (!isDTULearnHomepage() || !isBusEnabled() || document.hidden) return;
+        var interval = getNextBusPollInterval();
+        _busPollingTimer = setTimeout(function () {
             if (document.hidden || !isDTULearnHomepage() || !isBusEnabled()) return;
-            if (!_busFetchInProgress) {
-                _lastBusFetch = Date.now();
-                _cachedDepartures = await fetchBusDepartures();
-                insertBusDisplay();
-            }
-            // Re-schedule with updated interval
-            var nextInterval = getSmartPollInterval();
-            _busPollingTimer = setTimeout(pollCycle, nextInterval);
+            updateBusDepartures();
         }, interval);
     }
 
@@ -17638,14 +17007,36 @@
         }
     }
 
+    function scheduleBusLeaseRetry(delayMs) {
+        var delay = (typeof delayMs === 'number' && delayMs > 0) ? delayMs : BUS_LEASE_WAIT_RETRY_MS;
+        stopBusPolling();
+        _busPollingTimer = setTimeout(function () {
+            if (document.hidden || !isDTULearnHomepage() || !isBusEnabled()) return;
+            updateBusDepartures();
+        }, delay);
+    }
+
     // Visibility API: pause when tab is hidden, resume when visible
     document.addEventListener('visibilitychange', function () {
         if (!IS_TOP_WINDOW) return;
         if (document.hidden) {
             stopBusPolling();
+            abortInFlightBusRequests();
         } else {
             // Tab became visible â€” do an immediate refresh then resume polling
             updateBusDepartures();
+        }
+    });
+
+    window.addEventListener('storage', function (event) {
+        if (!IS_TOP_WINDOW) return;
+        if (!event || event.key !== BUS_SHARED_CACHE_KEY) return;
+        if (!isDTULearnHomepage() || !isBusEnabled() || document.hidden) return;
+        var cfg = getBusConfig();
+        var sig = getBusConfigSignature(cfg);
+        if (consumeBusSharedCache(BUS_SHARED_CACHE_MAX_AGE_MS, sig)) {
+            insertBusDisplay();
+            startBusPolling();
         }
     });
 
@@ -17654,17 +17045,43 @@
         if (!IS_TOP_WINDOW) return;
         if (!isDTULearnHomepage() || !isBusEnabled()) {
             stopBusPolling();
+            abortInFlightBusRequests();
             insertBusDisplay();
             return;
         }
+        if (document.hidden) {
+            stopBusPolling();
+            abortInFlightBusRequests();
+            return;
+        }
         const config = getBusConfig();
-        if (!config) return;
+        if (!config) {
+            stopBusPolling();
+            return;
+        }
+        var configSig = getBusConfigSignature(config);
 
         const now = Date.now();
+        var consumedShared = consumeBusSharedCache(BUS_SHARED_CACHE_MAX_AGE_MS, configSig);
         var interval = getSmartPollInterval();
-        if (now - _lastBusFetch >= interval && !_busFetchInProgress) {
-            _lastBusFetch = now;
-            _cachedDepartures = await fetchBusDepartures();
+        var backoffRemaining = getBusBackoffRemainingMs(now);
+        if (!consumedShared && backoffRemaining <= 0 && now - _lastBusFetch >= interval && !_busFetchInProgress) {
+            if (tryAcquireBusFetchLease()) {
+                try {
+                    _lastBusFetch = now;
+                    _cachedDepartures = await fetchBusDepartures();
+                    saveBusSharedCache(_cachedDepartures, configSig);
+                } finally {
+                    releaseBusFetchLease();
+                }
+            } else {
+                var sharedApplied = consumeBusSharedCache(BUS_SHARED_CACHE_MAX_AGE_MS, configSig);
+                if (!sharedApplied) {
+                    insertBusDisplay();
+                    scheduleBusLeaseRetry(BUS_LEASE_WAIT_RETRY_MS);
+                    return;
+                }
+            }
         }
         insertBusDisplay();
         startBusPolling();
@@ -18007,7 +17424,8 @@
             // Fetch departures to discover directions
             var allDepartures = [];
             for (var si = 0; si < DTU_AREA_STOP_IDS.length; si++) {
-                var deps = await getDepartures(DTU_AREA_STOP_IDS[si]);
+                var depResult = await getDepartures(DTU_AREA_STOP_IDS[si], { maxJourneys: 40 });
+                var deps = depResult && Array.isArray(depResult.departures) ? depResult.departures : [];
                 for (var di = 0; di < deps.length; di++) allDepartures.push(deps[di]);
             }
 
@@ -18167,6 +17585,8 @@
                     updateBusDepartures();
                 }
             } else {
+                stopBusPolling();
+                abortInFlightBusRequests();
                 insertBusDisplay();
             }
         });
