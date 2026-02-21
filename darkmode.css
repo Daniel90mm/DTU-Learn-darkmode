@@ -42,8 +42,6 @@ d2l-labs-navigation-band a:hover {
   background: var(--dtu-ad-accent-deep-hover) !important;
 }
 
-.d2l-w2d-count,
-.d2l-w2d-heading-3-count,
 .d2l-count-badge-number {
   background-color: var(--dtu-ad-accent-deep) !important;
   background: var(--dtu-ad-accent-deep) !important;
@@ -52,10 +50,10 @@ d2l-labs-navigation-band a:hover {
 
 .d2l-w2d-count,
 .d2l-w2d-heading-3-count {
-  border-radius: 999px !important;
-  padding: 0 7px !important;
-  min-width: 18px !important;
-  text-align: center !important;
+  background-color: var(--dtu-ad-accent) !important;
+  background: var(--dtu-ad-accent) !important;
+  color: var(--dtu-ad-accent-on) !important;
+  border-color: var(--dtu-ad-accent) !important;
 }
 
 .d2l-count-badge-number {
@@ -1893,6 +1891,11 @@ button[aria-label^="Actions for Lecture 01, Quiz 1"] d2l-icon[icon="tier1:chevro
 .inverse {
   background-color: #2d2d2d !important;
   color: #e0e0e0 !important;
+}
+
+/* Remove the site's white border between .box and .inverse sections */
+.box .inverse {
+  border: none !important;
 }
 
 /* Tables */

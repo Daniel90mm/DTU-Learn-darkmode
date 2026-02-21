@@ -567,6 +567,30 @@
         return rgbToHex(rgb, fallbackHex || ACCENT_CUSTOM_DEFAULT);
     }
 
+    function relativeLuminanceFromRgb(rgb) {
+        if (!rgb) return 0;
+        function toLinear(v) {
+            var c = clampByte(v) / 255;
+            return c <= 0.04045 ? (c / 12.92) : Math.pow((c + 0.055) / 1.055, 2.4);
+        }
+        var r = toLinear(rgb.r);
+        var g = toLinear(rgb.g);
+        var b = toLinear(rgb.b);
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+
+    // Pick black/white foreground for best contrast on a given background hex.
+    function getContrastTextForHex(bgHex, lightText, darkText) {
+        var light = lightText || '#ffffff';
+        var dark = darkText || '#000000';
+        var rgb = parseHexColorToRgb(bgHex);
+        if (!rgb) return light;
+        var lum = relativeLuminanceFromRgb(rgb);
+        var contrastWithWhite = 1.05 / (lum + 0.05);
+        var contrastWithBlack = (lum + 0.05) / 0.05;
+        return contrastWithBlack >= contrastWithWhite ? dark : light;
+    }
+
     function hexToRgbTriplet(hex, fallbackTriplet) {
         var rgb = parseHexColorToRgb(hex);
         if (!rgb) return fallbackTriplet || '198,40,40';
@@ -612,10 +636,12 @@
     function applyAccentThemeVars(theme) {
         var root = document.documentElement;
         if (!root || !root.style || !theme) return;
+        var accentOn = getContrastTextForHex(theme.accent, '#ffffff', '#000000');
 
         root.style.setProperty('--dtu-ad-accent', theme.accent);
         root.style.setProperty('--dtu-ad-accent-hover', theme.accentHover);
         root.style.setProperty('--dtu-ad-accent-rgb', hexToRgbTriplet(theme.accent, '153,0,0'));
+        root.style.setProperty('--dtu-ad-accent-on', accentOn);
 
         root.style.setProperty('--dtu-ad-accent-deep', theme.accentDeep);
         root.style.setProperty('--dtu-ad-accent-deep-hover', theme.accentDeepHover || theme.accentHover);
@@ -1056,22 +1082,24 @@
 
         /* Count badges (DTU Learn) */
         .d2l-w2d-count,
-        .d2l-w2d-heading-3-count,
-        .d2l-count-badge-number,
-        .d2l-count-badge-number > div {
+        .d2l-w2d-heading-3-count {
+            background-color: var(--dtu-ad-accent) !important;
+            background: var(--dtu-ad-accent) !important;
+            color: var(--dtu-ad-accent-on) !important;
+            border-color: var(--dtu-ad-accent) !important;
+        }
+        .d2l-count-badge-number {
             background-color: var(--dtu-ad-accent-deep) !important;
             background: var(--dtu-ad-accent-deep) !important;
             color: #ffffff !important;
         }
-        .d2l-w2d-count,
-        .d2l-w2d-heading-3-count {
-            border-radius: 999px !important;
-            padding: 0 7px !important;
-            min-width: 18px !important;
-            text-align: center !important;
-        }
         .d2l-count-badge-number {
             border-color: #ffffff !important;
+        }
+        .d2l-count-badge-number > div {
+            background: transparent !important;
+            background-color: transparent !important;
+            color: #ffffff !important;
         }
 
         /* Announcement title text */
@@ -1248,7 +1276,12 @@
 
         /* Accent badges and announcement titles */
         .d2l-w2d-count,
-        .d2l-w2d-heading-3-count,
+        .d2l-w2d-heading-3-count {
+            background-color: var(--dtu-ad-accent) !important;
+            background: var(--dtu-ad-accent) !important;
+            color: var(--dtu-ad-accent-on) !important;
+            border-color: var(--dtu-ad-accent) !important;
+        }
         .d2l-count-badge-number {
             background-color: var(--dtu-ad-accent-deep) !important;
             background: var(--dtu-ad-accent-deep) !important;
@@ -1557,7 +1590,13 @@
 
         /* Accent badges/text that should remain highlighted */
         .d2l-w2d-count,
-        .d2l-w2d-heading-3-count,
+        .d2l-w2d-heading-3-count {
+            background-color: var(--dtu-ad-accent) !important;
+            background: var(--dtu-ad-accent) !important;
+            background-image: none !important;
+            color: var(--dtu-ad-accent-on) !important;
+            border-color: var(--dtu-ad-accent) !important;
+        }
         .d2l-count-badge-number {
             background-color: var(--dtu-ad-accent-deep) !important;
             background: var(--dtu-ad-accent-deep) !important;
@@ -1659,7 +1698,13 @@
 
         /* Accent badges/text that should remain highlighted */
         .d2l-w2d-count,
-        .d2l-w2d-heading-3-count,
+        .d2l-w2d-heading-3-count {
+            background-color: var(--dtu-ad-accent) !important;
+            background: var(--dtu-ad-accent) !important;
+            background-image: none !important;
+            color: var(--dtu-ad-accent-on) !important;
+            border-color: var(--dtu-ad-accent) !important;
+        }
         .d2l-count-badge-number {
             background-color: var(--dtu-ad-accent-deep) !important;
             background: var(--dtu-ad-accent-deep) !important;
@@ -1711,23 +1756,14 @@
             color: ${DARK_TEXT} !important;
         }
 
-        /* W2D count badge */
+        /* Count badge used in the top navigation */
         .d2l-w2d-count,
         .d2l-w2d-heading-3-count {
-            background-color: var(--dtu-ad-accent-deep) !important;
-            background: var(--dtu-ad-accent-deep) !important;
-            background-image: none !important;
-            color: #ffffff !important;
-            border-radius: 999px !important;
-            padding: 0 7px !important;
-            min-width: 18px !important;
-            text-align: center !important;
-            border: 0 !important;
-            outline: 0 !important;
-            box-shadow: none !important;
+            background-color: var(--dtu-ad-accent) !important;
+            background: var(--dtu-ad-accent) !important;
+            color: var(--dtu-ad-accent-on) !important;
+            border-color: var(--dtu-ad-accent) !important;
         }
-
-        /* Count badge used in the top navigation */
         .d2l-count-badge-number {
             background-color: var(--dtu-ad-accent-deep) !important;
             background: var(--dtu-ad-accent-deep) !important;
@@ -1741,14 +1777,15 @@
         }
     `;
 
-    // Light-mode accent badge styles -- injected into shadow roots even when dark mode is OFF
-    // so that the user's chosen accent color replaces the default Brightspace red.
+    // Light-mode accent top-nav badge styles -- injected into shadow roots even when dark mode is OFF
+    // so that the user's chosen accent color replaces the default Brightspace red where we still theme badges.
     const lightAccentBadgeStyles = `
         .d2l-w2d-count,
         .d2l-w2d-heading-3-count {
-            background-color: var(--dtu-ad-accent-deep) !important;
-            background: var(--dtu-ad-accent-deep) !important;
-            color: #ffffff !important;
+            background-color: var(--dtu-ad-accent) !important;
+            background: var(--dtu-ad-accent) !important;
+            color: var(--dtu-ad-accent-on) !important;
+            border-color: var(--dtu-ad-accent) !important;
         }
         .d2l-count-badge-number {
             background-color: var(--dtu-ad-accent-deep) !important;
@@ -2817,7 +2854,17 @@
         // We set these inline with !important because applyDarkStyle() also writes inline !important.
         try {
             var badgeBg = darkModeEnabled ? 'var(--dtu-ad-accent)' : 'var(--dtu-ad-accent-deep)';
-            root.querySelectorAll('.d2l-w2d-count, .d2l-w2d-heading-3-count, .d2l-count-badge-number').forEach(function (el) {
+            var w2dBadgeBg = getResolvedAccent();
+            var w2dBadgeText = getContrastTextForHex(w2dBadgeBg, '#ffffff', '#000000');
+            root.querySelectorAll('.d2l-w2d-count, .d2l-w2d-heading-3-count').forEach(function (el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background', w2dBadgeBg, 'important');
+                el.style.setProperty('background-color', w2dBadgeBg, 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+                el.style.setProperty('color', w2dBadgeText, 'important');
+                el.style.setProperty('border-color', w2dBadgeBg, 'important');
+            });
+            root.querySelectorAll('.d2l-count-badge-number').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', badgeBg, 'important');
                 el.style.setProperty('background-color', badgeBg, 'important');
@@ -22250,9 +22297,10 @@
     function findStudyplanSemesterNumberForTable(table) {
         if (!table) return null;
         var cached = table.getAttribute('data-dtu-semester-num');
-        if (cached) {
+        if (cached !== null) {
+            // '' means previously scanned and not found; any other string is the number.
             var cachedNum = parseInt(cached, 10);
-            if (!isNaN(cachedNum)) return cachedNum;
+            return isNaN(cachedNum) ? null : cachedNum;
         }
 
         var found = null;
@@ -22276,6 +22324,60 @@
         }
 
         table.setAttribute('data-dtu-semester-num', found === null ? '' : String(found));
+        return found;
+    }
+
+    // Parse "1 September 2025 - 31 August 2026" date ranges from "Year of study" headers.
+    function parseStudyplanYearDateRange(text) {
+        var norm = normalizeExamClusterText(text);
+        var monthValues = {
+            january:0, february:1, march:2, april:3, may:4, june:5,
+            july:6, august:7, september:8, october:9, november:10, december:11,
+            januar:0, februar:1, marts:2, maj:4, juni:5, juli:6, oktober:9
+        };
+        var m = norm.match(/(\d{1,2})\s+([a-z]+)\s+(20\d{2})\s*[-\u2013]\s*(\d{1,2})\s+([a-z]+)\s+(20\d{2})/i);
+        if (!m) return null;
+        var sm = monthValues[m[2].toLowerCase()];
+        var em = monthValues[m[5].toLowerCase()];
+        if (sm === undefined || em === undefined) return null;
+        var startTs = Date.UTC(parseInt(m[3], 10), sm, parseInt(m[1], 10));
+        var endTs = Date.UTC(parseInt(m[6], 10), em, parseInt(m[4], 10) + 1); // +1: exclusive end
+        if (isNaN(startTs) || isNaN(endTs) || endTs <= startTs) return null;
+        return { startTs: startTs, endTs: endTs };
+    }
+
+    // Walk up the DOM from a table to find its "Year of study" section header date range.
+    // Cached on the element to avoid repeated DOM walks.
+    function findStudyplanYearDateRangeForTable(table) {
+        if (!table) return null;
+        var cached = table.getAttribute('data-dtu-year-range');
+        if (cached !== null) {
+            if (!cached) return null;
+            try { return JSON.parse(cached); } catch (e) { return null; }
+        }
+        var found = null;
+        var scope = table;
+        for (var up = 0; scope && up < 10 && !found; up++) {
+            var prev = scope.previousElementSibling;
+            var hops = 0;
+            while (prev && hops < 24 && !found) {
+                var txt = normalizeExamClusterText(prev.textContent || '');
+                if (txt && txt.length <= 300 && /(year of study|studie.r)/i.test(txt)) {
+                    found = parseStudyplanYearDateRange(txt);
+                    if (!found) {
+                        // Try headings inside the element
+                        var heads = prev.querySelectorAll('h1,h2,h3,h4,h5,h6,b,strong');
+                        for (var hi = 0; hi < heads.length && !found; hi++) {
+                            found = parseStudyplanYearDateRange(normalizeExamClusterText(heads[hi].textContent || ''));
+                        }
+                    }
+                }
+                prev = prev.previousElementSibling;
+                hops++;
+            }
+            scope = scope.parentElement;
+        }
+        table.setAttribute('data-dtu-year-range', found ? JSON.stringify(found) : '');
         return found;
     }
 
@@ -22351,19 +22453,34 @@
 
         if (!candidateTables.length) return [];
 
-        var maxSemester = null;
+        // Primary filter: narrow to the "Year of study" section that contains today.
+        // The page shows explicit date ranges like "1 September 2025 - 31 August 2026" in
+        // section headers. This anchors us to the student's current academic year and prevents
+        // future semesters (years 4-8 of an 8-year plan) from being selected.
+        var currentYearCandidates = candidateTables.filter(function (c) {
+            var yr = findStudyplanYearDateRangeForTable(c.table);
+            return yr && todayTs >= yr.startTs && todayTs < yr.endTs;
+        });
+        if (currentYearCandidates.length) {
+            candidateTables = currentYearCandidates;
+        }
+
+        // Secondary filter: pick the EARLIEST (lowest-numbered) term within the (now narrowed)
+        // candidate list. Within the current academic year the earliest term is the student's
+        // current active term. This is also the safe fallback if the year-header parse above fails.
+        var minSemester = null;
         candidateTables.forEach(function (c) {
             if (typeof c.semesterNum === 'number' && isFinite(c.semesterNum)) {
-                if (maxSemester === null || c.semesterNum > maxSemester) maxSemester = c.semesterNum;
+                if (minSemester === null || c.semesterNum < minSemester) minSemester = c.semesterNum;
             }
         });
 
         var selectedTables;
-        if (maxSemester === null) {
-            selectedTables = [candidateTables[candidateTables.length - 1].table];
+        if (minSemester === null) {
+            selectedTables = [candidateTables[0].table];
         } else {
             selectedTables = candidateTables
-                .filter(function (c) { return c.semesterNum === maxSemester; })
+                .filter(function (c) { return c.semesterNum === minSemester; })
                 .map(function (c) { return c.table; });
         }
 
@@ -23556,6 +23673,8 @@
         if (window.location.hostname !== 'learn.inside.dtu.dk') return;
 
         var badgeBg = darkModeEnabled ? 'var(--dtu-ad-accent)' : 'var(--dtu-ad-accent-deep)';
+        var w2dBadgeBg = getResolvedAccent();
+        var w2dBadgeText = getContrastTextForHex(w2dBadgeBg, '#ffffff', '#000000');
         var dark1 = '#1a1a1a';
 
         function hasAccessibilityWasLink(container) {
@@ -23594,18 +23713,11 @@
         try {
             root.querySelectorAll('.d2l-w2d-count, .d2l-w2d-heading-3-count').forEach(function (el) {
                 if (!el || !el.style) return;
-                el.style.setProperty('background', badgeBg, 'important');
-                el.style.setProperty('background-color', badgeBg, 'important');
+                el.style.setProperty('background', w2dBadgeBg, 'important');
+                el.style.setProperty('background-color', w2dBadgeBg, 'important');
                 el.style.setProperty('background-image', 'none', 'important');
-                el.style.setProperty('color', '#ffffff', 'important');
-                el.style.setProperty('border-radius', '999px', 'important');
-                el.style.setProperty('padding', '0 7px', 'important');
-                el.style.setProperty('min-width', '18px', 'important');
-                el.style.setProperty('text-align', 'center', 'important');
-                // Brightspace sometimes applies inset borders/shadows that show as a "ring".
-                el.style.setProperty('border', '0', 'important');
-                el.style.setProperty('outline', '0', 'important');
-                el.style.setProperty('box-shadow', 'none', 'important');
+                el.style.setProperty('color', w2dBadgeText, 'important');
+                el.style.setProperty('border-color', w2dBadgeBg, 'important');
             });
             root.querySelectorAll('.d2l-count-badge-number').forEach(function (el) {
                 if (!el || !el.style) return;
@@ -23614,6 +23726,8 @@
                 el.style.setProperty('background-image', 'none', 'important');
                 el.style.setProperty('color', '#ffffff', 'important');
                 el.style.setProperty('border-color', '#ffffff', 'important');
+                // Brightspace sometimes applies inset borders/shadows that show as a "ring".
+                el.style.setProperty('border', '0', 'important');
                 el.style.setProperty('outline', '0', 'important');
                 el.style.setProperty('box-shadow', 'none', 'important');
             });
