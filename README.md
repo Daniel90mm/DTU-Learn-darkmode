@@ -66,6 +66,7 @@ DTU After Dark is a comprehensive browser extension that upgrades the DTU digita
 - **Lessons Sidebar Contrast:** DTU Learn TOC module triangle, title/text rail surfaces, and related utility icons are pinned to dark 1 for clearer readability.
 - **Accessibility Widget Contrast (DTU Learn):** The widget content block that contains the `Accessibility` (`/was`) link is forced to dark 1 background while keeping normal text/link colors.
 - **Assignments Action Bar Contrast:** DTU Learn assignment action-bar containers stay dark 1, and action buttons (for example `View History`) follow the selected accent color.
+- **DTU Learn W2D Badge Contrast:** Homepage work-to-do count badges (`.d2l-w2d-count` / `.d2l-w2d-heading-3-count`) use the selected accent for background/border and automatically switch the number text between black/white for readable contrast.
 - **Feature Toggles:** Most tools can be enabled/disabled from the DTU Learn homepage via `Settings` (nav bar button, also available from the gear menu).
 - **Navigation Quick Links (DTU Learn, toggleable):** Adds Panopto (and CampusNet) shortcuts into the top navigation dropdowns.
 - **Course Card Content Shortcut:** Hover-revealed Content shortcut button on DTU Learn course cards (toggleable).
