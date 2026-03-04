@@ -45,7 +45,7 @@
         localStorage.setItem(DARK_MODE_KEY, String(enabled));
         try {
             if (location.hostname.endsWith('.dtu.dk')) {
-                document.cookie = 'dtuDarkMode=' + enabled + '; domain=.dtu.dk; path=/; max-age=31536000; SameSite=Lax';
+                document.cookie = 'dtuDarkMode=' + enabled + '; domain=.dtu.dk; path=/; max-age=31536000; SameSite=Lax; Secure';
             }
         } catch (e) { /* cookie access blocked */ }
         var storage = getExtensionStorageArea();
@@ -207,7 +207,7 @@
         localStorage.setItem(DARK_MODE_KEY, String(storedEnabled));
         try {
             if (location.hostname.endsWith('.dtu.dk')) {
-                document.cookie = 'dtuDarkMode=' + storedEnabled + '; domain=.dtu.dk; path=/; max-age=31536000; SameSite=Lax';
+                document.cookie = 'dtuDarkMode=' + storedEnabled + '; domain=.dtu.dk; path=/; max-age=31536000; SameSite=Lax; Secure';
             }
         } catch (e) { }
         if (storedEnabled !== darkModeEnabled && window === window.top) {
@@ -270,6 +270,7 @@
     const FEATURE_KURSER_ROOM_FINDER_KEY = 'dtuAfterDarkFeatureKurserRoomFinder';
     const FEATURE_KURSER_SCHEDULE_ANNOTATION_KEY = 'dtuAfterDarkFeatureKurserScheduleAnnotation';
     const FEATURE_KURSER_MYLINE_BADGES_KEY = 'dtuAfterDarkFeatureKurserMyLineBadges';
+
     const FEATURE_SMART_ROOM_LINKER_KEY = 'dtuAfterDarkFeatureSmartRoomLinker';
     const FEATURE_LEARN_NAV_RESOURCE_LINKS_KEY = 'dtuAfterDarkFeatureLearnNavResourceLinks';
     const FEATURE_PARTICIPANT_INTEL_KEY = 'dtuAfterDarkFeatureParticipantIntel';
@@ -296,6 +297,7 @@
         [FEATURE_KURSER_ROOM_FINDER_KEY]: true,
         [FEATURE_KURSER_SCHEDULE_ANNOTATION_KEY]: true,
         [FEATURE_KURSER_MYLINE_BADGES_KEY]: true,
+
         [FEATURE_SMART_ROOM_LINKER_KEY]: true,
         [FEATURE_LEARN_NAV_RESOURCE_LINKS_KEY]: true,
         [FEATURE_PARTICIPANT_INTEL_KEY]: true,
@@ -924,10 +926,32 @@
 
     // CSS to inject into shadow roots
     const shadowDOMStyles = `
-        /* Override all backgrounds to dark */
+        /* Keep readable text in shadow roots without forcing every background to dark */
         * {
-            background-color: ${DARK_BG} !important;
             color: ${DARK_TEXT} !important;
+        }
+
+        /* Keep notification indicator accent-colored (do not let wildcard dark fill override it). */
+        .d2l-labs-navigation-notification-icon-indicator {
+            background-color: var(--dtu-ad-accent) !important;
+            background: var(--dtu-ad-accent) !important;
+            background-image: none !important;
+        }
+
+        /* Keep notification bell icon background transparent. */
+        d2l-icon[icon="tier3:notification-bell"],
+        d2l-icon[icon="tier3:notification-bell"] * {
+            background-color: transparent !important;
+            background: transparent !important;
+            background-image: none !important;
+        }
+
+        /* Keep notification icon component surfaces transparent. */
+        d2l-labs-navigation-notification-icon,
+        d2l-labs-navigation-notification-icon * {
+            background-color: transparent !important;
+            background: transparent !important;
+            background-image: none !important;
         }
 
         /* Card elements */
@@ -1055,7 +1079,9 @@
         .d2l-floating-buttons-container,
         .d2l-floating-buttons,
         .d2l-floating-buttons-inner-container {
+            background: #1a1a1a !important;
             background-color: #1a1a1a !important;
+            background-image: none !important;
             color: ${DARK_TEXT} !important;
         }
 
@@ -1078,6 +1104,41 @@
         d2l-labs-navigation-band a:hover {
             background-color: var(--dtu-ad-accent-deep-hover) !important;
             background: var(--dtu-ad-accent-deep-hover) !important;
+        }
+
+        /* DTU Learn mobile navigation drawer */
+        .d2l-navigation-s-mobile-menu,
+        .d2l-navigation-s-mobile-menu-mask,
+        .d2l-navigation-s-mobile-menu-content,
+        .d2l-navigation-s-mobile-menu-nav,
+        .d2l-navigation-s-mobile-menu-course-menu {
+            background: #1a1a1a !important;
+            background-color: #1a1a1a !important;
+            background-image: none !important;
+            color: ${DARK_TEXT} !important;
+        }
+
+        .d2l-navigation-s-mobile-menu-mask-close,
+        .d2l-navigation-s-mobile-menu-color-strip,
+        .d2l-navigation-s-mobile-menu-header,
+        .d2l-navigation-s-mobile-menu-header > div,
+        .d2l-navigation-s-mobile-menu-branded-header,
+        .d2l-navigation-s-mobile-menu-branded-header > div,
+        .d2l-navigation-s-mobile-menu-course-selector,
+        .d2l-navigation-s-mobile-menu-header-course-menu,
+        .d2l-navigation-s-gutter,
+        .d2l-navigation-s-header-logo-area,
+        .d2l-navigation-s-header-no-home-icon,
+        .d2l-navigation-s-logo-divider,
+        .d2l-navigation-s-mobile-menu d2l-button-icon,
+        .d2l-navigation-s-mobile-menu d2l-labs-navigation-button-icon,
+        .d2l-navigation-s-mobile-menu d2l-labs-navigation-separator,
+        .d2l-navigation-s-mobile-menu d2l-menu-item-separator {
+            background: #2d2d2d !important;
+            background-color: #2d2d2d !important;
+            background-image: none !important;
+            color: ${DARK_TEXT} !important;
+            border-color: ${DARK_BORDER} !important;
         }
 
         /* Count badges (DTU Learn) */
@@ -1481,6 +1542,18 @@
         }
         a.dtu-dark-content-btn:hover {
             background-color: rgba(0, 0, 0, 0.85) !important;
+        }
+        a.dtu-dark-content-btn .dtu-content-shortcut-icon {
+            width: 20px !important;
+            height: 20px !important;
+            display: block !important;
+            color: currentColor !important;
+            fill: none !important;
+            stroke: currentColor !important;
+            stroke-width: 1.8 !important;
+            stroke-linecap: round !important;
+            stroke-linejoin: round !important;
+            pointer-events: none !important;
         }
     `;
 
@@ -2605,9 +2678,147 @@
         } catch (e1) { }
     }
 
+    function disableLegacyLessonsSidebarGradient(root) {
+        if (!darkModeEnabled) return;
+        if (window.location.hostname !== 'learn.inside.dtu.dk') return;
+        if (!root) return;
+
+        var scope = root;
+        if (scope.nodeType !== 1 && scope.nodeType !== 9 && scope.nodeType !== 11) return;
+
+        var separatorSelector = '.d2l-box.d2l-box-h.d2l-twopanelselector-side.d2l-twopanelselector-side-sep, '
+            + '.d2l-twopanelselector-side.d2l-twopanelselector-side-sep, '
+            + '.d2l-twopanelselector-side-bg.d2l-twopanelselector-side-sep, '
+            + '#D2L_LE_Content_Dashboard_Collapsed_Separator';
+
+        var selectedAnchorSelector = '#ContentModuleTree #D2L_LE_Content_TreeBrowser .d2l-le-TreeAccordionItem.d2l-le-TreeAccordionItem-Selected > a.d2l-le-TreeAccordionItem-anchor, '
+            + '#ContentModuleTree #ContentPluginTree .d2l-le-TreeAccordionItem.d2l-le-TreeAccordionItem-Selected > a.d2l-le-TreeAccordionItem-anchor';
+
+        function neutralizeSeparator(el) {
+            if (!el || !el.style) return;
+            el.style.setProperty('border-right', 'none', 'important');
+            el.style.setProperty('background', '#1a1a1a', 'important');
+            el.style.setProperty('background-color', '#1a1a1a', 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+            el.style.setProperty('box-shadow', 'none', 'important');
+            // If Brightspace keeps using CSS variables for the gradient/border, force them dark.
+            el.style.setProperty('--d2l-color-regolith', '#1a1a1a', 'important');
+            el.style.setProperty('--d2l-color-gypsum', '#1a1a1a', 'important');
+        }
+
+        function neutralizeSelectedAnchor(el) {
+            if (!el || !el.style) return;
+            // Clip the platform ::before stripe and keep selected rows on dark 2.
+            el.style.setProperty('position', 'relative', 'important');
+            el.style.setProperty('overflow', 'hidden', 'important');
+            el.style.setProperty('background', '#2d2d2d', 'important');
+            el.style.setProperty('background-color', '#2d2d2d', 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+            el.style.setProperty('box-shadow', 'none', 'important');
+        }
+
+        try {
+            if (scope.matches && scope.matches(separatorSelector)) {
+                neutralizeSeparator(scope);
+            }
+            if (scope.matches && scope.matches(selectedAnchorSelector)) {
+                neutralizeSelectedAnchor(scope);
+            }
+        } catch (e0) { }
+
+        if (!scope.querySelectorAll) return;
+        try {
+            scope.querySelectorAll(separatorSelector).forEach(neutralizeSeparator);
+            scope.querySelectorAll(selectedAnchorSelector).forEach(neutralizeSelectedAnchor);
+        } catch (e1) { }
+    }
+
+    function isWithinNotificationIconComponent(el) {
+        if (!el) return false;
+        var probe = el;
+        var hops = 0;
+        while (probe && hops < 8) {
+            try {
+                if (probe.matches && probe.matches('d2l-labs-navigation-notification-icon')) return true;
+                if (probe.closest && probe.closest('d2l-labs-navigation-notification-icon')) return true;
+            } catch (e0) { }
+            var root = null;
+            try { root = probe.getRootNode ? probe.getRootNode() : null; } catch (e1) { root = null; }
+            if (!root || !root.host) break;
+            probe = root.host;
+            hops++;
+        }
+        return false;
+    }
+
+    function isStudyplanModalBackgroundExemptElement(el) {
+        if (!el) return false;
+        if (window.location.hostname !== 'studieplan.dtu.dk') return false;
+        try {
+            if (el.id === 'searchCourseCatalogDialog' || el.id === 'createActivity') return true;
+            if (el.closest && el.closest('#searchCourseCatalogDialog, #createActivity')) return true;
+        } catch (e0) { }
+        return false;
+    }
+
+    function clearStudyplanModalInlineDarkBackgrounds(rootNode) {
+        if (!IS_TOP_WINDOW) return;
+        if (window.location.hostname !== 'studieplan.dtu.dk') return;
+        var scope = (rootNode && rootNode.querySelectorAll) ? rootNode : document;
+        var selectors = [
+            '#searchCourseCatalogDialog',
+            '#searchCourseCatalogDialog .modal-dialog',
+            '#searchCourseCatalogDialog .modal-content',
+            '#searchCourseCatalogDialog .modal-header',
+            '#searchCourseCatalogDialog .modal-body',
+            '#searchCourseCatalogDialog .modal-footer',
+            '#createActivity',
+            '#createActivity .modal-dialog',
+            '#createActivity .modal-content',
+            '#createActivity .modal-header',
+            '#createActivity .modal-body',
+            '#createActivity .modal-footer'
+        ];
+
+        selectors.forEach(function (selector) {
+            var nodes = [];
+            try { nodes = Array.from(scope.querySelectorAll(selector)); } catch (e1) { nodes = []; }
+            nodes.forEach(function (el) {
+                if (!el || !el.style) return;
+                el.style.removeProperty('background');
+                el.style.removeProperty('background-color');
+                el.style.removeProperty('background-image');
+            });
+        });
+    }
+
     // Function to apply darkest style to an element (#1a1a1a)
     function applyDarkStyle(el) {
         if (!el || !el.style) return;
+        if (isStudyplanModalBackgroundExemptElement(el)) return;
+        // DTU Learn top-nav notifications: preserve bell transparency and accent indicator.
+        if (window.location.hostname === 'learn.inside.dtu.dk' && el.matches) {
+            try {
+                if (el.matches('.d2l-labs-navigation-notification-icon-indicator')) {
+                    el.style.setProperty('background', 'var(--dtu-ad-accent)', 'important');
+                    el.style.setProperty('background-color', 'var(--dtu-ad-accent)', 'important');
+                    el.style.setProperty('background-image', 'none', 'important');
+                    return;
+                }
+                if (el.matches('d2l-icon[icon="tier3:notification-bell"], d2l-icon[icon="tier3:notification-bell"] *')) {
+                    el.style.setProperty('background', 'transparent', 'important');
+                    el.style.setProperty('background-color', 'transparent', 'important');
+                    el.style.setProperty('background-image', 'none', 'important');
+                    return;
+                }
+                if (isWithinNotificationIconComponent(el)) {
+                    el.style.setProperty('background', 'transparent', 'important');
+                    el.style.setProperty('background-color', 'transparent', 'important');
+                    el.style.setProperty('background-image', 'none', 'important');
+                    return;
+                }
+            } catch (eBell0) { }
+        }
         // CampusNet top-right nav icon stacks (heart/user): keep layers transparent.
         // Global darkening can otherwise paint dark bands across the accent circle.
         if (window.location.hostname === 'campusnet.dtu.dk' && el.matches) {
@@ -2672,6 +2883,30 @@
     // Function to apply lighter dark style to an element (#2d2d2d)
     function applyLighterDarkStyle(el) {
         if (!el || !el.style) return;
+        if (isStudyplanModalBackgroundExemptElement(el)) return;
+        // DTU Learn top-nav notifications: preserve bell transparency and accent indicator.
+        if (window.location.hostname === 'learn.inside.dtu.dk' && el.matches) {
+            try {
+                if (el.matches('.d2l-labs-navigation-notification-icon-indicator')) {
+                    el.style.setProperty('background', 'var(--dtu-ad-accent)', 'important');
+                    el.style.setProperty('background-color', 'var(--dtu-ad-accent)', 'important');
+                    el.style.setProperty('background-image', 'none', 'important');
+                    return;
+                }
+                if (el.matches('d2l-icon[icon="tier3:notification-bell"], d2l-icon[icon="tier3:notification-bell"] *')) {
+                    el.style.setProperty('background', 'transparent', 'important');
+                    el.style.setProperty('background-color', 'transparent', 'important');
+                    el.style.setProperty('background-image', 'none', 'important');
+                    return;
+                }
+                if (isWithinNotificationIconComponent(el)) {
+                    el.style.setProperty('background', 'transparent', 'important');
+                    el.style.setProperty('background-color', 'transparent', 'important');
+                    el.style.setProperty('background-image', 'none', 'important');
+                    return;
+                }
+            } catch (eBell1) { }
+        }
         // CampusNet top-right nav icon stacks (heart/user): keep layers transparent.
         // Global darkening can otherwise paint dark bands across the accent circle.
         if (window.location.hostname === 'campusnet.dtu.dk' && el.matches) {
@@ -2839,6 +3074,11 @@
             forceD2LActionButtonsDark1(document);
             if (root !== document) forceD2LActionButtonsDark1(root);
         } catch (eAction) { }
+        // DTU Learn legacy content sidebar: remove Brightspace separator/selected gradients.
+        try {
+            disableLegacyLessonsSidebarGradient(document);
+            if (root !== document) disableLegacyLessonsSidebarGradient(root);
+        } catch (eLegacySidebar) { }
 
         // Force white text on nav dropdown (Courses/Groups/Shortcuts menu)
         root.querySelectorAll('.nav__dropdown, article.nav__dropdown').forEach(dropdown => {
@@ -2901,6 +3141,9 @@
                     try {
                         forceD2LActionButtonsDark1(el);
                     } catch (eActionAttr) { }
+                    try {
+                        disableLegacyLessonsSidebarGradient(el);
+                    } catch (eLegacySidebarAttr) { }
                     // Check lighter dark selectors first (they take priority)
                     if (el.matches && el.matches(LIGHTER_DARK_SELECTORS)) {
                         applyLighterDarkStyle(el);
@@ -2919,6 +3162,9 @@
                             try {
                                 forceD2LActionButtonsDark1(node);
                             } catch (eActionNode) { }
+                            try {
+                                disableLegacyLessonsSidebarGradient(node);
+                            } catch (eLegacySidebarNode) { }
                             // Apply dark first, then lighter (lighter wins)
                             if (node.matches && node.matches(DARK_SELECTORS)) {
                                 applyDarkStyle(node);
@@ -2934,6 +3180,7 @@
                                 lighterDescendants.forEach(applyLighterDarkStyle);
                                 forceLessonsTocDark1(node);
                                 forceD2LActionButtonsDark1(node);
+                                disableLegacyLessonsSidebarGradient(node);
                             }
                         }
                     });
@@ -3008,6 +3255,7 @@
     // Function to find and inject into all shadow roots
     function processElement(element) {
         if (!element || element.nodeType !== 1) return;
+        if (!shouldUseBrightspaceShadowDomProcessing()) return;
 
         // Skip if inside PDF viewer
         if (isInsideExcludedContainer(element)) {
@@ -3041,6 +3289,7 @@
 
     function sweepForLateShadowRoots(root) {
         if (!darkModeEnabled) return;
+        if (!shouldUseBrightspaceShadowDomProcessing()) return;
         var baseRoot = root && root.nodeType === 1 ? root : (document.body || document.documentElement);
         if (!baseRoot) return;
 
@@ -3140,7 +3389,9 @@
     if (darkModeEnabled) {
         async function initialize() {
             await waitForCustomElements();
-            processElement(document.body);
+            if (shouldUseBrightspaceShadowDomProcessing()) {
+                processElement(document.body);
+            }
         }
 
         if (document.readyState === 'loading') {
@@ -3214,6 +3465,10 @@
     }
 
     function replaceLogoImage(rootNode) {
+        // Keep student.dtu.dk native identity/logo SVG untouched.
+        // The student portal header uses its own branded inline SVG sprite.
+        if (window.location.hostname === 'student.dtu.dk') return;
+
         const newSrc = getAccentLogoSrc();
 
         function replaceHostLogosInRoot(root) {
@@ -4615,61 +4870,56 @@
     }
 
     // ===== FIRST-TIME ONBOARDING HINT =====
-    // Show a hint pointing to the gear icon for the first 3 homepage visits
+    // Show a one-time hint pointing to the Settings entry point on first Learn homepage visit.
     function showOnboardingHint() {
         if (!IS_TOP_WINDOW) return;
-        // Only show on DTU Learn homepage where the gear icon lives
         if (!isDTULearnHomepage()) return;
+        if (document.querySelector('#dtu-dark-hint')) return;
 
-        var HINT_COUNT_KEY = 'dtuDarkModeHintCount';
-        var hintCount = parseInt(localStorage.getItem(HINT_COUNT_KEY) || '0', 10);
-        if (hintCount >= 3) return;
+        var HINT_SEEN_KEY = 'dtuDarkModeOnboardingHintSeenV2';
+        if (localStorage.getItem(HINT_SEEN_KEY) === '1') return;
 
-        // Find the gear button before incrementing counter
-        var gearBtn = document.querySelector('button[aria-label="Admin Tools"]');
-        if (!gearBtn) {
-            // Fallback: search shadow DOM for the gear icon
-            function findGearIcon(root) {
-                if (!root) return null;
-                var icon = root.querySelector('d2l-icon[icon="tier3:gear"]');
-                if (icon) return icon;
-                var els = root.querySelectorAll('*');
-                for (var i = 0; i < els.length; i++) {
-                    if (els[i].shadowRoot) {
-                        var found = findGearIcon(els[i].shadowRoot);
-                        if (found) return found;
-                    }
-                }
-                return null;
+        function findAdminToolsButton(root) {
+            if (!root || !root.querySelectorAll) return null;
+            var direct = null;
+            try { direct = root.querySelector('button[aria-label="Admin Tools"]'); } catch (e0) { direct = null; }
+            if (direct) return direct;
+            var els = [];
+            try { els = root.querySelectorAll('*'); } catch (e1) { els = []; }
+            for (var i = 0; i < els.length; i++) {
+                var el = els[i];
+                if (!el || !el.shadowRoot) continue;
+                var nested = findAdminToolsButton(el.shadowRoot);
+                if (nested) return nested;
             }
-            gearBtn = findGearIcon(document);
+            return null;
         }
-        if (!gearBtn) return;
 
-        // Only increment after we confirmed we can actually show the hint
-        localStorage.setItem(HINT_COUNT_KEY, (hintCount + 1).toString());
+        var targetBtn = document.querySelector('.dtu-settings-nav-item button');
+        var targetKind = 'settings';
+        if (!targetBtn) {
+            targetBtn = findAdminToolsButton(document);
+            targetKind = 'gear';
+        }
+        if (!targetBtn) return;
 
-        // Get gear button position
-        var gearRect = gearBtn.getBoundingClientRect();
-        if (gearRect.width === 0) return; // not visible yet
+        var targetRect = targetBtn.getBoundingClientRect();
+        if (targetRect.width === 0 || targetRect.height === 0) return;
 
-        // Arrow should point to the center of the gear button
-        var bubbleWidth = 240;
-        var gearCenterX = gearRect.left + gearRect.width / 2;
-        var bubbleLeft = gearCenterX - bubbleWidth / 2;
-        // Keep bubble on screen
+        var bubbleWidth = 260;
+        var targetCenterX = targetRect.left + targetRect.width / 2;
+        var bubbleLeft = targetCenterX - bubbleWidth / 2;
         if (bubbleLeft < 8) bubbleLeft = 8;
         if (bubbleLeft + bubbleWidth > window.innerWidth - 8) bubbleLeft = window.innerWidth - bubbleWidth - 8;
-        var arrowLeft = gearCenterX - bubbleLeft;
+        var arrowLeft = targetCenterX - bubbleLeft;
 
-        // Create the hint bubble
         var bubble = document.createElement('div');
         bubble.id = 'dtu-dark-hint';
         var outer = document.createElement('div');
         outer.id = 'dtu-dark-hint-inner';
         Object.assign(outer.style, {
             position: 'fixed',
-            top: (gearRect.bottom + 12) + 'px',
+            top: (targetRect.bottom + 12) + 'px',
             left: bubbleLeft + 'px',
             zIndex: '999999',
             pointerEvents: 'auto'
@@ -4706,16 +4956,17 @@
 
         var title = document.createElement('span');
         Object.assign(title.style, { fontWeight: 'bold', fontSize: '14px' });
-        title.textContent = '\u2699 DTU After Dark';
+        title.textContent = 'DTU After Dark';
 
         var desc = document.createElement('span');
         desc.style.opacity = '0.9';
-        desc.textContent = 'Click the gear or "Settings" in the nav bar to customize your experience!';
+        desc.textContent = targetKind === 'settings'
+            ? 'Open Settings here to access feature toggles and customize DTU After Dark.'
+            : 'Open the admin gear here to access DTU After Dark toggles and settings.';
 
         var visitNote = document.createElement('div');
         Object.assign(visitNote.style, { marginTop: '6px', fontSize: '11px', opacity: '0.7', textAlign: 'right' });
-        visitNote.textContent = 'click to dismiss (' + (3 - hintCount - 1) + ' more)';
-        if (hintCount + 1 >= 3) visitNote.textContent = 'click to dismiss';
+        visitNote.textContent = 'click to dismiss';
 
         card.appendChild(arrow);
         card.appendChild(title);
@@ -4734,21 +4985,41 @@
         }
         document.body.appendChild(bubble);
 
-        // Dismiss on click (for this visit only, will reappear until 3 visits)
-        function dismissBubble() {
+        function dismissBubble(markSeen) {
+            if (markSeen) {
+                try { localStorage.setItem(HINT_SEEN_KEY, '1'); } catch (eSeen) { }
+            }
             bubble.style.transition = 'opacity 0.3s';
             bubble.style.opacity = '0';
             setTimeout(function () { bubble.remove(); }, 300);
         }
-        bubble.addEventListener('click', dismissBubble);
+        bubble.addEventListener('click', function () {
+            dismissBubble(true);
+        });
 
-        // Auto-dismiss after 15 seconds
         setTimeout(function () {
-            if (document.querySelector('#dtu-dark-hint')) dismissBubble();
+            if (document.querySelector('#dtu-dark-hint')) dismissBubble(true);
         }, 15000);
     }
 
-    // showOnboardingHint is called from unified load handler below
+    function scheduleOnboardingHint() {
+        if (!IS_TOP_WINDOW) return;
+        if (!isDTULearnHomepage()) return;
+        var attempts = 0;
+        function tryShow() {
+            attempts++;
+            showOnboardingHint();
+            if (document.querySelector('#dtu-dark-hint')) return;
+            try {
+                if (localStorage.getItem('dtuDarkModeOnboardingHintSeenV2') === '1') return;
+            } catch (e0) { }
+            if (attempts >= 8) return;
+            setTimeout(tryShow, attempts < 3 ? 600 : 1200);
+        }
+        setTimeout(tryShow, 1200);
+    }
+
+    // scheduleOnboardingHint is called from primary bootstrap below
 
     // ===== TYPEBOX PRESERVATION (kurser.dtu.dk, studieplan.dtu.dk, etc.) =====
     // Preserve custom colors on .typebox elements by reapplying inline styles with !important
@@ -4778,11 +5049,346 @@
 
     // ===== CAMPUSNET GPA CALCULATION (campusnet.dtu.dk) =====
     // Calculate weighted GPA from the grades table and insert a summary row
+    const GPA_SIM_STORAGE_KEY = 'gpaSimEntries';
+    const GPA_EXCLUDED_ACTUAL_STORAGE_KEY = 'gpaExcludedActualRows';
+
+    function isCampusnetGradesPage() {
+        return window.location.hostname === 'campusnet.dtu.dk'
+            && /\/cnnet\/Grades\//i.test(window.location.pathname);
+    }
+
+    function getCampusnetGradesTable() {
+        return document.querySelector('table.gradesList');
+    }
+
+    function normalizeCampusnetGradeCellText(text) {
+        return String(text || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function getCampusnetActualGradeTitleText(cell) {
+        if (!cell) return '';
+        try {
+            const clone = cell.cloneNode(true);
+            clone.querySelectorAll('.gpa-actual-toggle-btn').forEach(function (btn) {
+                btn.remove();
+            });
+            return normalizeCampusnetGradeCellText(clone.textContent);
+        } catch (e) {
+            return normalizeCampusnetGradeCellText(cell.textContent);
+        }
+    }
+
+    function getCampusnetActualGradeCodeText(cell) {
+        if (!cell) return '';
+        try {
+            const clone = cell.cloneNode(true);
+            clone.querySelectorAll('.gpa-actual-toggle-btn').forEach(function (btn) {
+                btn.remove();
+            });
+            return normalizeCampusnetGradeCellText(clone.textContent);
+        } catch (e) {
+            return normalizeCampusnetGradeCellText(cell.textContent);
+        }
+    }
+
+    function isCampusnetActualGradeDataRow(row) {
+        if (!row || row.classList.contains('gradesListHeader')) return false;
+        if (row.classList.contains('gpa-row')
+            || row.classList.contains('gpa-projected-row')
+            || row.classList.contains('gpa-sim-row')
+            || row.classList.contains('gpa-sim-add-row')
+            || row.classList.contains('gpa-sim-disclaimer-row')) {
+            return false;
+        }
+        return true;
+    }
+
+    function parseCampusnetActualGradeRow(row) {
+        if (!isCampusnetActualGradeDataRow(row)) return null;
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 4) return null;
+
+        const code = getCampusnetActualGradeCodeText(cells[0]);
+        const title = getCampusnetActualGradeTitleText(cells[1]);
+        const gradeSpan = cells[2].querySelector('span');
+        const gradeText = normalizeCampusnetGradeCellText(gradeSpan ? gradeSpan.textContent : cells[2].textContent);
+        const numericMatch = gradeText.match(/^(-?\d+)/);
+        const numericGrade = numericMatch ? parseInt(numericMatch[1], 10) : null;
+        const ects = parseFloat(normalizeCampusnetGradeCellText(cells[3].textContent).replace(',', '.'));
+        const term = normalizeCampusnetGradeCellText(cells[4] ? cells[4].textContent : '');
+        const safeEcts = (!isNaN(ects) && ects > 0) ? ects : 0;
+        const baseSignature = [code, title, gradeText, safeEcts, term].join('|').toLowerCase();
+
+        return {
+            row: row,
+            cells: cells,
+            code: code,
+            title: title,
+            gradeText: gradeText,
+            numericGrade: numericGrade,
+            ects: safeEcts,
+            term: term,
+            baseSignature: baseSignature,
+            signature: baseSignature,
+            countsForGpa: numericGrade !== null && safeEcts > 0,
+            countsForPassedEcts: ((numericGrade !== null && numericGrade >= 2) || /^BE\b/i.test(gradeText)) && safeEcts > 0
+        };
+    }
+
+    function getCampusnetActualGradeEntries(table) {
+        const scope = table || getCampusnetGradesTable();
+        if (!scope) return [];
+        const rows = scope.querySelectorAll('tr');
+        const entries = [];
+        const seen = new Map();
+        rows.forEach(function (row) {
+            const entry = parseCampusnetActualGradeRow(row);
+            if (!entry) return;
+            const occurrence = (seen.get(entry.baseSignature) || 0) + 1;
+            seen.set(entry.baseSignature, occurrence);
+            entry.occurrenceIndex = occurrence;
+            entry.signature = entry.baseSignature + '|occ:' + occurrence;
+            entries.push(entry);
+        });
+        return entries;
+    }
+
+    function readCampusnetExcludedActualGradeSignatures() {
+        try {
+            const raw = localStorage.getItem(GPA_EXCLUDED_ACTUAL_STORAGE_KEY);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [];
+            return parsed.filter(function (item) {
+                return typeof item === 'string' && item.trim();
+            });
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function writeCampusnetExcludedActualGradeSignatures(signatures) {
+        const unique = [];
+        const seen = new Set();
+        (Array.isArray(signatures) ? signatures : []).forEach(function (item) {
+            if (typeof item !== 'string' || !item.trim()) return;
+            if (seen.has(item)) return;
+            seen.add(item);
+            unique.push(item);
+        });
+        localStorage.setItem(GPA_EXCLUDED_ACTUAL_STORAGE_KEY, JSON.stringify(unique));
+    }
+
+    function getCampusnetActualGradeSummary(table) {
+        const entries = getCampusnetActualGradeEntries(table);
+        const excludedSet = new Set(readCampusnetExcludedActualGradeSignatures());
+        let totalWeighted = 0;
+        let totalECTS = 0;
+        let passedECTS = 0;
+        let excludedCount = 0;
+        let excludedECTS = 0;
+
+        entries.forEach(function (entry) {
+            entry.excluded = excludedSet.has(entry.signature);
+            if (entry.excluded) {
+                excludedCount++;
+                if (entry.ects > 0) excludedECTS += entry.ects;
+                return;
+            }
+            if (entry.countsForGpa) {
+                totalWeighted += entry.numericGrade * entry.ects;
+                totalECTS += entry.ects;
+            }
+            if (entry.countsForPassedEcts) {
+                passedECTS += entry.ects;
+            }
+        });
+
+        return {
+            entries: entries,
+            excludedSet: excludedSet,
+            totalWeighted: totalWeighted,
+            totalECTS: totalECTS,
+            passedECTS: passedECTS,
+            excludedCount: excludedCount,
+            excludedECTS: excludedECTS
+        };
+    }
+
+    function clearCampusnetActualGradeExclusionUi(table) {
+        const scope = table || getCampusnetGradesTable();
+        if (!scope) return;
+        scope.querySelectorAll('.gpa-actual-toggle-btn').forEach(function (btn) {
+            btn.remove();
+        });
+        scope.querySelectorAll('.gpa-actual-excluded').forEach(function (row) {
+            row.classList.remove('gpa-actual-excluded');
+            row.removeAttribute('data-gpa-actual-excluded');
+        });
+        scope.querySelectorAll('[data-gpa-actual-inline-muted="1"]').forEach(function (el) {
+            if (!el || !el.style) return;
+            el.removeAttribute('data-gpa-actual-inline-muted');
+            el.style.removeProperty('background');
+            el.style.removeProperty('background-color');
+            el.style.removeProperty('color');
+            el.style.removeProperty('text-decoration');
+        });
+    }
+
+    function applyCampusnetActualGradeToggleButtonState(btn, excluded) {
+        if (!btn || !btn.style) return;
+        btn.classList.toggle('is-excluded', !!excluded);
+        btn.setAttribute('aria-pressed', excluded ? 'true' : 'false');
+        btn.textContent = excluded ? 'Back' : 'Hide';
+        btn.title = excluded
+            ? 'Include this course again in GPA and ECTS calculations'
+            : 'Ignore this course in GPA and ECTS calculations';
+        const fg = darkModeEnabled
+            ? (excluded ? 'rgba(var(--dtu-ad-accent-rgb), 0.56)' : 'rgba(var(--dtu-ad-accent-rgb), 0.74)')
+            : (excluded ? 'rgba(var(--dtu-ad-accent-deep-rgb), 0.68)' : 'rgba(var(--dtu-ad-accent-deep-rgb), 0.92)');
+        btn.style.setProperty('background', 'transparent', 'important');
+        btn.style.setProperty('background-color', 'transparent', 'important');
+        btn.style.setProperty('background-image', 'none', 'important');
+        btn.style.setProperty('color', fg, 'important');
+        btn.style.setProperty('border', '0', 'important');
+        btn.style.setProperty('border-radius', '0', 'important');
+        btn.style.setProperty('box-shadow', 'none', 'important');
+        btn.style.setProperty('outline', '0', 'important');
+        btn.style.setProperty('appearance', 'none', 'important');
+        btn.style.setProperty('-webkit-appearance', 'none', 'important');
+        btn.style.setProperty('padding', '0', 'important');
+        btn.style.setProperty('display', 'inline-flex', 'important');
+        btn.style.setProperty('align-items', 'center', 'important');
+        btn.style.setProperty('justify-content', 'center', 'important');
+        btn.style.setProperty('float', 'right', 'important');
+        btn.style.setProperty('clear', 'none', 'important');
+        btn.style.setProperty('margin-top', '0', 'important');
+        btn.style.setProperty('margin-left', '0', 'important');
+        btn.style.setProperty('margin-right', '12px', 'important');
+        btn.style.setProperty('line-height', '1.2', 'important');
+        btn.style.setProperty('white-space', 'nowrap', 'important');
+        btn.style.setProperty('vertical-align', 'middle', 'important');
+    }
+
+    function applyCampusnetActualGradeExcludedRowInlineStyles(entry, excluded) {
+        if (!entry || !entry.row || !entry.row.querySelectorAll) return;
+
+        entry.row.querySelectorAll('[data-gpa-actual-inline-muted="1"]').forEach(function (el) {
+            if (!el || !el.style) return;
+            el.removeAttribute('data-gpa-actual-inline-muted');
+            el.style.removeProperty('background');
+            el.style.removeProperty('background-color');
+            el.style.removeProperty('color');
+            el.style.removeProperty('text-decoration');
+        });
+
+        if (!excluded) return;
+
+        var rowBg = darkModeEnabled ? '#1f1f1f' : '#f3f4f6';
+        var mutedText = darkModeEnabled ? '#a8afb8' : '#6b7280';
+
+        entry.row.querySelectorAll('td').forEach(function (cell) {
+            if (!cell || !cell.style) return;
+            cell.setAttribute('data-gpa-actual-inline-muted', '1');
+            cell.style.setProperty('background', rowBg, 'important');
+            cell.style.setProperty('background-color', rowBg, 'important');
+            cell.style.setProperty('color', mutedText, 'important');
+            cell.style.setProperty('text-decoration', 'line-through', 'important');
+        });
+
+        entry.row.querySelectorAll('td span, td a').forEach(function (el) {
+            if (!el || !el.style) return;
+            if (el.closest && el.closest('.gpa-actual-toggle-btn')) return;
+            el.setAttribute('data-gpa-actual-inline-muted', '1');
+            el.style.setProperty('color', mutedText, 'important');
+            el.style.setProperty('text-decoration', 'line-through', 'important');
+        });
+    }
+
+    function applyCampusnetActualGradeColumnLayout(table) {
+        const scope = table || getCampusnetGradesTable();
+        if (!scope) return;
+        scope.querySelectorAll('tr.gradesListHeader td:first-child, tr.context_direct td:first-child, tr.context_alternating td:first-child').forEach(function (cell) {
+            if (!cell || !cell.style) return;
+            cell.style.setProperty('width', '220px', 'important');
+            cell.style.setProperty('min-width', '220px', 'important');
+            cell.style.setProperty('white-space', 'nowrap', 'important');
+        });
+    }
+
+    function applyCampusnetActualGradeExclusionState(entry, btn, excluded) {
+        if (!entry || !entry.row) return;
+        entry.row.classList.toggle('gpa-actual-excluded', !!excluded);
+        if (excluded) entry.row.setAttribute('data-gpa-actual-excluded', '1');
+        else entry.row.removeAttribute('data-gpa-actual-excluded');
+        applyCampusnetActualGradeExcludedRowInlineStyles(entry, excluded);
+        applyCampusnetActualGradeToggleButtonState(btn, excluded);
+    }
+
+    function refreshCampusnetGpaDerivedOutputs() {
+        const table = getCampusnetGradesTable();
+        if (!table) return;
+        const gpaRow = table.querySelector('.gpa-row');
+        if (gpaRow) gpaRow.remove();
+        const projectedRow = table.querySelector('.gpa-projected-row');
+        if (projectedRow) projectedRow.remove();
+        const progress = document.querySelector('.ects-progress-container');
+        if (progress) progress.remove();
+        insertGPARow();
+        insertECTSProgressBar();
+        updateProjectedGPA();
+    }
+
+    function syncCampusnetActualGradeExclusionControls() {
+        if (!IS_TOP_WINDOW) return;
+        if (!isCampusnetGradesPage()) return;
+        const table = getCampusnetGradesTable();
+        if (!table) return;
+
+        if (!isFeatureFlagEnabled(FEATURE_CAMPUSNET_GPA_TOOLS_KEY)) {
+            clearCampusnetActualGradeExclusionUi(table);
+            return;
+        }
+
+        applyCampusnetActualGradeColumnLayout(table);
+        const summary = getCampusnetActualGradeSummary(table);
+        summary.entries.forEach(function (entry) {
+            if (!entry || !entry.cells || entry.cells.length < 2) return;
+            const codeCell = entry.cells[0];
+            if (!codeCell) return;
+
+            let btn = codeCell.querySelector('.gpa-actual-toggle-btn');
+            if (!btn) {
+                btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'gpa-actual-toggle-btn';
+                btn.setAttribute('data-dtu-ext', '1');
+                btn.addEventListener('click', function (ev) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    const signature = btn.getAttribute('data-gpa-signature') || '';
+                    if (!signature) return;
+                    const signatures = new Set(readCampusnetExcludedActualGradeSignatures());
+                    if (signatures.has(signature)) signatures.delete(signature);
+                    else signatures.add(signature);
+                    writeCampusnetExcludedActualGradeSignatures(Array.from(signatures));
+                    refreshCampusnetGpaDerivedOutputs();
+                    syncCampusnetActualGradeExclusionControls();
+                });
+                codeCell.appendChild(btn);
+            }
+
+            btn.setAttribute('data-gpa-signature', entry.signature);
+            applyCampusnetActualGradeExclusionState(entry, btn, summary.excludedSet.has(entry.signature));
+        });
+    }
+
     function insertGPARow() {
         if (!IS_TOP_WINDOW) return;
         if (!isFeatureFlagEnabled(FEATURE_CAMPUSNET_GPA_TOOLS_KEY)) {
-            const table = document.querySelector('table.gradesList');
+            const table = getCampusnetGradesTable();
             if (table) {
+                clearCampusnetActualGradeExclusionUi(table);
                 const existing = table.querySelector('.gpa-row');
                 if (existing) existing.remove();
                 const projected = table.querySelector('.gpa-projected-row');
@@ -4790,36 +5396,14 @@
             }
             return;
         }
-        const table = document.querySelector('table.gradesList');
+        const table = getCampusnetGradesTable();
+        syncCampusnetActualGradeExclusionControls();
         if (!table || table.querySelector('.gpa-row')) return;
 
-        const rows = table.querySelectorAll('tr:not(.gradesListHeader)');
-        let totalWeighted = 0;
-        let totalECTS = 0;
+        const summary = getCampusnetActualGradeSummary(table);
+        if (summary.totalECTS === 0 && summary.excludedCount === 0) return;
 
-        rows.forEach(row => {
-            if (row.classList.contains('gpa-sim-row') || row.classList.contains('gpa-sim-add-row')) return;
-            const cells = row.querySelectorAll('td');
-            if (cells.length < 4) return;
-
-            const gradeSpan = cells[2].querySelector('span');
-            if (!gradeSpan) return;
-
-            const gradeText = gradeSpan.textContent.trim();
-            const gradeMatch = gradeText.match(/^(-?\d+)/);
-            if (!gradeMatch) return; // Skip pass/fail (e.g. "BE (P)")
-
-            const grade = parseInt(gradeMatch[1], 10);
-            const ects = parseFloat(cells[3].textContent.trim());
-            if (isNaN(ects) || ects <= 0) return;
-
-            totalWeighted += grade * ects;
-            totalECTS += ects;
-        });
-
-        if (totalECTS === 0) return;
-
-        const gpa = totalWeighted / totalECTS;
+        const gpa = summary.totalECTS > 0 ? (summary.totalWeighted / summary.totalECTS) : 0;
 
         const headerRow = table.querySelector('tr.gradesListHeader');
         if (!headerRow) return;
@@ -4839,15 +5423,20 @@
         const tdGrade = document.createElement('td');
         tdGrade.setAttribute('data-dtu-ext', '1');
         tdGrade.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold; white-space: nowrap;';
-        tdGrade.textContent = gpa.toFixed(2);
+        tdGrade.textContent = summary.totalECTS > 0 ? gpa.toFixed(2) : '—';
 
         const tdECTS = document.createElement('td');
         tdECTS.setAttribute('data-dtu-ext', '1');
         tdECTS.style.cssText = 'text-align: right; padding-right: 5px; font-weight: bold;';
-        tdECTS.textContent = totalECTS;
+        tdECTS.textContent = summary.totalECTS;
 
         const tdDate = document.createElement('td');
         tdDate.setAttribute('data-dtu-ext', '1');
+        tdDate.style.cssText = 'text-align: right; padding-right: 5px; font-size: 11px;';
+        tdDate.style.setProperty('color', darkModeEnabled ? '#9aa1aa' : '#6b7280', 'important');
+        if (summary.excludedCount > 0) {
+            tdDate.textContent = summary.excludedCount + ' ignored';
+        }
 
         gpaRow.appendChild(tdLabel);
         gpaRow.appendChild(tdGrade);
@@ -4864,7 +5453,7 @@
     }
 
     // Run GPA insertion only on the CampusNet Grades page
-    if (window.location.hostname === 'campusnet.dtu.dk' && /\/cnnet\/Grades\//i.test(window.location.pathname)) {
+    if (isCampusnetGradesPage()) {
         insertGPARow();
     }
 
@@ -4877,7 +5466,7 @@
             if (existing) existing.remove();
             return;
         }
-        const table = document.querySelector('table.gradesList');
+        const table = getCampusnetGradesTable();
         if (!table) return;
 
         const existing = document.querySelector('.ects-progress-container');
@@ -4893,28 +5482,8 @@
             return;
         }
 
-        const rows = table.querySelectorAll('tr:not(.gradesListHeader)');
-        let passedECTS = 0;
-
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            if (cells.length < 4) return;
-
-            const gradeSpan = cells[2].querySelector('span');
-            if (!gradeSpan) return;
-
-            const gradeText = gradeSpan.textContent.trim();
-            const ects = parseFloat(cells[3].textContent.trim());
-            if (isNaN(ects) || ects <= 0) return;
-
-            // Check if passed: numeric grade >= 2, or "BE" (BestÃ¥et/Pass)
-            const numMatch = gradeText.match(/^(-?\d+)/);
-            if (numMatch) {
-                if (parseInt(numMatch[1], 10) >= 2) passedECTS += ects;
-            } else if (/^BE\b/i.test(gradeText)) {
-                passedECTS += ects;
-            }
-        });
+        const summary = getCampusnetActualGradeSummary(table);
+        const passedECTS = summary.passedECTS;
 
         if (passedECTS === 0) return;
 
@@ -4987,7 +5556,7 @@
     }
 
     // Run ECTS progress bar only on the CampusNet Grades page
-    if (window.location.hostname === 'campusnet.dtu.dk' && /\/cnnet\/Grades\//i.test(window.location.pathname)) {
+    if (isCampusnetGradesPage()) {
         insertECTSProgressBar();
     }
 
@@ -5041,33 +5610,16 @@
                 ects: parseFloat(ectsInput.value) || 5
             });
         });
-        localStorage.setItem('gpaSimEntries', JSON.stringify(entries));
+        localStorage.setItem(GPA_SIM_STORAGE_KEY, JSON.stringify(entries));
     }
 
     function updateProjectedGPA() {
-        const table = document.querySelector('table.gradesList');
+        const table = getCampusnetGradesTable();
         if (!table) return;
 
-        // Read actual grades (same logic as insertGPARow)
-        const rows = table.querySelectorAll('tr:not(.gradesListHeader)');
-        let actualWeighted = 0;
-        let actualECTS = 0;
-        rows.forEach(row => {
-            if (row.classList.contains('gpa-sim-row') || row.classList.contains('gpa-sim-add-row')
-                || row.classList.contains('gpa-row') || row.classList.contains('gpa-projected-row')) return;
-            const cells = row.querySelectorAll('td');
-            if (cells.length < 4) return;
-            const gradeSpan = cells[2].querySelector('span');
-            if (!gradeSpan) return;
-            const gradeText = gradeSpan.textContent.trim();
-            const gradeMatch = gradeText.match(/^(-?\d+)/);
-            if (!gradeMatch) return;
-            const grade = parseInt(gradeMatch[1], 10);
-            const ects = parseFloat(cells[3].textContent.trim());
-            if (isNaN(ects) || ects <= 0) return;
-            actualWeighted += grade * ects;
-            actualECTS += ects;
-        });
+        const actualSummary = getCampusnetActualGradeSummary(table);
+        const actualWeighted = actualSummary.totalWeighted;
+        const actualECTS = actualSummary.totalECTS;
 
         // Read simulated entries
         let simWeighted = 0;
@@ -5151,7 +5703,9 @@
             tdDelta.textContent = delta.toFixed(2);
         } else {
             tdDelta.style.setProperty('color', projectedNeutralTextColor, 'important');
-            tdDelta.textContent = '0.00';
+            tdDelta.textContent = actualSummary.excludedCount > 0
+                ? (actualSummary.excludedCount + ' ignored')
+                : '0.00';
         }
 
         projRow.appendChild(tdLabel);
@@ -5271,7 +5825,7 @@
             });
             return;
         }
-        const table = document.querySelector('table.gradesList');
+        const table = getCampusnetGradesTable();
         if (!table || table.querySelector('.gpa-sim-add-row')) return;
 
         const headerRow = table.querySelector('tr.gradesListHeader');
@@ -5280,7 +5834,7 @@
         // Load saved entries
         let savedEntries = [];
         try {
-            const stored = localStorage.getItem('gpaSimEntries');
+            const stored = localStorage.getItem(GPA_SIM_STORAGE_KEY);
             if (stored) savedEntries = JSON.parse(stored);
         } catch (e) { /* ignore parse errors */ }
 
@@ -5351,7 +5905,7 @@
     }
 
     // Run GPA simulator only on the CampusNet Grades page
-    if (window.location.hostname === 'campusnet.dtu.dk' && /\/cnnet\/Grades\//i.test(window.location.pathname)) {
+    if (isCampusnetGradesPage()) {
         insertGPASimulator();
     }
 
@@ -7235,8 +7789,18 @@
         markExt(btn);
         btn.setAttribute('data-dtu-semester-twin-filterbtn', '1');
         btn.setAttribute('aria-label', 'Filters');
-        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">'
-            + '<path d="M1 3h14M3 8h10M5 13h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+        var filterSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        filterSvg.setAttribute('width', '16');
+        filterSvg.setAttribute('height', '16');
+        filterSvg.setAttribute('viewBox', '0 0 16 16');
+        filterSvg.setAttribute('fill', 'none');
+        var filterPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        filterPath.setAttribute('d', 'M1 3h14M3 8h10M5 13h6');
+        filterPath.setAttribute('stroke', 'currentColor');
+        filterPath.setAttribute('stroke-width', '1.5');
+        filterPath.setAttribute('stroke-linecap', 'round');
+        filterSvg.appendChild(filterPath);
+        btn.appendChild(filterSvg);
         btn.style.cssText = 'display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;'
             + 'cursor:pointer;border:none;outline:none;transition:background 0.12s;';
         btn.style.setProperty('background', isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', 'important');
@@ -9361,6 +9925,482 @@
     // Adds a small "Content" button to each course card on the homepage
     // that links directly to /d2l/le/lessons/{courseId}
 
+    const CONTENT_SHORTCUT_OVERRIDES_KEY = 'dtuAfterDarkContentShortcutOverridesV1';
+
+    function normalizeContentShortcutCourseId(raw) {
+        var value = normalizeWhitespace(String(raw || ''));
+        if (!value) return '';
+
+        if (/^\d+$/.test(value)) return value;
+
+        var parsed = parseCourseIdFromString(value);
+        if (parsed) return String(parsed);
+
+        try {
+            var decoded = decodeURIComponent(value);
+            if (decoded && decoded !== value) {
+                parsed = parseCourseIdFromString(decoded);
+                if (parsed) return String(parsed);
+            }
+        } catch (e0) { }
+
+        return '';
+    }
+
+    function isLikelyDtuCourseCodeInput(rawInput, parsedId) {
+        var raw = String(rawInput || '').trim();
+        var id = String(parsedId || '').trim();
+        if (!raw || !id) return false;
+        // If user typed plain 5-digit code (e.g. 22050), it's often the DTU course number,
+        // not the Brightspace Org Unit ID used by this feature.
+        return /^\d{5}$/.test(raw) && raw === id;
+    }
+
+    function normalizeContentShortcutTarget(raw) {
+        var value = normalizeWhitespace(String(raw || ''));
+        if (!value) return '';
+
+        if (/^\/\//.test(value)) return null;
+        if (/^\/.+/.test(value)) return value;
+        if (/^[^/].*/.test(value) && /^d2l\//i.test(value)) return '/' + value;
+
+        try {
+            var parsed = new URL(value, location.origin);
+            if (parsed.origin !== location.origin) return null;
+            return (parsed.pathname || '/') + (parsed.search || '') + (parsed.hash || '');
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function sanitizeContentShortcutOverridesMap(input) {
+        var out = {};
+        if (!input || typeof input !== 'object') return out;
+        Object.keys(input).forEach(function (key) {
+            var courseId = normalizeContentShortcutCourseId(key);
+            if (!courseId) return;
+            var href = normalizeContentShortcutTarget(input[key]);
+            if (!href) return;
+            out[courseId] = href;
+        });
+        return out;
+    }
+
+    function readContentShortcutOverridesFromLocalStorage() {
+        try {
+            var raw = localStorage.getItem(CONTENT_SHORTCUT_OVERRIDES_KEY);
+            if (!raw) return {};
+            return sanitizeContentShortcutOverridesMap(JSON.parse(raw));
+        } catch (e) {
+            return {};
+        }
+    }
+
+    var _contentShortcutOverrides = readContentShortcutOverridesFromLocalStorage();
+    var _contentShortcutOverridesStorageSubscribed = false;
+
+    function persistContentShortcutOverrides(opts) {
+        var clean = sanitizeContentShortcutOverridesMap(_contentShortcutOverrides);
+        _contentShortcutOverrides = clean;
+        try {
+            localStorage.setItem(CONTENT_SHORTCUT_OVERRIDES_KEY, JSON.stringify(clean));
+        } catch (e0) { }
+        if (opts && opts.noStorage) return;
+        storageLocalSet({ [CONTENT_SHORTCUT_OVERRIDES_KEY]: clean });
+    }
+
+    function getContentShortcutOverridesMap() {
+        return Object.assign({}, _contentShortcutOverrides || {});
+    }
+
+    function getContentShortcutOverride(courseId) {
+        var key = normalizeContentShortcutCourseId(courseId);
+        if (!key) return '';
+        return (_contentShortcutOverrides && _contentShortcutOverrides[key]) || '';
+    }
+
+    function setContentShortcutOverride(courseId, href, opts) {
+        var key = normalizeContentShortcutCourseId(courseId);
+        if (!key) return false;
+
+        var next = normalizeContentShortcutTarget(href);
+        if (href && !next) return false;
+
+        var map = getContentShortcutOverridesMap();
+        if (next) map[key] = next;
+        else delete map[key];
+
+        _contentShortcutOverrides = map;
+        persistContentShortcutOverrides(opts);
+        return true;
+    }
+
+    function clearAllContentShortcutOverrides(opts) {
+        _contentShortcutOverrides = {};
+        persistContentShortcutOverrides(opts);
+    }
+
+    function loadContentShortcutOverrides(cb) {
+        storageLocalGet({ [CONTENT_SHORTCUT_OVERRIDES_KEY]: _contentShortcutOverrides }, function (result) {
+            var raw = result ? result[CONTENT_SHORTCUT_OVERRIDES_KEY] : null;
+            _contentShortcutOverrides = sanitizeContentShortcutOverridesMap(raw);
+            persistContentShortcutOverrides({ noStorage: true });
+            if (cb) cb(getContentShortcutOverridesMap());
+        });
+    }
+
+    function subscribeContentShortcutOverrideStorageChanges() {
+        if (_contentShortcutOverridesStorageSubscribed) return;
+        _contentShortcutOverridesStorageSubscribed = true;
+
+        var onChanged = function (changes, areaName) {
+            if (areaName && areaName !== 'local') return;
+            if (!changes || !changes[CONTENT_SHORTCUT_OVERRIDES_KEY]) return;
+
+            var nextRaw = changes[CONTENT_SHORTCUT_OVERRIDES_KEY]
+                ? changes[CONTENT_SHORTCUT_OVERRIDES_KEY].newValue
+                : null;
+            _contentShortcutOverrides = sanitizeContentShortcutOverridesMap(nextRaw);
+            persistContentShortcutOverrides({ noStorage: true });
+
+            if (!IS_TOP_WINDOW) return;
+            if (!isDTULearnHomepage()) return;
+            if (!isFeatureFlagEnabled(FEATURE_CONTENT_SHORTCUT_KEY)) return;
+            insertContentButtons();
+        };
+
+        try {
+            if (typeof browser !== 'undefined' && browser.storage && browser.storage.onChanged) {
+                browser.storage.onChanged.addListener(onChanged);
+                return;
+            }
+        } catch (e0) { }
+        try {
+            if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+                chrome.storage.onChanged.addListener(onChanged);
+            }
+        } catch (e1) { }
+    }
+
+    function isContentShortcutEditGesture(e) {
+        return !!(e && (e.ctrlKey || e.metaKey) && e.shiftKey);
+    }
+
+    function applyContentShortcutTargetToButton(btn, courseId, defaultHref) {
+        if (!btn) return false;
+        var courseKey = normalizeContentShortcutCourseId(courseId);
+        var fallback = normalizeContentShortcutTarget(defaultHref) || '';
+        if (!fallback) return false;
+
+        var custom = courseKey ? getContentShortcutOverride(courseKey) : '';
+        var finalHref = custom || fallback;
+
+        btn.href = finalHref;
+        btn.setAttribute('data-dtu-course-id', courseKey || '');
+        btn.setAttribute('data-dtu-default-href', fallback);
+        btn.setAttribute('data-dtu-current-href', finalHref);
+        btn.setAttribute('data-dtu-custom-href', custom || '');
+
+        var title = custom ? 'Go to Content (custom link)' : 'Go to Content';
+        title += ' | Ctrl/Cmd+Shift+Click to edit';
+        btn.title = title;
+        btn.setAttribute('aria-label', title);
+        return true;
+    }
+
+    function promptEditContentShortcutFromButton(btn) {
+        if (!btn) return;
+        var courseId = normalizeContentShortcutCourseId(btn.getAttribute('data-dtu-course-id'));
+        var defaultHref = normalizeContentShortcutTarget(btn.getAttribute('data-dtu-default-href')) || '';
+        if (!courseId || !defaultHref) {
+            alert('Could not detect the course ID for this card, so no custom link can be saved yet.');
+            return;
+        }
+
+        var currentCustom = getContentShortcutOverride(courseId);
+        var currentTarget = currentCustom || defaultHref;
+        var msg = 'Set custom "Go to Content" link for this course (ID ' + courseId + ').\n'
+            + 'Use a relative path (example: /d2l/home/' + courseId + ') or full learn.inside.dtu.dk URL.\n'
+            + 'Leave empty to reset to default.\n\n'
+            + 'Default: ' + defaultHref + '\n'
+            + 'Current: ' + currentTarget;
+
+        var input = prompt(msg, currentCustom || currentTarget);
+        if (input === null) return;
+
+        var trimmed = String(input || '').trim();
+        if (!trimmed) {
+            setContentShortcutOverride(courseId, '', null);
+            insertContentButtons();
+            return;
+        }
+
+        var normalized = normalizeContentShortcutTarget(trimmed);
+        if (!normalized) {
+            alert('Invalid link. Use a relative path (starting with /) or a full learn.inside.dtu.dk URL.');
+            return;
+        }
+
+        if (normalized === defaultHref) {
+            setContentShortcutOverride(courseId, '', null);
+        } else {
+            setContentShortcutOverride(courseId, normalized, null);
+        }
+
+        insertContentButtons();
+    }
+
+    function promptForCourseId(defaultValue) {
+        var input = prompt(
+            'Brightspace Org Unit ID or course URL:\n'
+            + '- Paste URL, e.g. https://learn.inside.dtu.dk/d2l/home/242098\n'
+            + '- or paste just the Org Unit ID, e.g. 242098\n\n'
+            + 'Do NOT use DTU course code (e.g. 22050).',
+            defaultValue || ''
+        );
+        if (input === null) return null;
+        var id = normalizeContentShortcutCourseId(input);
+        if (!id) return '';
+        if (isLikelyDtuCourseCodeInput(input, id)) {
+            var proceed = confirm(
+                '"' + id + '" looks like a DTU course code, not a Brightspace Org Unit ID.\n'
+                + 'If unsure, cancel and paste the course URL from Learn to auto-detect the correct ID.\n\n'
+                + 'Use "' + id + '" anyway?'
+            );
+            if (!proceed) return null;
+        }
+        return id;
+    }
+
+    function promptForContentShortcutTarget(defaultValue) {
+        var input = prompt(
+            'Custom link for this course:\n'
+            + '- Relative path, e.g. /d2l/home/123456\n'
+            + '- or full learn.inside.dtu.dk URL\n'
+            + '(Leave empty to cancel)',
+            defaultValue || ''
+        );
+        if (input === null) return null;
+        var trimmed = String(input || '').trim();
+        if (!trimmed) return '';
+        var normalized = normalizeContentShortcutTarget(trimmed);
+        if (!normalized) {
+            alert('Invalid link. Use a relative path (starting with /) or a full learn.inside.dtu.dk URL.');
+            return null;
+        }
+        return normalized || null;
+    }
+
+    function showContentShortcutOverridesModal() {
+        if (!IS_TOP_WINDOW) return;
+
+        var existing = document.querySelector('.dtu-content-shortcut-overrides-modal');
+        if (existing) existing.remove();
+
+        var isDarkTheme = isDarkModeEnabled();
+        var palette = isDarkTheme
+            ? {
+                bg: 'rgba(30,30,30,0.94)',
+                text: '#e0e0e0',
+                heading: '#ffffff',
+                muted: '#9aa0a6',
+                border: '#404040',
+                panel: '#1f1f1f'
+            }
+            : {
+                bg: 'rgba(255,255,255,0.96)',
+                text: '#1f2937',
+                heading: '#111827',
+                muted: '#6b7280',
+                border: '#d1d5db',
+                panel: '#f9fafb'
+            };
+
+        var overlay = document.createElement('div');
+        markExt(overlay);
+        overlay.className = 'dtu-content-shortcut-overrides-modal';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:1000001;display:flex;align-items:center;justify-content:center;'
+            + 'background:transparent !important;background-color:transparent !important;'
+            + 'backdrop-filter:blur(4px) !important;-webkit-backdrop-filter:blur(4px) !important;'
+            + 'opacity:0;transition:opacity .2s ease;';
+
+        var modal = document.createElement('div');
+        markExt(modal);
+        modal.style.cssText = 'width:min(760px,92vw);max-height:82vh;overflow:auto;'
+            + 'border-radius:14px;padding:22px 22px 16px;background:' + palette.bg + ';'
+            + 'color:' + palette.text + ';border:1px solid ' + palette.border + ';'
+            + 'box-shadow:0 18px 52px rgba(0,0,0,0.45);font-family:sans-serif;';
+
+        function closeModal() {
+            overlay.style.opacity = '0';
+            setTimeout(function () { try { overlay.remove(); } catch (e) { } }, 150);
+        }
+
+        function buttonStyle(kind) {
+            if (kind === 'danger') {
+                return 'border:1px solid #7f1d1d;background:rgba(127,29,29,0.12);color:#ef9a9a;';
+            }
+            if (kind === 'primary') {
+                return 'border:1px solid var(--dtu-ad-accent-border);background:var(--dtu-ad-accent);color:#fff;';
+            }
+            return 'border:1px solid ' + palette.border + ';background:transparent;color:' + palette.text + ';';
+        }
+
+        function makeBtn(label, kind) {
+            var btn = document.createElement('button');
+            markExt(btn);
+            btn.type = 'button';
+            btn.textContent = label;
+            btn.style.cssText = 'padding:7px 11px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;'
+                + buttonStyle(kind);
+            return btn;
+        }
+
+        function render() {
+            while (modal.firstChild) modal.removeChild(modal.firstChild);
+
+            var title = document.createElement('h2');
+            markExt(title);
+            title.textContent = 'Content Shortcut Links';
+            title.style.cssText = 'margin:0 0 6px;font-size:22px;font-weight:700;color:' + palette.heading + ';';
+            modal.appendChild(title);
+
+            var intro = document.createElement('p');
+            markExt(intro);
+            intro.style.cssText = 'margin:0 0 14px;font-size:13px;line-height:1.45;color:' + palette.muted + ';';
+            intro.textContent = 'Quick edit on dashboard: hold Ctrl/Cmd+Shift and click a course Content button. '
+                + 'Use this manager to review, add, or remove per-course overrides. '
+                + 'Tip: Add Override accepts a Learn course URL and auto-detects the Brightspace Org Unit ID (do not use DTU course code like 22050).';
+            modal.appendChild(intro);
+
+            var listWrap = document.createElement('div');
+            markExt(listWrap);
+            listWrap.style.cssText = 'border:1px solid ' + palette.border + ';border-radius:10px;overflow:hidden;';
+
+            var rows = getContentShortcutOverridesMap();
+            var keys = Object.keys(rows).sort(function (a, b) { return Number(a) - Number(b); });
+
+            if (!keys.length) {
+                var empty = document.createElement('div');
+                markExt(empty);
+                empty.style.cssText = 'padding:14px;font-size:13px;color:' + palette.muted + ';background:' + palette.panel + ';';
+                empty.textContent = 'No custom links saved yet.';
+                listWrap.appendChild(empty);
+            } else {
+                keys.forEach(function (courseId, idx) {
+                    var row = document.createElement('div');
+                    markExt(row);
+                    row.style.cssText = 'display:flex;gap:10px;align-items:center;justify-content:space-between;'
+                        + 'padding:10px 12px;background:' + (idx % 2 ? palette.panel : 'transparent') + ';'
+                        + (idx < keys.length - 1 ? 'border-bottom:1px solid ' + palette.border + ';' : '');
+
+                    var left = document.createElement('div');
+                    markExt(left);
+                    left.style.cssText = 'min-width:0;flex:1;';
+
+                    var idEl = document.createElement('div');
+                    markExt(idEl);
+                    idEl.style.cssText = 'font-size:12px;font-weight:700;color:' + palette.heading + ';';
+                    idEl.textContent = 'Org Unit ' + courseId;
+
+                    var hrefEl = document.createElement('div');
+                    markExt(hrefEl);
+                    hrefEl.style.cssText = 'font-size:12px;line-height:1.3;color:' + palette.muted
+                        + ';overflow-wrap:anywhere;word-break:break-word;';
+                    hrefEl.textContent = rows[courseId];
+
+                    left.appendChild(idEl);
+                    left.appendChild(hrefEl);
+
+                    var actions = document.createElement('div');
+                    markExt(actions);
+                    actions.style.cssText = 'display:flex;gap:8px;flex-shrink:0;';
+
+                    var editBtn = makeBtn('Edit', 'secondary');
+                    editBtn.addEventListener('click', function () {
+                        var nextHref = promptForContentShortcutTarget(rows[courseId]);
+                        if (nextHref === null) return;
+                        if (nextHref === '') {
+                            setContentShortcutOverride(courseId, '', null);
+                        } else {
+                            setContentShortcutOverride(courseId, nextHref, null);
+                        }
+                        insertContentButtons();
+                        render();
+                    });
+
+                    var removeBtn = makeBtn('Remove', 'danger');
+                    removeBtn.addEventListener('click', function () {
+                        setContentShortcutOverride(courseId, '', null);
+                        insertContentButtons();
+                        render();
+                    });
+
+                    actions.appendChild(editBtn);
+                    actions.appendChild(removeBtn);
+                    row.appendChild(left);
+                    row.appendChild(actions);
+                    listWrap.appendChild(row);
+                });
+            }
+
+            modal.appendChild(listWrap);
+
+            var footer = document.createElement('div');
+            markExt(footer);
+            footer.style.cssText = 'display:flex;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap;';
+
+            var leftBtns = document.createElement('div');
+            markExt(leftBtns);
+            leftBtns.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+
+            var addBtn = makeBtn('Add Override', 'primary');
+            addBtn.addEventListener('click', function () {
+                var courseId = promptForCourseId('');
+                if (courseId === null) return;
+                if (!courseId) {
+                    alert('Invalid input. Paste a Learn course URL or Brightspace Org Unit ID (numbers only).');
+                    return;
+                }
+                var href = promptForContentShortcutTarget('/d2l/home/' + courseId);
+                if (href === null) return;
+                if (!href) return;
+                setContentShortcutOverride(courseId, href, null);
+                insertContentButtons();
+                render();
+            });
+
+            var clearBtn = makeBtn('Clear All', 'danger');
+            clearBtn.addEventListener('click', function () {
+                var hasAny = Object.keys(getContentShortcutOverridesMap()).length > 0;
+                if (!hasAny) return;
+                if (!confirm('Clear all custom content shortcut links?')) return;
+                clearAllContentShortcutOverrides(null);
+                insertContentButtons();
+                render();
+            });
+
+            leftBtns.appendChild(addBtn);
+            leftBtns.appendChild(clearBtn);
+
+            var closeBtn = makeBtn('Close', 'secondary');
+            closeBtn.addEventListener('click', closeModal);
+
+            footer.appendChild(leftBtns);
+            footer.appendChild(closeBtn);
+            modal.appendChild(footer);
+        }
+
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) closeModal();
+        });
+
+        render();
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        requestAnimationFrame(function () { overlay.style.opacity = '1'; });
+    }
+
     // Standalone button CSS â€” injected into card shadow roots when dark mode styles aren't present
     const contentBtnShadowCSS = `
         a.dtu-dark-content-btn,
@@ -9403,6 +10443,18 @@
         a.dtu-dark-content-btn:hover {
             background-color: rgba(0, 0, 0, 0.85) !important;
         }
+        a.dtu-dark-content-btn .dtu-content-shortcut-icon {
+            width: 20px !important;
+            height: 20px !important;
+            display: block !important;
+            color: currentColor !important;
+            fill: none !important;
+            stroke: currentColor !important;
+            stroke-width: 1.8 !important;
+            stroke-linecap: round !important;
+            stroke-linejoin: round !important;
+            pointer-events: none !important;
+        }
     `;
 
     // Recursively find all elements matching a selector, traversing shadow roots
@@ -9437,7 +10489,9 @@
         if (!str) return null;
         const patterns = [
             /\/d2l\/home\/(\d+)/i,
-            /[?&]ou=(\d+)/i,
+            /\/d2l\/le\/lessons\/(\d+)/i,
+            /\/d2l\/lp\/navbars\/(\d+)/i,
+            /[?&](?:ou|orgUnitId|courseOfferingId|offeringId)=(\d+)/i,
             /\/org(?:units?|Units?)\/(\d+)/i,
             /(?:orgUnitId|courseOfferingId|offeringId)[=:"\s]+(\d+)/i
         ];
@@ -9516,6 +10570,28 @@
 
     let _contentShortcutsLastEnabled = null;
 
+    function setContentShortcutButtonIcon(btn) {
+        if (!btn) return;
+        if (btn.querySelector && btn.querySelector('.dtu-content-shortcut-icon')) return;
+        while (btn.firstChild) btn.removeChild(btn.firstChild);
+
+        var svgNs = 'http://www.w3.org/2000/svg';
+        var icon = document.createElementNS(svgNs, 'svg');
+        icon.setAttribute('class', 'dtu-content-shortcut-icon');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.setAttribute('focusable', 'false');
+
+        var pages = document.createElementNS(svgNs, 'path');
+        pages.setAttribute('d', 'M3.5 4.5h5.7c1.45 0 2.8.7 3.8 1.9 1-1.2 2.35-1.9 3.8-1.9h5.7v14h-5.7c-1.45 0-2.8.7-3.8 1.9-1-1.2-2.35-1.9-3.8-1.9H3.5z');
+        var spine = document.createElementNS(svgNs, 'path');
+        spine.setAttribute('d', 'M12.5 6.4v14');
+
+        icon.appendChild(pages);
+        icon.appendChild(spine);
+        btn.appendChild(icon);
+    }
+
     function insertContentButtons(rootNode) {
         if (!IS_TOP_WINDOW) return;
         if (!isDTULearnHomepage()) return;
@@ -9553,22 +10629,37 @@
             const header = styleRoot.querySelector('.d2l-card-header, .d2l-enrollment-card-image-container');
             const container = header || styleRoot.querySelector('.d2l-card-container, .d2l-enrollment-card-content, .d2l-enrollment-card-container');
             if (!container) return;
-            if (container.querySelector('.dtu-dark-content-btn')) return;
             container.style.setProperty('position', 'relative', 'important');
 
             const roots = [styleRoot, ecShadow];
             const courseId = extractCourseId(ec, card, roots);
             const fallbackHref = extractFallbackHref(ec, card, roots);
             if (!courseId && !fallbackHref) return;
-            const targetHref = courseId ? ('/d2l/le/lessons/' + courseId) : fallbackHref;
+            const defaultHref = courseId ? ('/d2l/le/lessons/' + courseId) : fallbackHref;
+
+            const existingBtn = container.querySelector('.dtu-dark-content-btn');
+            if (existingBtn) {
+                setContentShortcutButtonIcon(existingBtn);
+                if (!applyContentShortcutTargetToButton(existingBtn, courseId, defaultHref)) {
+                    try { existingBtn.remove(); } catch (eRm0) { }
+                }
+                return;
+            }
 
             // Styling is handled by cardShadowStyles CSS (.dtu-dark-content-btn)
             const btn = document.createElement('a');
             btn.className = 'dtu-dark-content-btn';
-            btn.href = targetHref;
-            btn.title = 'Go to Content';
-            btn.textContent = '\u{1F4D6}';
-            btn.addEventListener('click', (e) => e.stopPropagation());
+            setContentShortcutButtonIcon(btn);
+            if (!applyContentShortcutTargetToButton(btn, courseId, defaultHref)) return;
+            btn.addEventListener('click', function (e) {
+                if (isContentShortcutEditGesture(e)) {
+                    try { e.preventDefault(); } catch (e0) { }
+                    try { e.stopPropagation(); } catch (e1) { }
+                    promptEditContentShortcutFromButton(btn);
+                    return;
+                }
+                try { e.stopPropagation(); } catch (e2) { }
+            });
 
             container.appendChild(btn);
         });
@@ -9623,6 +10714,13 @@
     } else {
         removeContentButtons();
     }
+    loadContentShortcutOverrides(function () {
+        if (!IS_TOP_WINDOW) return;
+        if (!isDTULearnHomepage()) return;
+        if (!isFeatureFlagEnabled(FEATURE_CONTENT_SHORTCUT_KEY)) return;
+        insertContentButtons();
+    });
+    subscribeContentShortcutOverrideStorageChanges();
 
     // ===== LESSONS BULK DOWNLOAD (DTU Learn) =====
     // Small utility under the lessons search bar:
@@ -13393,26 +14491,75 @@
     // ===== BUS DEPARTURE TIMES (Rejseplanen 2.0 API) =====
     // Live bus departure information for DTU-area stops, shown on the DTU Learn homepage
 
-    const REJSEPLANEN_API = 'https://www.rejseplanen.dk/api';
-    const REJSEPLANEN_KEY = (typeof CONFIG !== 'undefined' && CONFIG.REJSEPLANEN_API_KEY) || '';
-
-    // Bus lines that serve the DTU campus area
+    // Bus lines that serve DTU campuses.
     const DTU_BUS_LINES = [
         { line: '150S', name: 'Bus 150S' },
         { line: '300S', name: 'Bus 300S' },
         { line: '40E', name: 'Bus 40E' },
         { line: '15E', name: 'Bus 15E' },
-        { line: '193', name: 'Bus 193' }
+        { line: '193', name: 'Bus 193' },
+        { line: '350S', name: 'Bus 350S' },
+        { line: '55E', name: 'Bus 55E' },
+        { line: '216', name: 'Bus 216' },
+        { line: '600S', name: 'Bus 600S' }
     ];
+    const DTU_BUS_LINES_BY_CODE = DTU_BUS_LINES.reduce(function (acc, lineDef) {
+        if (!lineDef || !lineDef.line) return acc;
+        acc[lineDef.line] = lineDef;
+        return acc;
+    }, {});
+
+    // Static direction tokens for bus-line filtering in the config modal.
+    // These are used to avoid extra API calls while editing bus settings.
+    const DTU_BUS_DIRECTION_TOKENS = {
+        '150S': ['Nørreport St.', 'Kokkedal St.', 'Gl. Holte Øverødvej', 'Søhuset, Forskerparken'],
+        '300S': ['Rødovre Nord St.', 'Lundtofte, Lundtofteparken', 'DTU', 'Gladsaxe Trafikplads', 'Lyngby St.'],
+        '40E': ['Høje Taastrup St.', 'Skodsborg St.', 'DTU, Rævehøjvej'],
+        '15E': ['Nørreport St.'],
+        '193': ['Lyngby St.', 'Vedbæk St.'],
+        '350S': ['Nørreport St.', 'Ballerup St.'],
+        '55E': ['Allerød St.', 'Rødovre Nord St.'],
+        '216': ['Roskilde St.', 'Ballerup St.', 'Søagerskolen', 'Østrup'],
+        '600S': ['Hillerød St.', 'Ishøj St.', 'Roskilde St.', 'Greve St.', 'Roskilde St. Sygehuset', 'Jyllingecentret', 'Slangerup Rutebilstation', 'Tune Center']
+    };
 
     // Badge colors per bus line
-    const LINE_COLORS = { '150S': '#1565c0', '300S': '#2e7d32', '40E': '#6a1b9a', '15E': '#c62828', '193': '#e65100' };
+    const LINE_COLORS = {
+        '150S': '#1565c0',
+        '300S': '#2e7d32',
+        '40E': '#6a1b9a',
+        '15E': '#c62828',
+        '193': '#e65100',
+        '350S': '#00838f',
+        '55E': '#ad1457',
+        '216': '#5d4037',
+        '600S': '#283593'
+    };
 
-    // Known DTU-area stop IDs (hardcoded for reliability instead of name search)
-    // 6015/6026: RÃ¦vehÃ¸jvej, DTU (HelsingÃ¸rmotorvejen) â€” 150S, 300S, 40E, 15E
-    // 474/496:   RÃ¦vehÃ¸jvej, DTU (LundtoftegÃ¥rdsvej)    â€” 150S, 300S, 40E, 15E
-    // 497/473:   DTU (Anker Engelunds Vej)               â€” 300S
-    const DTU_AREA_STOP_IDS = ['6015', '6026', '474', '496', '497', '473'];
+    // Campus presets: stop IDs + commonly used lines.
+    const DTU_CAMPUS_PRESETS = {
+        lyngby: {
+            id: 'lyngby',
+            label: 'DTU Lyngby',
+            stopIds: ['6015', '6026', '474', '496', '497', '473', '472', '53591', '53614', '53615'],
+            lines: ['150S', '300S', '40E', '15E', '193']
+        },
+        ballerup: {
+            id: 'ballerup',
+            label: 'DTU Ballerup',
+            stopIds: ['2175', '2134', '2177', '2132'],
+            lines: ['350S', '40E', '55E']
+        },
+        riso: {
+            id: 'riso',
+            label: 'DTU Risø',
+            stopIds: ['9183', '4369'],
+            lines: ['216', '600S']
+        }
+    };
+    const DTU_CAMPUS_ORDER = ['lyngby', 'ballerup', 'riso'];
+    const DTU_DEFAULT_CAMPUSES = ['lyngby'];
+    const DTU_AREA_STOP_IDS = (DTU_CAMPUS_PRESETS.lyngby.stopIds || []).slice();
 
     const BUS_ENABLED_KEY = 'dtuDarkModeBusEnabled';
     const BUS_CONFIG_KEY = 'dtuDarkModeBusConfig';
@@ -13434,6 +14581,7 @@
     let _busFetchInProgress = false;
     let _busConsecutiveErrors = 0;
     let _busBackoffUntil = 0;
+    let _busConfigModalOpen = false;
     const _busActiveControllers = new Set();
 
     let _deadlinesFetchInProgress = false;
@@ -13456,19 +14604,237 @@
         return stored === 'true';
     }
 
+    function sanitizeBusStopIds(stopIds) {
+        if (!Array.isArray(stopIds)) return [];
+        var seen = {};
+        var out = [];
+        stopIds.forEach(function (sid) {
+            var id = String(sid || '').trim();
+            if (!id) return;
+            if (!/^\d+$/.test(id)) return;
+            if (seen[id]) return;
+            seen[id] = true;
+            out.push(id);
+        });
+        return out;
+    }
+
+    function sanitizeBusCampusIds(campusIds) {
+        if (!Array.isArray(campusIds)) return [];
+        var seen = {};
+        var out = [];
+        campusIds.forEach(function (cid) {
+            var id = String(cid || '').trim().toLowerCase();
+            if (!id || !DTU_CAMPUS_PRESETS[id]) return;
+            if (seen[id]) return;
+            seen[id] = true;
+            out.push(id);
+        });
+        return out;
+    }
+
+    function getCampusStopIds(campusIds) {
+        var ids = sanitizeBusCampusIds(campusIds);
+        if (!ids.length) ids = DTU_DEFAULT_CAMPUSES.slice();
+        var seen = {};
+        var out = [];
+        ids.forEach(function (cid) {
+            var preset = DTU_CAMPUS_PRESETS[cid];
+            if (!preset || !Array.isArray(preset.stopIds)) return;
+            preset.stopIds.forEach(function (sid) {
+                var id = String(sid || '').trim();
+                if (!id || seen[id]) return;
+                seen[id] = true;
+                out.push(id);
+            });
+        });
+        return out;
+    }
+
+    function getCampusLineCodes(campusIds) {
+        var ids = sanitizeBusCampusIds(campusIds);
+        if (!ids.length) ids = DTU_DEFAULT_CAMPUSES.slice();
+        var seen = {};
+        var out = [];
+        ids.forEach(function (cid) {
+            var preset = DTU_CAMPUS_PRESETS[cid];
+            if (!preset || !Array.isArray(preset.lines)) return;
+            preset.lines.forEach(function (line) {
+                var code = String(line || '').trim();
+                if (!code || seen[code]) return;
+                seen[code] = true;
+                out.push(code);
+            });
+        });
+        return out;
+    }
+
+    function getCampusLineDefinitions(campusIds) {
+        var codes = getCampusLineCodes(campusIds);
+        return codes.map(function (code) {
+            return DTU_BUS_LINES_BY_CODE[code] || { line: code, name: 'Bus ' + code };
+        });
+    }
+
+    function inferBusCampusesFromStopIds(stopIds) {
+        var stops = sanitizeBusStopIds(stopIds);
+        if (!stops.length) return DTU_DEFAULT_CAMPUSES.slice();
+
+        var selected = [];
+        DTU_CAMPUS_ORDER.forEach(function (cid) {
+            var preset = DTU_CAMPUS_PRESETS[cid];
+            if (!preset || !Array.isArray(preset.stopIds)) return;
+            var hasAny = preset.stopIds.some(function (sid) { return stops.indexOf(String(sid)) !== -1; });
+            if (hasAny) selected.push(cid);
+        });
+        if (!selected.length) selected = DTU_DEFAULT_CAMPUSES.slice();
+        return selected;
+    }
+
+    function normalizeBusDirections(directions) {
+        if (!Array.isArray(directions)) return [];
+        var seen = {};
+        var out = [];
+        directions.forEach(function (d0) {
+            var d = normalizeWhitespace(String(d0 || ''));
+            if (!d) return;
+            if (d === 'ANY' || d === '*' || /^all directions$/i.test(d)) d = '*';
+            if (seen[d]) return;
+            seen[d] = true;
+            out.push(d);
+        });
+        return out;
+    }
+
+    function normalizeBusLines(lines, allowedLineSet) {
+        if (!Array.isArray(lines)) return [];
+        var seen = {};
+        var out = [];
+        lines.forEach(function (entry) {
+            var line = String(entry && entry.line || '').trim();
+            if (!line) return;
+            if (allowedLineSet && !allowedLineSet[line]) return;
+            if (seen[line]) return;
+            seen[line] = true;
+            var dirs = normalizeBusDirections(entry && entry.directions);
+            out.push({ line: line, directions: dirs });
+        });
+        return out;
+    }
+
+    function normalizeBusConfig(rawConfig, opts) {
+        if (!rawConfig || typeof rawConfig !== 'object') {
+            return null;
+        }
+
+        var campuses = sanitizeBusCampusIds(rawConfig.campuses);
+        var stopIds = sanitizeBusStopIds(rawConfig.stopIds);
+
+        if (!campuses.length) campuses = inferBusCampusesFromStopIds(stopIds);
+        if (!campuses.length) campuses = DTU_DEFAULT_CAMPUSES.slice();
+
+        var campusStops = getCampusStopIds(campuses);
+        if (!stopIds.length) stopIds = campusStops.slice();
+        if (!stopIds.length) stopIds = DTU_AREA_STOP_IDS.slice();
+
+        var allowedLines = {};
+        getCampusLineCodes(campuses).forEach(function (line) { allowedLines[line] = true; });
+        var lines = normalizeBusLines(rawConfig.lines, allowedLines);
+
+        if (opts && opts.keepUnknownLines) {
+            lines = normalizeBusLines(rawConfig.lines, null);
+        }
+
+        return {
+            campuses: campuses,
+            stopIds: stopIds,
+            lines: lines
+        };
+    }
+
+    function buildDefaultBusConfig(campuses) {
+        var selectedCampuses = sanitizeBusCampusIds(campuses);
+        if (!selectedCampuses.length) selectedCampuses = DTU_DEFAULT_CAMPUSES.slice();
+        return {
+            campuses: selectedCampuses,
+            stopIds: getCampusStopIds(selectedCampuses),
+            lines: []
+        };
+    }
+
     function getBusConfig() {
         try {
-            const raw = localStorage.getItem(BUS_CONFIG_KEY);
-            return raw ? JSON.parse(raw) : null;
+            var raw = localStorage.getItem(BUS_CONFIG_KEY);
+            if (!raw) return null;
+            var parsed = JSON.parse(raw);
+            var normalized = normalizeBusConfig(parsed);
+            return normalized || null;
         } catch (e) {
             return null;
         }
     }
 
     function saveBusConfig(config) {
-        localStorage.setItem(BUS_CONFIG_KEY, JSON.stringify(config));
+        var normalized = normalizeBusConfig(config, { keepUnknownLines: true }) || buildDefaultBusConfig();
+        localStorage.setItem(BUS_CONFIG_KEY, JSON.stringify(normalized));
         try { localStorage.removeItem(BUS_SHARED_CACHE_KEY); } catch (e0) { }
         try { localStorage.removeItem(BUS_FETCH_LEASE_KEY); } catch (e1) { }
+    }
+
+    function getLocalBusDirectionOptions(lineCode, config) {
+        var line = String(lineCode || '').trim();
+        if (!line) return [];
+        var seen = {};
+        var out = [];
+
+        function shouldKeepBusDirectionOption(lineCode0, rawDir) {
+            var lineNorm = String(lineCode0 || '').trim().toUpperCase();
+            var dirNorm = normalizeWhitespace(String(rawDir || '')).toLowerCase();
+            if (!dirNorm) return false;
+            if (lineNorm !== '40E' && /rævehøjvej|raevehøjvej|raevehojvej|r[æa]veh[øo]jvej/.test(dirNorm)) {
+                return false;
+            }
+            if (lineNorm === '600S' && /\bris[øo]\b/.test(dirNorm)) {
+                return false;
+            }
+            return true;
+        }
+
+        function pushDir(rawDir) {
+            var dir = normalizeWhitespace(String(rawDir || ''));
+            if (!dir || dir === '*') return;
+            if (!shouldKeepBusDirectionOption(line, dir)) return;
+            var key = dir.toLowerCase();
+            if (seen[key]) return;
+            seen[key] = true;
+            out.push(dir);
+        }
+
+        var lineCfgs = (config && Array.isArray(config.lines)) ? config.lines : [];
+        lineCfgs.forEach(function (entry) {
+            if (!entry || entry.line !== line) return;
+            normalizeBusDirections(entry.directions).forEach(pushDir);
+        });
+
+        var presets = DTU_BUS_DIRECTION_TOKENS[line];
+        if (Array.isArray(presets)) presets.forEach(pushDir);
+
+        if (Array.isArray(_cachedDepartures)) {
+            _cachedDepartures.forEach(function (dep) {
+                if (!dep || dep.line !== line) return;
+                pushDir(dep.direction);
+            });
+        }
+
+        var shared = getBusSharedCache();
+        if (shared && Array.isArray(shared.departures)) {
+            shared.departures.forEach(function (dep) {
+                if (!dep || dep.line !== line) return;
+                pushDir(dep.direction);
+            });
+        }
+
+        return out;
     }
 
     function registerBusFetchController(controller) {
@@ -13526,6 +14892,11 @@
 
     function getBusConfigSignature(config) {
         if (!config || typeof config !== 'object') return '';
+        var campuses = Array.isArray(config.campuses) ? config.campuses.map(function (id) {
+            return String(id || '').trim().toLowerCase();
+        }).filter(Boolean) : [];
+        campuses.sort();
+
         var stopIds = Array.isArray(config.stopIds) ? config.stopIds.map(function (id) {
             return String(id || '').trim();
         }).filter(Boolean) : [];
@@ -13545,7 +14916,7 @@
         }) : [];
         lines.sort(function (a, b) { return a.line.localeCompare(b.line); });
 
-        return JSON.stringify({ stopIds: stopIds, lines: lines });
+        return JSON.stringify({ campuses: campuses, stopIds: stopIds, lines: lines });
     }
 
     function consumeBusSharedCache(maxAgeMs, expectedConfigSig) {
@@ -13617,6 +14988,11 @@
     function isDTULearnHomepage() {
         return window.location.hostname === 'learn.inside.dtu.dk'
             && /^\/d2l\/home\/?$/.test(window.location.pathname);
+    }
+
+    function isDTULearnLegacyDropboxPage() {
+        return window.location.hostname === 'learn.inside.dtu.dk'
+            && /^\/d2l\/lms\/dropbox\//i.test(window.location.pathname);
     }
 
     // Inject helpful external links into existing DTU Learn nav dropdowns.
@@ -14396,7 +15772,7 @@
             refreshBtn.setAttribute('data-dtu-deadlines-refresh', '1');
             refreshBtn.setAttribute('aria-label', 'Refresh deadlines');
             refreshBtn.setAttribute('title', 'Refresh deadlines');
-            refreshBtn.innerHTML = '&#x21bb;';
+            refreshBtn.textContent = '\u21bb';
             refreshBtn.style.cssText = 'border: none; background: transparent; cursor: pointer; '
                 + 'font-size: 14px; line-height: 1; padding: 2px; border-radius: 4px; '
                 + 'color: ' + (darkModeEnabled ? '#888' : '#9ca3af') + ';';
@@ -14483,8 +15859,12 @@
 
     var _libraryEventsCache = null;
     var _libraryNewsCache = null;
+    var _libraryOccupancyCache = null;
+    var _libraryCrowdingCache = null;
     var LIBRARY_RUNTIME_STYLE_ID = 'dtu-library-runtime-style';
     var _libraryEscHandler = null;
+    var _libraryOccupancyAutoTimer = null;
+    var LIBRARY_CROWD_HEATMAP_EXPANDED_KEY = 'dtuAfterDarkLibraryCrowdHeatmapExpanded';
 
     function ensureLibraryRuntimeStyles() {
         if (!IS_TOP_WINDOW) return;
@@ -14506,6 +15886,8 @@
         var sectionBg = darkModeEnabled ? '#2d2d2d' : '#ffffff';
         var rowBg = darkModeEnabled ? 'rgba(255,255,255,0.03)' : 'rgba(15,23,42,0.03)';
         var rowBgHover = darkModeEnabled ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.06)';
+        var linkBg = darkModeEnabled ? 'rgba(255,255,255,0.018)' : 'rgba(15,23,42,0.018)';
+        var linkBgHover = darkModeEnabled ? 'rgba(255,255,255,0.045)' : 'rgba(15,23,42,0.045)';
         var sectionTitle = darkModeEnabled ? '#a3acb8' : '#667084';
         var stateBg = darkModeEnabled ? 'rgba(255,255,255,0.02)' : '#f8fafc';
         var actionBorder = darkModeEnabled ? '#4a4a4a' : '#d4dbe6';
@@ -14513,6 +15895,16 @@
         var actionBgHover = darkModeEnabled ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)';
         var dateBg = darkModeEnabled ? '#212121' : '#f3f6fb';
         var panelShadow = darkModeEnabled ? '0.7' : '0.25';
+        var crowdBg = darkModeEnabled ? '#1a1a1a' : '#ffffff';
+        var crowdInset = darkModeEnabled ? '#121212' : '#f5f5f5';
+        var crowdInsetSoft = darkModeEnabled ? '#181818' : '#f8fafc';
+        var crowdBorder = darkModeEnabled ? '#363636' : '#d8dde6';
+        var crowdText = darkModeEnabled ? '#e0e0e0' : '#1a1a1a';
+        var crowdMuted = darkModeEnabled ? '#888' : '#666';
+        var crowdTrack = darkModeEnabled ? '#2a2a2a' : '#e8e8e8';
+        var crowdGood = '#2e7d32';
+        var crowdWarn = '#d97706'; // Fixed amber — keeps traffic-light semantics independent of accent colour
+        var crowdBad = '#c62828';
 
         var css = [
             '.dtu-library-modal-overlay{position:fixed !important;inset:0 !important;z-index:1000000 !important;display:flex !important;align-items:center !important;justify-content:center !important;padding:20px !important;background:transparent !important;background-color:transparent !important;backdrop-filter:blur(4px) !important;-webkit-backdrop-filter:blur(4px) !important;}',
@@ -14520,7 +15912,16 @@
             '.dtu-library-panel{display:flex !important;flex-direction:column !important;overflow:hidden !important;width:min(980px,calc(100vw - 40px)) !important;max-height:calc(100vh - 80px) !important;box-sizing:border-box !important;border-radius:14px !important;background:' + panelBg + ' !important;border:1px solid ' + panelBorder + ' !important;color:' + panelText + ' !important;box-shadow:0 20px 60px rgba(0,0,0,' + panelShadow + ') !important;}',
             '.dtu-library-panel,.dtu-library-panel *{box-sizing:border-box !important;font-family:inherit !important;}',
             '.dtu-library-header{display:flex !important;align-items:center !important;justify-content:space-between !important;gap:10px !important;padding:14px 18px 12px !important;border-bottom:1px solid ' + panelBorder + ' !important;background:rgba(255,255,255,0.02) !important;flex-shrink:0 !important;}',
-            '.dtu-library-title{margin:0 !important;font-size:21px !important;font-weight:760 !important;line-height:1.1 !important;letter-spacing:-0.3px !important;color:' + panelText + ' !important;}',
+            '.dtu-library-header-main{display:flex !important;align-items:center !important;gap:14px !important;min-width:0 !important;flex:1 1 auto !important;}',
+            '.dtu-library-title{margin:0 !important;font-size:21px !important;font-weight:760 !important;line-height:1.1 !important;letter-spacing:-0.3px !important;color:' + panelText + ' !important;white-space:nowrap !important;}',
+            '.dtu-library-header-occupancy{display:flex !important;align-items:flex-end !important;justify-content:flex-start !important;gap:12px !important;flex-wrap:wrap !important;min-width:0 !important;flex:1 1 auto !important;}',
+            '.dtu-library-header-occ-item{display:flex !important;flex-direction:column !important;align-items:flex-start !important;justify-content:center !important;gap:2px !important;padding:0 !important;background:transparent !important;border:0 !important;min-width:54px !important;}',
+            '.dtu-library-header-occ-label{margin:0 !important;font-size:9px !important;font-weight:700 !important;line-height:1.1 !important;letter-spacing:0.55px !important;text-transform:uppercase !important;color:' + sectionTitle + ' !important;}',
+            '.dtu-library-header-occ-value{margin:0 !important;font-size:22px !important;font-weight:800 !important;line-height:0.95 !important;color:' + panelText + ' !important;}',
+            '.dtu-library-header-actions{display:flex !important;align-items:center !important;justify-content:flex-end !important;gap:8px !important;min-width:0 !important;flex:0 0 auto !important;}',
+            '.dtu-library-header-updated{margin:0 !important;font-size:10px !important;font-weight:600 !important;line-height:1.2 !important;letter-spacing:0.2px !important;color:' + muted + ' !important;white-space:nowrap !important;}',
+            '.dtu-library-header-occ-refresh{appearance:none !important;border:1px solid ' + actionBorder + ' !important;background:' + actionBg + ' !important;color:' + panelText + ' !important;border-radius:999px !important;cursor:pointer !important;padding:3px 8px !important;font-size:10px !important;font-weight:700 !important;line-height:1.1 !important;white-space:nowrap !important;min-height:24px !important;}',
+            '.dtu-library-header-occ-refresh:hover{background:' + actionBgHover + ' !important;border-color:var(--dtu-ad-accent) !important;color:var(--dtu-ad-accent-soft) !important;}',
             'button.dtu-library-close{appearance:none !important;border:1px solid ' + actionBorder + ' !important;background:' + actionBg + ' !important;color:' + muted + ' !important;border-radius:7px !important;cursor:pointer !important;padding:2px 9px !important;line-height:1 !important;font-size:26px !important;min-width:34px !important;min-height:30px !important;}',
             'button.dtu-library-close:hover{background:' + actionBgHover + ' !important;color:' + panelText + ' !important;border-color:var(--dtu-ad-accent) !important;}',
             '.dtu-library-content{display:flex !important;flex-direction:column !important;gap:14px !important;padding:18px 22px 20px !important;overflow:auto !important;background:transparent !important;flex:1 1 auto !important;}',
@@ -14532,9 +15933,49 @@
             '.dtu-library-actions{display:flex !important;align-items:center !important;gap:8px !important;background:transparent !important;}',
             'button.dtu-library-action-btn{appearance:none !important;border:1px solid ' + actionBorder + ' !important;background:' + actionBg + ' !important;color:' + panelText + ' !important;border-radius:7px !important;cursor:pointer !important;padding:4px 10px !important;font-size:11px !important;font-weight:650 !important;line-height:1.2 !important;white-space:nowrap !important;min-height:26px !important;}',
             'button.dtu-library-action-btn:hover{background:' + actionBgHover + ' !important;border-color:var(--dtu-ad-accent) !important;color:var(--dtu-ad-accent-soft) !important;}',
-            '.dtu-library-link-grid{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:8px !important;background:transparent !important;}',
-            'a.dtu-library-link-item{display:flex !important;align-items:center !important;justify-content:center !important;min-height:44px !important;padding:9px 10px !important;border-radius:9px !important;background:' + rowBg + ' !important;border:1px solid ' + panelBorder + ' !important;color:' + panelText + ' !important;text-decoration:none !important;text-align:center !important;font-size:12px !important;font-weight:650 !important;line-height:1.25 !important;white-space:normal !important;overflow-wrap:anywhere !important;transition:background-color .16s ease,border-color .16s ease,transform .16s ease !important;}',
-            'a.dtu-library-link-item:hover{background:' + rowBgHover + ' !important;border-color:var(--dtu-ad-accent) !important;color:var(--dtu-ad-accent-soft) !important;transform:translateY(-1px) !important;}',
+            '.dtu-library-link-grid{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:6px !important;background:transparent !important;}',
+            'a.dtu-library-link-item{display:flex !important;align-items:center !important;justify-content:flex-start !important;gap:8px !important;min-height:34px !important;padding:6px 9px !important;border-radius:8px !important;background:' + linkBg + ' !important;border:1px solid ' + panelBorder + ' !important;color:' + panelText + ' !important;text-decoration:none !important;text-align:left !important;font-size:11.5px !important;font-weight:640 !important;line-height:1.2 !important;white-space:normal !important;overflow-wrap:anywhere !important;transition:background-color .14s ease,border-color .14s ease,transform .14s ease !important;}',
+            'a.dtu-library-link-item:hover{background:' + linkBgHover + ' !important;border-color:var(--dtu-ad-accent) !important;color:var(--dtu-ad-accent-soft) !important;transform:translateY(-1px) !important;}',
+            '.dtu-library-link-icon{display:inline-flex !important;align-items:center !important;justify-content:center !important;flex-shrink:0 !important;width:14px !important;min-width:14px !important;font-size:12px !important;line-height:1 !important;color:' + sectionTitle + ' !important;}',
+            '.dtu-library-link-label{display:block !important;min-width:0 !important;overflow-wrap:anywhere !important;}',
+            '.dtu-library-crowd{display:flex !important;flex-direction:column !important;gap:10px !important;color:' + crowdText + ' !important;}',
+            '.dtu-library-crowd-card{background:' + crowdBg + ' !important;border:1px solid ' + crowdBorder + ' !important;border-radius:10px !important;padding:8px !important;}',
+            '.dtu-library-crowd-hero{display:flex !important;flex-direction:column !important;gap:6px !important;}',
+            '.dtu-library-crowd-hero-top{display:flex !important;align-items:flex-end !important;justify-content:space-between !important;gap:14px !important;flex-wrap:wrap !important;}',
+            '.dtu-library-crowd-hero-main{display:flex !important;align-items:flex-end !important;gap:10px !important;flex-wrap:wrap !important;}',
+            '.dtu-library-crowd-hero-stats{display:flex !important;align-items:flex-end !important;gap:14px !important;flex-wrap:wrap !important;}',
+            '.dtu-library-crowd-hero-stat{display:flex !important;flex-direction:column !important;align-items:flex-start !important;gap:1px !important;min-width:74px !important;}',
+            '.dtu-library-crowd-hero-stat-label{margin:0 !important;font-size:9px !important;font-weight:700 !important;line-height:1.1 !important;letter-spacing:0.45px !important;text-transform:uppercase !important;color:' + crowdMuted + ' !important;}',
+            '.dtu-library-crowd-hero-stat-value{margin:0 !important;font-size:16px !important;font-weight:760 !important;line-height:1 !important;color:' + crowdText + ' !important;}',
+            '.dtu-library-crowd-hero-stat-hint{margin:0 !important;font-size:9px !important;font-weight:520 !important;line-height:1.1 !important;color:' + crowdMuted + ' !important;}',
+            '.dtu-library-crowd-label{margin:0 !important;font-size:9px !important;font-weight:700 !important;line-height:1.1 !important;letter-spacing:0.45px !important;text-transform:uppercase !important;color:' + crowdMuted + ' !important;}',
+            '.dtu-library-crowd-free-wrap{display:flex !important;align-items:flex-end !important;gap:6px !important;}',
+            '.dtu-library-crowd-free{margin:0 !important;font-size:30px !important;font-weight:800 !important;line-height:0.98 !important;letter-spacing:-0.35px !important;color:' + crowdText + ' !important;}',
+            '.dtu-library-crowd-free-unit{margin:0 0 3px !important;font-size:10px !important;font-weight:620 !important;line-height:1 !important;color:' + crowdMuted + ' !important;}',
+            '.dtu-library-crowd-status{margin:0 0 3px !important;font-size:12px !important;font-weight:700 !important;line-height:1.1 !important;color:' + crowdMuted + ' !important;}',
+            '.dtu-library-crowd-progress{position:relative !important;width:100% !important;height:12px !important;border-radius:999px !important;background:' + crowdTrack + ' !important;border:1px solid ' + crowdBorder + ' !important;overflow:hidden !important;}',
+            '.dtu-library-crowd-progress-fill{position:absolute !important;left:0 !important;top:0 !important;bottom:0 !important;width:0 !important;border-radius:999px !important;background:' + crowdGood + ' !important;transition:width 0.25s ease !important;}',
+            '.dtu-library-crowd-progress[aria-valuetext*=\"Moderate\"] .dtu-library-crowd-progress-fill{background:' + crowdWarn + ' !important;}',
+            '.dtu-library-crowd-progress[aria-valuetext*=\"Busy\"] .dtu-library-crowd-progress-fill{background:' + crowdBad + ' !important;}',
+            '.dtu-library-crowd-chart-wrap{background:' + crowdInset + ' !important;border:1px solid ' + crowdBorder + ' !important;border-radius:10px !important;padding:8px !important;}',
+            '.dtu-library-crowd-chart{display:block !important;width:100% !important;height:172px !important;border-radius:7px !important;background:' + crowdInset + ' !important;}',
+            '.dtu-library-crowd-chart-note{margin:6px 0 0 !important;font-size:10px !important;line-height:1.3 !important;color:' + crowdMuted + ' !important;}',
+            '.dtu-library-crowd-events{display:flex !important;flex-direction:column !important;gap:4px !important;margin-top:6px !important;}',
+            '.dtu-library-crowd-event{display:flex !important;align-items:flex-start !important;gap:6px !important;font-size:10px !important;line-height:1.3 !important;color:' + crowdMuted + ' !important;}',
+            '.dtu-library-crowd-event-dot{display:inline-block !important;width:8px !important;min-width:8px !important;height:8px !important;border-radius:2px !important;margin-top:2px !important;background:rgba(var(--dtu-ad-accent-rgb),0.45) !important;border:1px solid rgba(var(--dtu-ad-accent-rgb),0.75) !important;}',
+            '.dtu-library-crowd-event-text{display:inline !important;color:' + crowdMuted + ' !important;}',
+            '.dtu-library-crowd-confidence{margin:0 !important;font-size:10px !important;line-height:1.3 !important;color:' + crowdMuted + ' !important;}',
+            '.dtu-library-crowd-heatmap-toggle{appearance:none !important;border:1px solid ' + actionBorder + ' !important;background:' + actionBg + ' !important;color:' + crowdText + ' !important;border-radius:7px !important;cursor:pointer !important;padding:5px 9px !important;font-size:11px !important;font-weight:650 !important;line-height:1.2 !important;white-space:nowrap !important;}',
+            '.dtu-library-crowd-heatmap-toggle:hover{background:' + actionBgHover + ' !important;border-color:var(--dtu-ad-accent) !important;color:var(--dtu-ad-accent-soft) !important;}',
+            '.dtu-library-crowd-heatmap{display:none !important;background:' + crowdInset + ' !important;border:1px solid ' + crowdBorder + ' !important;border-radius:10px !important;padding:8px !important;}',
+            '.dtu-library-crowd-heatmap.is-open{display:block !important;}',
+            '.dtu-library-crowd-heatmap-head,.dtu-library-crowd-heatmap-row{display:grid !important;grid-template-columns:50px repeat(5,minmax(0,1fr)) !important;gap:4px !important;align-items:center !important;}',
+            '.dtu-library-crowd-heatmap-head{margin:0 0 4px !important;}',
+            '.dtu-library-crowd-heatmap-day{font-size:10px !important;font-weight:700 !important;line-height:1.1 !important;text-align:center !important;color:' + crowdMuted + ' !important;}',
+            '.dtu-library-crowd-heatmap-hour{font-size:10px !important;font-weight:650 !important;line-height:1.1 !important;color:' + crowdMuted + ' !important;}',
+            '.dtu-library-crowd-heatmap-cell{appearance:none !important;border:1px solid ' + crowdBorder + ' !important;border-radius:4px !important;min-height:16px !important;padding:0 !important;cursor:default !important;background:rgba(var(--dtu-ad-accent-rgb),0.08) !important;}',
+            '.dtu-library-crowd-heatmap-cell:focus-visible{outline:2px solid var(--dtu-ad-accent) !important;outline-offset:1px !important;}',
+            '.dtu-library-crowd-state{margin:0 !important;padding:10px !important;border-radius:8px !important;border:1px dashed ' + crowdBorder + ' !important;background:' + crowdInset + ' !important;font-size:11px !important;line-height:1.35 !important;color:' + crowdMuted + ' !important;}',
             '.dtu-library-feed-list{display:flex !important;flex-direction:column !important;gap:8px !important;background:transparent !important;}',
             'a.dtu-library-feed-item{display:flex !important;align-items:flex-start !important;gap:11px !important;padding:10px !important;border-radius:10px !important;background:' + rowBg + ' !important;border:1px solid ' + panelBorder + ' !important;text-decoration:none !important;color:' + panelText + ' !important;transition:background-color .16s ease,border-color .16s ease,transform .16s ease !important;}',
             'a.dtu-library-feed-item:hover{background:' + rowBgHover + ' !important;border-color:var(--dtu-ad-accent) !important;transform:translateY(-1px) !important;}',
@@ -14547,8 +15988,8 @@
             '.dtu-library-item-title{margin:0 0 4px !important;font-size:13px !important;font-weight:700 !important;line-height:1.35 !important;color:' + panelText + ' !important;display:-webkit-box !important;-webkit-line-clamp:2 !important;line-clamp:2 !important;-webkit-box-orient:vertical !important;overflow:hidden !important;}',
             '.dtu-library-item-meta{margin:0 !important;font-size:11px !important;line-height:1.35 !important;color:' + muted + ' !important;white-space:normal !important;overflow-wrap:anywhere !important;}',
             '.dtu-library-state-msg{margin:0 !important;padding:16px 12px !important;border-radius:9px !important;border:1px dashed ' + panelBorder + ' !important;background:' + stateBg + ' !important;text-align:center !important;color:' + muted + ' !important;font-size:12px !important;font-style:italic !important;}',
-            '@media (max-width: 900px){.dtu-library-feed-grid{grid-template-columns:1fr !important;}.dtu-library-link-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}}',
-            '@media (max-width: 520px){.dtu-library-modal-overlay{padding:8px !important;}.dtu-library-panel{width:calc(100vw - 16px) !important;max-height:calc(100vh - 16px) !important;border-radius:12px !important;}.dtu-library-header{padding:12px 14px 10px !important;}.dtu-library-content{padding:12px 14px 14px !important;}.dtu-library-link-grid{grid-template-columns:1fr !important;}}'
+            '@media (max-width: 900px){.dtu-library-feed-grid{grid-template-columns:1fr !important;}.dtu-library-link-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}.dtu-library-header{align-items:flex-start !important;}.dtu-library-header-main{flex-wrap:wrap !important;align-items:flex-start !important;gap:10px !important;}.dtu-library-header-occupancy{width:100% !important;gap:10px !important;}.dtu-library-header-actions{width:100% !important;justify-content:flex-start !important;}}',
+            '@media (max-width: 520px){.dtu-library-modal-overlay{padding:8px !important;}.dtu-library-panel{width:calc(100vw - 16px) !important;max-height:calc(100vh - 16px) !important;border-radius:12px !important;}.dtu-library-header{padding:12px 14px 10px !important;}.dtu-library-content{padding:12px 14px 14px !important;}.dtu-library-link-grid{grid-template-columns:1fr !important;}.dtu-library-header-occupancy{gap:8px !important;}.dtu-library-header-occ-value{font-size:19px !important;}.dtu-library-header-updated{display:none !important;}}'
         ].join('');
 
         if (style.textContent !== css) style.textContent = css;
@@ -14568,6 +16009,980 @@
         });
     }
 
+    function requestLibraryCrowding(cb, forceRefresh) {
+        sendRuntimeMessage({
+            type: 'dtu-library-occupancy',
+            forceRefresh: !!forceRefresh,
+            seats: '800'
+        }, function (resp) {
+            if (!resp || !resp.ok) {
+                if (cb) cb(resp);
+                return;
+            }
+
+            var occ = resp.occupancy || {};
+            var ts = parseLibraryIntLoose(occ.fetchedAt, null);
+            var normalized = {
+                ok: true,
+                occupancy: occ,
+                current: {
+                    visitors: parseLibraryIntLoose(occ.now, null),
+                    capacity: parseLibraryIntLoose(occ.capacity, null),
+                    free_seats: parseLibraryIntLoose(occ.freeSeats, null),
+                    timestamp: ts != null ? new Date(ts).toISOString() : null
+                },
+                today: {
+                    total_visits: parseLibraryIntLoose(occ.today, null),
+                    samples: []
+                },
+                historical: {
+                    weekday_averages: {},
+                    days_collected: null
+                }
+            };
+            _libraryCrowdingCache = normalized;
+            if (cb) cb(normalized);
+        });
+    }
+
+    function formatHourWindow(hour) {
+        var h = (hour % 24 + 24) % 24;
+        var n = (h + 1) % 24;
+        var hs = (h < 10 ? '0' : '') + h + ':00';
+        var ns = (n < 10 ? '0' : '') + n + ':00';
+        return hs + '-' + ns;
+    }
+
+    function getLibrarySharedTrendHourly(sharedResp) {
+        var trends = sharedResp && sharedResp.trends ? sharedResp.trends : null;
+        if (!trends || !Array.isArray(trends.hourly)) return [];
+        return trends.hourly.map(function (row) {
+            var hour = parseInt(row && row.hour, 10);
+            var avg = Number(row && row.avgNow);
+            var samples = parseInt(row && row.samples, 10);
+            return {
+                hour: hour,
+                avgNow: avg,
+                samples: isFinite(samples) ? samples : 0,
+                window: (row && row.window) ? String(row.window) : formatHourWindow(hour)
+            };
+        }).filter(function (row) {
+            return isFinite(row.hour) && row.hour >= 0 && row.hour <= 23
+                && isFinite(row.avgNow)
+                && row.samples >= 3;
+        }).sort(function (a, b) { return a.hour - b.hour; });
+    }
+
+    function createLibraryTrendSvgEl(tag) {
+        return document.createElementNS('http://www.w3.org/2000/svg', tag);
+    }
+
+    function appendLibrarySharedTrendGraph(body, sharedResp) {
+        if (!body) return false;
+        var trends = sharedResp && sharedResp.trends ? sharedResp.trends : null;
+        var hourly = getLibrarySharedTrendHourly(sharedResp);
+        var totalSamples = parseInt(trends && trends.totalSamples, 10);
+        if (!isFinite(totalSamples)) totalSamples = 0;
+
+        // Require enough span/volume before showing a chart.
+        var hasConfidence = hourly.length >= 6 && totalSamples >= 180;
+        if (!hasConfidence) return false;
+
+        var chartWrap = document.createElement('div');
+        chartWrap.className = 'dtu-library-trend-chart';
+
+        var svg = createLibraryTrendSvgEl('svg');
+        svg.setAttribute('class', 'dtu-library-trend-svg');
+        svg.setAttribute('viewBox', '0 0 520 132');
+        svg.setAttribute('preserveAspectRatio', 'none');
+        chartWrap.appendChild(svg);
+
+        var chartW = 520;
+        var chartH = 132;
+        var pad = { left: 24, right: 10, top: 8, bottom: 22 };
+        var innerW = chartW - pad.left - pad.right;
+        var innerH = chartH - pad.top - pad.bottom;
+
+        var minAvg = Math.min.apply(null, hourly.map(function (h) { return h.avgNow; }));
+        var maxAvg = Math.max.apply(null, hourly.map(function (h) { return h.avgNow; }));
+        if (!isFinite(minAvg) || !isFinite(maxAvg)) return false;
+        if (maxAvg - minAvg < 1) {
+            maxAvg = minAvg + 1;
+        }
+
+        // Horizontal grid
+        [0, 0.5, 1].forEach(function (f) {
+            var gy = pad.top + innerH * f;
+            var grid = createLibraryTrendSvgEl('line');
+            grid.setAttribute('class', 'dtu-library-trend-grid');
+            grid.setAttribute('x1', String(pad.left));
+            grid.setAttribute('x2', String(chartW - pad.right));
+            grid.setAttribute('y1', String(gy));
+            grid.setAttribute('y2', String(gy));
+            svg.appendChild(grid);
+        });
+
+        // Axes
+        var axisX = createLibraryTrendSvgEl('line');
+        axisX.setAttribute('class', 'dtu-library-trend-axis');
+        axisX.setAttribute('x1', String(pad.left));
+        axisX.setAttribute('x2', String(chartW - pad.right));
+        axisX.setAttribute('y1', String(chartH - pad.bottom));
+        axisX.setAttribute('y2', String(chartH - pad.bottom));
+        svg.appendChild(axisX);
+
+        var points = hourly.map(function (h) {
+            var x = pad.left + ((h.hour / 23) * innerW);
+            var yNorm = (h.avgNow - minAvg) / (maxAvg - minAvg);
+            var y = pad.top + (1 - yNorm) * innerH;
+            return { x: x, y: y, hour: h.hour, avgNow: h.avgNow };
+        });
+
+        var pathD = '';
+        points.forEach(function (p, i) {
+            pathD += (i === 0 ? 'M ' : ' L ') + p.x.toFixed(2) + ' ' + p.y.toFixed(2);
+        });
+        var line = createLibraryTrendSvgEl('path');
+        line.setAttribute('class', 'dtu-library-trend-line');
+        line.setAttribute('d', pathD);
+        svg.appendChild(line);
+
+        points.forEach(function (p) {
+            var dot = createLibraryTrendSvgEl('circle');
+            dot.setAttribute('class', 'dtu-library-trend-dot');
+            dot.setAttribute('cx', p.x.toFixed(2));
+            dot.setAttribute('cy', p.y.toFixed(2));
+            dot.setAttribute('r', '2.3');
+            svg.appendChild(dot);
+        });
+
+        // Time labels
+        [0, 6, 12, 18, 23].forEach(function (hour) {
+            var x = pad.left + ((hour / 23) * innerW);
+            var label = createLibraryTrendSvgEl('text');
+            label.setAttribute('class', 'dtu-library-trend-label');
+            label.setAttribute('x', x.toFixed(2));
+            label.setAttribute('y', String(chartH - 6));
+            label.setAttribute('text-anchor', hour === 0 ? 'start' : (hour === 23 ? 'end' : 'middle'));
+            label.textContent = (hour < 10 ? '0' : '') + hour;
+            svg.appendChild(label);
+        });
+
+        body.appendChild(chartWrap);
+
+        var caption = document.createElement('div');
+        caption.className = 'dtu-library-trend-caption';
+        caption.textContent = 'Hourly shared occupancy average. Based on ' + totalSamples
+            + ' samples across ' + hourly.length + ' hour windows.';
+        body.appendChild(caption);
+        return true;
+    }
+
+    function buildLibrarySharedTrendLines(sharedResp) {
+        var trends = sharedResp && sharedResp.trends ? sharedResp.trends : null;
+        if (!trends || !Array.isArray(trends.hourly)) {
+            return null;
+        }
+
+        var hourly = getLibrarySharedTrendHourly(sharedResp);
+        var totalSamples = parseInt(trends.totalSamples, 10);
+        if (!isFinite(totalSamples)) totalSamples = 0;
+
+        var currentAvg = trends.currentWindow && trends.currentWindow.avgNow;
+        var currentBasis = trends.currentWindow && trends.currentWindow.basis;
+        var line1 = (typeof currentAvg === 'number' && isFinite(currentAvg))
+            ? ('Typical right now: ~' + Math.round(currentAvg) + ' visitors.')
+            : 'Not enough same-time history yet.';
+
+        if (hourly.length < 2) {
+            return [
+                line1,
+                'Need data from at least 2 different hour windows before comparing busy vs quiet periods.',
+                'Currently collected: ' + totalSamples + ' samples across ' + hourly.length + ' hour window.'
+            ];
+        }
+
+        var sortedBusy = hourly.slice().sort(function (a, b) { return b.avgNow - a.avgNow; });
+        var busyTop = sortedBusy.slice(0, 2);
+        var busyHourSet = {};
+        busyTop.forEach(function (x) { busyHourSet[x.hour] = true; });
+
+        var quietTop = hourly.slice()
+            .sort(function (a, b) { return a.avgNow - b.avgNow; })
+            .filter(function (x) { return !busyHourSet[x.hour]; })
+            .slice(0, 2);
+
+        if (!quietTop.length) {
+            return [
+                line1,
+                'Need more hour diversity before busiest/quieter comparison is reliable.',
+                'Currently collected: ' + totalSamples + ' samples across ' + hourly.length + ' hour windows.'
+            ];
+        }
+
+        var busyText = busyTop.map(function (h) { return h.window; }).join(', ');
+        var quietText = quietTop.map(function (h) { return h.window; }).join(', ');
+
+        return [
+            line1,
+            'Busiest recent hours: ' + busyText + '.',
+            'Quieter recent hours: ' + quietText + '.',
+            'Data confidence: ' + totalSamples + ' shared samples across ' + hourly.length + ' hour windows.'
+        ];
+    }
+
+    function parseLibraryIntLoose(value, fallback) {
+        var digits = String(value == null ? '' : value).match(/-?\d+/);
+        if (!digits) return (typeof fallback === 'number' ? fallback : null);
+        var num = parseInt(digits[0], 10);
+        return isFinite(num) ? num : (typeof fallback === 'number' ? fallback : null);
+    }
+
+    function parseLibraryNumLoose(value, fallback) {
+        var n = Number(value);
+        return isFinite(n) ? n : (typeof fallback === 'number' ? fallback : null);
+    }
+
+    function toLibraryDateKey(ts) {
+        var d = new Date(ts);
+        if (!(d instanceof Date) || isNaN(d.getTime())) return '';
+        var y = d.getFullYear();
+        var m = d.getMonth() + 1;
+        var day = d.getDate();
+        return y + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+    }
+
+    function parseLibraryMinuteOfDay(raw) {
+        if (typeof raw === 'number' && isFinite(raw)) {
+            if (raw >= 0 && raw < 24 * 60) return Math.round(raw);
+            if (raw > 24 * 60) {
+                var d0 = new Date(raw);
+                if (!isNaN(d0.getTime())) return d0.getHours() * 60 + d0.getMinutes();
+            }
+        }
+        var s = String(raw || '').trim();
+        if (!s) return null;
+        var hhmm = s.match(/^(\d{1,2}):(\d{2})$/);
+        if (hhmm) {
+            var hh = parseInt(hhmm[1], 10);
+            var mm = parseInt(hhmm[2], 10);
+            if (isFinite(hh) && isFinite(mm) && hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59) {
+                return hh * 60 + mm;
+            }
+        }
+        var d = new Date(s);
+        if (!isNaN(d.getTime())) return d.getHours() * 60 + d.getMinutes();
+        return null;
+    }
+
+    function getLibraryWeekdayName(dayIndex) {
+        var names = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        return names[(dayIndex % 7 + 7) % 7];
+    }
+
+    function normalizeLibraryWeekdayKey(raw) {
+        var key = String(raw || '').toLowerCase().trim();
+        if (!key) return '';
+        if (/^(0|sun|sunday)$/.test(key)) return 'sunday';
+        if (/^(1|mon|monday)$/.test(key)) return 'monday';
+        if (/^(2|tue|tuesday)$/.test(key)) return 'tuesday';
+        if (/^(3|wed|wednesday)$/.test(key)) return 'wednesday';
+        if (/^(4|thu|thursday)$/.test(key)) return 'thursday';
+        if (/^(5|fri|friday)$/.test(key)) return 'friday';
+        if (/^(6|sat|saturday)$/.test(key)) return 'saturday';
+        if (key === 'generic') return 'generic';
+        return '';
+    }
+
+    function normalizeLibraryHourRows(rows) {
+        if (!Array.isArray(rows)) return [];
+        var map = {};
+        rows.forEach(function (row) {
+            var hour = parseLibraryIntLoose(row && (row.hour != null ? row.hour : row.hour_local), null);
+            var avg = parseLibraryNumLoose(
+                row && (row.avg_visitors != null ? row.avg_visitors
+                    : row.avgNow != null ? row.avgNow
+                        : row.avg_now),
+                null
+            );
+            var minV = parseLibraryNumLoose(
+                row && (row.min_visitors != null ? row.min_visitors
+                    : row.minNow != null ? row.minNow
+                        : row.min_now),
+                null
+            );
+            var maxV = parseLibraryNumLoose(
+                row && (row.max_visitors != null ? row.max_visitors
+                    : row.maxNow != null ? row.maxNow
+                        : row.max_now),
+                null
+            );
+            var samples = parseLibraryIntLoose(row && row.samples, 0);
+            if (hour == null || hour < 0 || hour > 23 || avg == null || !isFinite(avg)) return;
+
+            if (minV == null && maxV == null) {
+                var spread = Math.max(8, Math.abs(avg) * 0.08);
+                minV = Math.max(0, avg - spread);
+                maxV = avg + spread;
+            } else {
+                if (minV == null) minV = Math.max(0, avg - Math.max(5, Math.abs(avg - maxV)));
+                if (maxV == null) maxV = Math.max(avg, avg + Math.max(5, Math.abs(avg - minV)));
+            }
+            if (maxV < minV) {
+                var tmp = minV;
+                minV = maxV;
+                maxV = tmp;
+            }
+            map[hour] = {
+                hour: hour,
+                avg: avg,
+                min: minV,
+                max: maxV,
+                samples: Math.max(0, samples || 0),
+                window: formatHourWindow(hour)
+            };
+        });
+        var out = Object.keys(map).map(function (k) { return map[k]; });
+        out.sort(function (a, b) { return a.hour - b.hour; });
+        return out;
+    }
+
+    function normalizeLibraryWeekdayAverages(rawMap) {
+        var out = {};
+        if (!rawMap || typeof rawMap !== 'object') return out;
+        Object.keys(rawMap).forEach(function (key) {
+            var normKey = normalizeLibraryWeekdayKey(key);
+            if (!normKey) return;
+            var rows = normalizeLibraryHourRows(rawMap[key]);
+            if (rows.length) out[normKey] = rows;
+        });
+        return out;
+    }
+
+    function estimateLibraryWeekdayOccurrences(rows) {
+        if (!Array.isArray(rows) || !rows.length) return null;
+        var estimates = [];
+        rows.forEach(function (row) {
+            var samples = parseLibraryNumLoose(row && row.samples, null);
+            if (!isFinite(samples) || samples <= 0) return;
+            estimates.push(samples / 60);
+        });
+        if (!estimates.length) return null;
+        estimates.sort(function (a, b) { return a - b; });
+        var mid = Math.floor(estimates.length / 2);
+        var median = (estimates.length % 2)
+            ? estimates[mid]
+            : ((estimates[mid - 1] + estimates[mid]) / 2);
+        if (!isFinite(median) || median <= 0) return null;
+        return Math.max(1, Math.round(median));
+    }
+
+    function formatLibraryWeekdayObservations(weekdayName, count) {
+        var labels = {
+            sunday: 'Sunday',
+            monday: 'Monday',
+            tuesday: 'Tuesday',
+            wednesday: 'Wednesday',
+            thursday: 'Thursday',
+            friday: 'Friday',
+            saturday: 'Saturday'
+        };
+        var base = labels[normalizeLibraryWeekdayKey(weekdayName)] || 'day';
+        return count === 1 ? base : (base + 's');
+    }
+
+    function extractLibraryCurrentSnapshot(crowdingResp, fallbackOccupancyResp) {
+        var snap = {
+            visitors: null,
+            today: null,
+            freeSeats: null,
+            capacity: null,
+            fetchedAt: null,
+            source: '',
+            hasCurrent: false
+        };
+
+        var c = crowdingResp && crowdingResp.current ? crowdingResp.current : null;
+        var latest = crowdingResp && crowdingResp.latest ? crowdingResp.latest : null;
+
+        if (c || latest) {
+            snap.visitors = parseLibraryIntLoose(c && c.visitors != null ? c.visitors : latest && latest.now, null);
+            snap.today = parseLibraryIntLoose(c && c.total_visits != null ? c.total_visits : latest && latest.today, null);
+            snap.capacity = parseLibraryIntLoose(c && c.capacity != null ? c.capacity : latest && latest.capacity, null);
+            snap.freeSeats = parseLibraryIntLoose(c && c.free_seats != null ? c.free_seats : latest && latest.freeSeats, null);
+            if (snap.freeSeats == null && snap.capacity != null && snap.visitors != null) {
+                snap.freeSeats = Math.max(0, snap.capacity - snap.visitors);
+            }
+            var tsRaw = c && c.timestamp ? c.timestamp : (latest && (latest.fetchedAtIso || latest.fetchedAt));
+            var tsParsed = typeof tsRaw === 'number' ? tsRaw : Date.parse(tsRaw || '');
+            if (isFinite(tsParsed)) snap.fetchedAt = tsParsed;
+            snap.source = String((crowdingResp && crowdingResp.sourceUrl) || (latest && latest.source) || '').trim();
+            snap.hasCurrent = snap.visitors != null || snap.freeSeats != null;
+        }
+
+        if (!snap.hasCurrent && fallbackOccupancyResp && fallbackOccupancyResp.occupancy) {
+            var occ = fallbackOccupancyResp.occupancy;
+            snap.visitors = parseLibraryIntLoose(occ.now, null);
+            snap.today = parseLibraryIntLoose(occ.today, null);
+            snap.capacity = parseLibraryIntLoose(occ.capacity, null);
+            snap.freeSeats = parseLibraryIntLoose(occ.freeSeats, null);
+            if (snap.freeSeats == null && snap.capacity != null && snap.visitors != null) {
+                snap.freeSeats = Math.max(0, snap.capacity - snap.visitors);
+            }
+            var ts = parseLibraryIntLoose(occ.fetchedAt, null);
+            if (ts != null) snap.fetchedAt = ts;
+            snap.source = String(occ.source || '').trim();
+            snap.hasCurrent = snap.visitors != null || snap.freeSeats != null;
+        }
+
+        return snap;
+    }
+
+    function buildLibraryTodaySamplesFromPayload(crowdingResp, referenceTs) {
+        var today = crowdingResp && crowdingResp.today ? crowdingResp.today : null;
+        if (!today || !Array.isArray(today.samples)) return [];
+        var refDateKey = toLibraryDateKey(referenceTs || Date.now());
+        var byMinute = {};
+
+        today.samples.forEach(function (sample) {
+            if (!sample || typeof sample !== 'object') return;
+            var visitors = parseLibraryNumLoose(
+                sample.visitors != null ? sample.visitors
+                    : sample.now != null ? sample.now
+                        : sample.value,
+                null
+            );
+            if (visitors == null) return;
+
+            var minute = parseLibraryMinuteOfDay(
+                sample.time != null ? sample.time
+                    : sample.minute != null ? sample.minute
+                        : sample.timestamp != null ? sample.timestamp
+                            : sample.ts != null ? sample.ts
+                                : sample.at
+            );
+            if (minute == null || minute < 0 || minute >= 24 * 60) return;
+
+            var sampleTs = sample.timestamp != null ? Date.parse(sample.timestamp) : NaN;
+            if (!isFinite(sampleTs) && sample.ts != null) sampleTs = parseLibraryIntLoose(sample.ts, NaN);
+            if (isFinite(sampleTs)) {
+                var sampleDateKey = toLibraryDateKey(sampleTs);
+                if (sampleDateKey && refDateKey && sampleDateKey !== refDateKey) return;
+            }
+            byMinute[minute] = visitors;
+        });
+
+        return Object.keys(byMinute).map(function (k) {
+            return { minute: parseInt(k, 10), visitors: byMinute[k] };
+        }).sort(function (a, b) { return a.minute - b.minute; });
+    }
+
+    function mergeLibraryTodaySamples(primary, fallback, currentMinute, currentVisitors) {
+        var byMinute = {};
+        (fallback || []).forEach(function (p) {
+            if (p && isFinite(p.minute) && isFinite(p.visitors)) byMinute[p.minute] = p.visitors;
+        });
+        (primary || []).forEach(function (p) {
+            if (p && isFinite(p.minute) && isFinite(p.visitors)) byMinute[p.minute] = p.visitors;
+        });
+        if (isFinite(currentMinute) && isFinite(currentVisitors)) {
+            byMinute[currentMinute] = currentVisitors;
+        }
+        return Object.keys(byMinute).map(function (k) {
+            return { minute: parseInt(k, 10), visitors: byMinute[k] };
+        }).sort(function (a, b) { return a.minute - b.minute; });
+    }
+
+    function buildLibraryCrowdingModel(crowdingResp, fallbackOccupancyResp) {
+        var nowTs = Date.now();
+        var snapshot = extractLibraryCurrentSnapshot(crowdingResp, fallbackOccupancyResp);
+        var nowDate = new Date(snapshot.fetchedAt || nowTs);
+        var nowMinute = nowDate.getHours() * 60 + nowDate.getMinutes();
+        var weekdayName = getLibraryWeekdayName(nowDate.getDay());
+
+        var historical = crowdingResp && crowdingResp.historical ? crowdingResp.historical : null;
+        var weekdayMap = normalizeLibraryWeekdayAverages(historical && historical.weekday_averages);
+        var operatingStartHour = 8;
+        var operatingEndHour = 22;
+
+        if (!Object.keys(weekdayMap).length && crowdingResp && crowdingResp.trends && Array.isArray(crowdingResp.trends.hourly)) {
+            weekdayMap.generic = normalizeLibraryHourRows(crowdingResp.trends.hourly);
+        }
+
+        var weekdayRows = Array.isArray(weekdayMap[weekdayName]) ? weekdayMap[weekdayName] : [];
+        var hasWeekdaySpecificHistory = weekdayRows.length > 0;
+        var typicalRows = hasWeekdaySpecificHistory ? weekdayRows : (weekdayMap.generic || []);
+        var currentHour = Math.floor(nowMinute / 60);
+        var typicalNowRow = typicalRows.find(function (r) { return r.hour === currentHour; }) || null;
+        var typicalNow = typicalNowRow ? typicalNowRow.avg : null;
+        var typicalBandEndMinute = null;
+        if (typicalRows.length) {
+            typicalBandEndMinute = Math.min(operatingEndHour * 60, (typicalRows[typicalRows.length - 1].hour + 1) * 60);
+        }
+
+        var todaySamplesPayload = buildLibraryTodaySamplesFromPayload(crowdingResp, snapshot.fetchedAt || nowTs);
+        var todaySamples = mergeLibraryTodaySamples(
+            todaySamplesPayload,
+            [],
+            nowMinute,
+            snapshot.visitors
+        );
+
+        var daysCollected = parseLibraryIntLoose(historical && historical.days_collected, null);
+        if (daysCollected == null && crowdingResp && crowdingResp.trends) {
+            var totalSamples = parseLibraryIntLoose(crowdingResp.trends.totalSamples, null);
+            if (totalSamples != null) daysCollected = Math.max(1, Math.round(totalSamples / (60 * 8)));
+        }
+
+        var weekdayObservationCount = hasWeekdaySpecificHistory ? estimateLibraryWeekdayOccurrences(weekdayRows) : null;
+        var weekdayObservationEstimated = false;
+        if (weekdayObservationCount == null && daysCollected != null && daysCollected >= 7) {
+            weekdayObservationCount = Math.max(1, Math.round(daysCollected / 7));
+            weekdayObservationEstimated = true;
+        }
+
+        var occupancyRatio = null;
+        if (snapshot.capacity != null && snapshot.capacity > 0 && snapshot.visitors != null) {
+            occupancyRatio = Math.max(0, Math.min(1, snapshot.visitors / snapshot.capacity));
+        }
+
+        var heatmapDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+        var heatmapAvailable = daysCollected != null && daysCollected >= 7
+            && heatmapDays.some(function (day) { return Array.isArray(weekdayMap[day]) && weekdayMap[day].length; });
+
+        return {
+            snapshot: snapshot,
+            nowTs: snapshot.fetchedAt || nowTs,
+            nowMinute: nowMinute,
+            weekdayName: weekdayName,
+            startHour: operatingStartHour,
+            endHour: operatingEndHour,
+            todaySamples: todaySamples,
+            typicalRows: typicalRows,
+            weekdayMap: weekdayMap,
+            typicalNow: typicalNow,
+            typicalBandEndMinute: typicalBandEndMinute,
+            daysCollected: daysCollected,
+            weekdayObservationCount: weekdayObservationCount,
+            weekdayObservationEstimated: weekdayObservationEstimated,
+            hasWeekdaySpecificHistory: hasWeekdaySpecificHistory,
+            occupancyRatio: occupancyRatio,
+            heatmapAvailable: heatmapAvailable
+        };
+    }
+
+    function getLibraryCrowdingTier(occupancyRatio) {
+        // isFinite(null) === true in JS (null coerces to 0), so check for null explicitly
+        if (occupancyRatio == null || !isFinite(occupancyRatio)) {
+            return { key: 'unknown', label: 'Unknown', color: '#888' };
+        }
+        if (occupancyRatio <= 0.60) {
+            return { key: 'low', label: 'Plenty of seats', color: '#2e7d32' };
+        }
+        if (occupancyRatio <= 0.85) {
+            // Fixed amber — not accent — so the green→amber→red traffic-light
+            // system stays consistent regardless of the user's accent colour pick.
+            return { key: 'medium', label: 'Moderate', color: '#d97706' };
+        }
+        return { key: 'high', label: 'Busy', color: '#c62828' };
+    }
+
+    function formatLibraryHourMinute(minute) {
+        var m = Math.max(0, Math.min(1439, parseLibraryIntLoose(minute, 0)));
+        var hh = Math.floor(m / 60);
+        var mm = m % 60;
+        return (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm;
+    }
+
+    function formatLibraryMinuteRange(startMinute, endMinute) {
+        return formatLibraryHourMinute(startMinute) + '-' + formatLibraryHourMinute(endMinute);
+    }
+
+    function parseLibraryTimeRangeFromText(text) {
+        var raw = String(text || '');
+        var m = raw.match(/(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/);
+        if (!m) return null;
+        var h1 = parseInt(m[1], 10);
+        var mm1 = parseInt(m[2], 10);
+        var h2 = parseInt(m[3], 10);
+        var mm2 = parseInt(m[4], 10);
+        if (![h1, mm1, h2, mm2].every(function (n) { return isFinite(n); })) return null;
+        if (h1 < 0 || h1 > 23 || h2 < 0 || h2 > 23 || mm1 < 0 || mm1 > 59 || mm2 < 0 || mm2 > 59) return null;
+        return { startMinute: h1 * 60 + mm1, endMinute: h2 * 60 + mm2 };
+    }
+
+    function isLibraryEventAtDtuLibrary(ev) {
+        var where = String((ev && ev.location) || '').toLowerCase();
+        return /dtu\s*library/.test(where);
+    }
+
+    function buildLibraryEventIntervals(eventsResp, model) {
+        if (!eventsResp || eventsResp.ok === false || !Array.isArray(eventsResp.events) || !model) return [];
+        var dayStart = new Date(model.nowTs || Date.now());
+        dayStart.setHours(0, 0, 0, 0);
+        var dayStartTs = dayStart.getTime();
+        var dayEndTs = dayStartTs + 24 * 60 * 60 * 1000;
+        var graphStart = model.startHour * 60;
+        var graphEnd = model.endHour * 60;
+        var out = [];
+
+        eventsResp.events.forEach(function (ev) {
+            if (!ev || !isLibraryEventAtDtuLibrary(ev)) return;
+
+            var startTs = Date.parse(ev.startIso || '');
+            var endTs = Date.parse(ev.endIso || '');
+
+            if (!isFinite(startTs)) {
+                return;
+            }
+
+            if (!isFinite(endTs) || endTs <= startTs) {
+                var parsed = parseLibraryTimeRangeFromText(ev.formattedDate || ev.excerpt || '');
+                if (parsed) {
+                    var base = new Date(startTs);
+                    startTs = new Date(base.getFullYear(), base.getMonth(), base.getDate(), Math.floor(parsed.startMinute / 60), parsed.startMinute % 60).getTime();
+                    endTs = new Date(base.getFullYear(), base.getMonth(), base.getDate(), Math.floor(parsed.endMinute / 60), parsed.endMinute % 60).getTime();
+                    if (endTs <= startTs) endTs += 24 * 60 * 60 * 1000;
+                } else {
+                    endTs = startTs + 60 * 60 * 1000;
+                }
+            }
+
+            if (endTs <= dayStartTs || startTs >= dayEndTs) return;
+
+            var clippedStart = Math.max(startTs, dayStartTs);
+            var clippedEnd = Math.min(endTs, dayEndTs);
+            var sDate = new Date(clippedStart);
+            var eDate = new Date(clippedEnd);
+            var startMinute = sDate.getHours() * 60 + sDate.getMinutes();
+            var endMinute = eDate.getHours() * 60 + eDate.getMinutes();
+
+            if (clippedEnd === dayEndTs) endMinute = 24 * 60;
+            startMinute = Math.max(graphStart, startMinute);
+            endMinute = Math.min(graphEnd, endMinute);
+            if (endMinute <= startMinute) return;
+
+            out.push({
+                startMinute: startMinute,
+                endMinute: endMinute,
+                title: String(ev.title || 'Library event'),
+                location: String(ev.location || '')
+            });
+        });
+
+        out.sort(function (a, b) { return a.startMinute - b.startMinute; });
+        return out;
+    }
+
+    function drawLibraryCrowdingChart(canvas, model, eventIntervals) {
+        if (!canvas || !model) return;
+        var dpr = Math.max(1, window.devicePixelRatio || 1);
+        var cssW = Math.max(320, Math.round(canvas.clientWidth || 640));
+        var cssH = Math.max(150, Math.round(canvas.clientHeight || 186));
+        var targetW = Math.round(cssW * dpr);
+        var targetH = Math.round(cssH * dpr);
+        if (canvas.width !== targetW) canvas.width = targetW;
+        if (canvas.height !== targetH) canvas.height = targetH;
+
+        var ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.scale(dpr, dpr);
+
+        var rootStyles = getComputedStyle(document.documentElement);
+        var accent = (rootStyles.getPropertyValue('--dtu-ad-accent') || '#1f7ae0').trim();
+        var accentRgb = (rootStyles.getPropertyValue('--dtu-ad-accent-rgb') || '31,122,224').trim();
+        var gridColor = darkModeEnabled ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.14)';
+        var textColor = darkModeEnabled ? '#9aa0aa' : '#667084';
+        // Helper: apply opacity to the dynamic accent color safely
+        function accentWithOpacity(opacity) { return 'rgba(' + accentRgb + ',' + opacity + ')'; }
+        var bandFill = accentWithOpacity(0.15);          // Historical range: ~15% opacity
+        var bandStroke = accentWithOpacity(0.60);        // Typical dashed line: ~60% opacity
+        var markerColor = darkModeEnabled ? '#f5f5f5' : '#1a1a1a';
+
+        // Hide the min-max band if there are fewer than 3 weekday observations
+        // (a range is meaningless with only 1–2 data points)
+        var _weekdayObs = (model.weekdayObservationCount != null) ? model.weekdayObservationCount : null;
+        var _daysObs = (model.daysCollected != null) ? model.daysCollected : null;
+        // Fall back to daysCollected / 7 when no weekday-specific count is available
+        var _impliedWeekdayObs = (_weekdayObs != null) ? _weekdayObs : (_daysObs != null ? Math.round(_daysObs / 7) : 0);
+        var showHistoricalBand = _impliedWeekdayObs >= 3;
+
+        var startMinute = model.startHour * 60;
+        var endMinute = model.endHour * 60;
+        var pad = { left: 38, right: 16, top: 14, bottom: 24 };
+        var w = cssW;
+        var h = cssH;
+        var innerW = Math.max(10, w - pad.left - pad.right);
+        var innerH = Math.max(10, h - pad.top - pad.bottom);
+
+        var today = (model.todaySamples || []).filter(function (p) {
+            return isFinite(p.minute) && isFinite(p.visitors) && p.minute >= startMinute && p.minute <= endMinute;
+        });
+        var typical = (model.typicalRows || []).filter(function (r) {
+            return isFinite(r.hour) && isFinite(r.avg) && r.hour >= model.startHour && r.hour <= model.endHour;
+        });
+
+        var maxY = 0;
+        var capacityForScale = parseLibraryNumLoose(model.snapshot && model.snapshot.capacity, null);
+        if (isFinite(capacityForScale) && capacityForScale > 0) maxY = Math.max(maxY, capacityForScale);
+        today.forEach(function (p) { maxY = Math.max(maxY, p.visitors); });
+        typical.forEach(function (r) { maxY = Math.max(maxY, r.max, r.avg); });
+        if (!isFinite(maxY) || maxY <= 0) maxY = 100;
+        maxY = Math.ceil(maxY / 10) * 10;
+        // Always leave ~12.5% headroom above capacity so the max line floats
+        // visibly as a ceiling rather than sitting on the top edge (800 → 900)
+        if (isFinite(capacityForScale) && capacityForScale > 0) {
+            maxY = Math.max(maxY, Math.ceil(capacityForScale * 1.125 / 10) * 10);
+        }
+
+        function xForMinute(minute) {
+            var clamped = Math.max(startMinute, Math.min(endMinute, minute));
+            var t = (clamped - startMinute) / Math.max(1, endMinute - startMinute);
+            return pad.left + t * innerW;
+        }
+
+        function yForVisitors(value) {
+            var v = Math.max(0, Number(value || 0));
+            var t = v / Math.max(1, maxY);
+            return pad.top + (1 - t) * innerH;
+        }
+
+        var intervals = Array.isArray(eventIntervals) ? eventIntervals : [];
+        if (intervals.length) {
+            ctx.fillStyle = 'rgba(' + accentRgb + ',' + (darkModeEnabled ? '0.12' : '0.10') + ')';
+            ctx.strokeStyle = 'rgba(' + accentRgb + ',' + (darkModeEnabled ? '0.30' : '0.24') + ')';
+            ctx.lineWidth = 1;
+            intervals.forEach(function (itv) {
+                var x0 = xForMinute(itv.startMinute);
+                var x1 = xForMinute(itv.endMinute);
+                var wBand = Math.max(2, x1 - x0);
+                ctx.fillRect(x0, pad.top, wBand, innerH);
+                ctx.strokeRect(x0, pad.top, wBand, innerH);
+            });
+        }
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = gridColor;
+        ctx.fillStyle = textColor;
+        ctx.font = '10px sans-serif';
+
+        // Compute a clean round step size targeting ~5 ticks (e.g. 200, 250, 500…)
+        var _roughStep = maxY / 5;
+        var _mag = Math.pow(10, Math.floor(Math.log10(Math.max(1, _roughStep))));
+        var _norm = _roughStep / _mag;
+        var niceStepY = _norm <= 1.5 ? _mag : _norm <= 3 ? 2 * _mag : _norm <= 7 ? 5 * _mag : 10 * _mag;
+        for (var yValue = 0; yValue <= maxY + niceStepY * 0.01; yValue += niceStepY) {
+            var yPos = yForVisitors(yValue);
+            ctx.beginPath();
+            ctx.moveTo(pad.left, yPos);
+            ctx.lineTo(w - pad.right, yPos);
+            ctx.stroke();
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(Math.round(yValue)), pad.left - 6, yPos);
+        }
+
+        var capacityValue = parseLibraryNumLoose(model.snapshot && model.snapshot.capacity, null);
+        if (isFinite(capacityValue) && capacityValue > 0) {
+            var capacityY = yForVisitors(capacityValue);
+            if (capacityY >= pad.top - 1 && capacityY <= (h - pad.bottom + 1)) {
+                ctx.beginPath();
+                ctx.moveTo(pad.left, capacityY);
+                ctx.lineTo(w - pad.right, capacityY);
+                ctx.strokeStyle = darkModeEnabled ? 'rgba(255,255,255,0.70)' : 'rgba(15,23,42,0.60)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([5, 4]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'bottom';
+                ctx.fillStyle = darkModeEnabled ? 'rgba(255,255,255,0.70)' : 'rgba(15,23,42,0.60)';
+                ctx.font = '10px sans-serif';
+                ctx.fillText('max ' + Math.round(capacityValue), w - pad.right - 2, capacityY - 2);
+            }
+        }
+
+        for (var hour = model.startHour; hour <= model.endHour; hour += 2) {
+            var xPos = xForMinute(hour * 60);
+            ctx.beginPath();
+            ctx.moveTo(xPos, pad.top);
+            ctx.lineTo(xPos, h - pad.bottom);
+            ctx.stroke();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText((hour < 10 ? '0' : '') + hour + ':00', xPos, h - pad.bottom + 4);
+        }
+
+        if (typical.length >= 2) {
+            var firstTypical = typical[0];
+            var lastTypical = typical[typical.length - 1];
+            var typicalStartMinute = Math.max(startMinute, firstTypical.hour * 60);
+            var typicalEndMinute = Math.min(endMinute, (lastTypical.hour + 1) * 60);
+
+            // Only draw the shaded min-max band if we have enough historical observations
+            if (showHistoricalBand) {
+                ctx.beginPath();
+                ctx.moveTo(xForMinute(typicalStartMinute), yForVisitors(firstTypical.max));
+                typical.forEach(function (r) {
+                    ctx.lineTo(xForMinute(r.hour * 60 + 30), yForVisitors(r.max));
+                });
+                ctx.lineTo(xForMinute(typicalEndMinute), yForVisitors(lastTypical.max));
+                ctx.lineTo(xForMinute(typicalEndMinute), yForVisitors(lastTypical.min));
+                for (var i = typical.length - 1; i >= 0; i--) {
+                    var rr = typical[i];
+                    ctx.lineTo(xForMinute(rr.hour * 60 + 30), yForVisitors(rr.min));
+                }
+                ctx.lineTo(xForMinute(typicalStartMinute), yForVisitors(firstTypical.min));
+                ctx.closePath();
+                ctx.fillStyle = bandFill;
+                ctx.fill();
+            }
+
+            // Dashed "typical" average line — always shown when data exists
+            ctx.beginPath();
+            ctx.moveTo(xForMinute(typicalStartMinute), yForVisitors(firstTypical.avg));
+            typical.forEach(function (r) {
+                ctx.lineTo(xForMinute(r.hour * 60 + 30), yForVisitors(r.avg));
+            });
+            ctx.lineTo(xForMinute(typicalEndMinute), yForVisitors(lastTypical.avg));
+            ctx.strokeStyle = bandStroke;
+            ctx.lineWidth = 1.2;
+            ctx.setLineDash([4, 3]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        if (today.length >= 2) {
+            ctx.beginPath();
+            today.forEach(function (p, idx) {
+                var x = xForMinute(p.minute);
+                var y = yForVisitors(p.visitors);
+                if (idx === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.strokeStyle = accent;        // Current line: 100% opacity
+            ctx.lineWidth = 2.4;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            // Slight drop shadow for contrast on light accent colours
+            ctx.shadowColor = darkModeEnabled ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.22)';
+            ctx.shadowBlur = 4;
+            ctx.stroke();
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+        } else if (today.length === 1) {
+            ctx.beginPath();
+            ctx.arc(xForMinute(today[0].minute), yForVisitors(today[0].visitors), 3.2, 0, Math.PI * 2);
+            ctx.fillStyle = accent;
+            ctx.shadowColor = darkModeEnabled ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.22)';
+            ctx.shadowBlur = 4;
+            ctx.fill();
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+        }
+
+        if (isFinite(model.nowMinute)) {
+            var markerX = xForMinute(model.nowMinute);
+            ctx.beginPath();
+            ctx.moveTo(markerX, pad.top);
+            ctx.lineTo(markerX, h - pad.bottom);
+            ctx.strokeStyle = markerColor;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 3]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            if (model.snapshot && model.snapshot.visitors != null && isFinite(model.snapshot.visitors)) {
+                ctx.beginPath();
+                ctx.arc(markerX, yForVisitors(model.snapshot.visitors), 3, 0, Math.PI * 2);
+                ctx.fillStyle = markerColor;
+                ctx.fill();
+            }
+        }
+
+        // Return band-visibility flags so the caller can update the HTML legend
+        return { showHistoricalBand: showHistoricalBand, hasTypical: typical.length >= 2 };
+    }
+
+    function buildLibraryCrowdingInsightLine(model) {
+        if (!model || !model.snapshot || !model.snapshot.hasCurrent) {
+            return 'Library data unavailable right now.';
+        }
+
+        var current = model.snapshot.visitors;
+        var typicalNow = model.typicalNow;
+        if (isFinite(current) && isFinite(typicalNow)) {
+            var delta = current - typicalNow;
+            var threshold = Math.max(20, typicalNow * 0.12);
+            if (delta <= -threshold) return 'Quieter than typical for this hour.';
+            if (delta >= threshold) return 'Busier than typical for this hour.';
+            return 'Around typical for this hour.';
+        }
+
+        if (model.occupancyRatio != null && isFinite(model.occupancyRatio)) {
+            if (model.occupancyRatio >= 0.85) return 'Almost full right now.';
+            if (model.occupancyRatio <= 0.60) return 'Plenty of free seats right now.';
+            return 'Moderately busy right now.';
+        }
+
+        return 'Building historical averages.';
+    }
+
+    function buildLibraryCrowdingConfidenceLine(model) {
+        if (!model) return '';
+        var sampleCount = (model.todaySamples || []).length;
+        var dayCount = parseLibraryIntLoose(model.daysCollected, null);
+        var weekdayCount = parseLibraryIntLoose(model.weekdayObservationCount, null);
+        if (dayCount != null && dayCount >= 7 && weekdayCount != null && weekdayCount > 0) {
+            var prefix = model.weekdayObservationEstimated ? 'Based on about ' : 'Based on ';
+            return prefix + weekdayCount + ' ' + formatLibraryWeekdayObservations(model.weekdayName, weekdayCount) + '.';
+        }
+        if (dayCount != null && dayCount > 0) {
+            return 'Based on about ' + dayCount + ' day' + (dayCount === 1 ? '' : 's') + ' of collected data.';
+        }
+        if (sampleCount > 0) {
+            return 'Based on ' + sampleCount + ' local sample' + (sampleCount === 1 ? '' : 's') + ' from today.';
+        }
+        return 'Building historical averages...';
+    }
+
+    function isLibraryHeatmapExpanded() {
+        try { return localStorage.getItem(LIBRARY_CROWD_HEATMAP_EXPANDED_KEY) === 'true'; } catch (e0) { return false; }
+    }
+
+    function setLibraryHeatmapExpanded(expanded) {
+        try { localStorage.setItem(LIBRARY_CROWD_HEATMAP_EXPANDED_KEY, expanded ? 'true' : 'false'); } catch (e0) { }
+    }
+
+    function removeDTULearnHelpDropdown() {
+        if (!IS_TOP_WINDOW) return;
+        if (window.location.hostname !== 'learn.inside.dtu.dk') return;
+        if (!isDTULearnHomepage()) return;
+
+        var mainWrapper = document.querySelector('.d2l-navigation-s-main-wrapper');
+        if (!mainWrapper) return;
+
+        var items = [];
+        try { items = Array.from(mainWrapper.querySelectorAll('.d2l-navigation-s-item')); } catch (e0) { items = []; }
+        items.forEach(function (item) {
+            if (!item || !item.querySelector) return;
+            if (item.classList && (item.classList.contains('dtu-library-nav-item') || item.classList.contains('dtu-settings-nav-item'))) return;
+
+            var text = '';
+            try {
+                var textEl = item.querySelector('.d2l-navigation-s-group-text')
+                    || item.querySelector('a.d2l-navigation-s-link')
+                    || item.querySelector('button.d2l-dropdown-opener');
+                text = normalizeWhitespace(textEl ? textEl.textContent : '').toLowerCase();
+            } catch (e1) { text = ''; }
+
+            if (text !== 'help') return;
+            try { item.remove(); } catch (e2) { }
+        });
+    }
+
     function removeLibraryNavDropdown() {
         var item = document.querySelector('.dtu-library-nav-item');
         if (item) item.remove();
@@ -14584,6 +16999,10 @@
         if (_libraryEscHandler) {
             try { document.removeEventListener('keydown', _libraryEscHandler); } catch (eEsc) { }
             _libraryEscHandler = null;
+        }
+        if (_libraryOccupancyAutoTimer) {
+            clearInterval(_libraryOccupancyAutoTimer);
+            _libraryOccupancyAutoTimer = null;
         }
         document.querySelectorAll('.dtu-library-nav-item .d2l-dropdown-opener[aria-expanded="true"]').forEach(function (btn) {
             btn.setAttribute('aria-expanded', 'false');
@@ -14712,9 +17131,16 @@
         var header = document.createElement('div');
         header.className = 'dtu-library-header';
 
+        var headerMain = document.createElement('div');
+        headerMain.className = 'dtu-library-header-main';
+
         var headerTitle = document.createElement('div');
         headerTitle.className = 'dtu-library-title';
         headerTitle.textContent = 'DTU Library';
+
+        var headerOccupancy = createLibraryHeaderOccupancy();
+        var headerActions = document.createElement('div');
+        headerActions.className = 'dtu-library-header-actions';
 
         var closeBtn = document.createElement('button');
         closeBtn.type = 'button';
@@ -14726,8 +17152,12 @@
             anchorBtn.setAttribute('aria-expanded', 'false');
         });
 
-        header.appendChild(headerTitle);
-        header.appendChild(closeBtn);
+        headerMain.appendChild(headerTitle);
+        headerActions.appendChild(headerOccupancy.updatedEl);
+        headerActions.appendChild(headerOccupancy.refreshBtn);
+        headerActions.appendChild(closeBtn);
+        header.appendChild(headerMain);
+        header.appendChild(headerActions);
         panel.appendChild(header);
 
         // Main Content Scroll Area
@@ -14735,6 +17165,10 @@
         content.className = 'dtu-library-content';
         var layout = document.createElement('div');
         layout.className = 'dtu-library-layout';
+
+        // Trend section (above quick links)
+        var trendSection = createLibraryTrendSection();
+        layout.appendChild(trendSection.container);
 
         // Quick Links section
         var linksSection = document.createElement('div');
@@ -14751,12 +17185,12 @@
         linksSection.appendChild(linksHeader);
 
         var links = [
-            { text: 'Book Study Room', url: 'https://www.supersaas.com/schedule/DTU_Library/Study_Areas_-_Lyngby' },
-            { text: 'All Library Bookings', url: 'https://www.supersaas.com/schedule/DTU_Library/' },
-            { text: 'DTU FindIt', url: 'https://findit.dtu.dk/' },
-            { text: 'Printing', url: 'https://databar.dtu.dk/print' },
-            { text: 'Events Calendar', url: 'https://www.bibliotek.dtu.dk/en/use-the-library/events/calendar' },
-            { text: 'Library News', url: 'https://www.bibliotek.dtu.dk/en/news' }
+            { text: 'Book Study Room', url: 'https://www.supersaas.com/schedule/DTU_Library/Study_Areas_-_Lyngby', icon: '▣' },
+            { text: 'All Library Bookings', url: 'https://www.supersaas.com/schedule/DTU_Library/', icon: '☰' },
+            { text: 'DTU FindIt', url: 'https://findit.dtu.dk/', icon: '⌕' },
+            { text: 'Printing', url: 'https://databar.dtu.dk/print', icon: '⎙' },
+            { text: 'Events Calendar', url: 'https://www.bibliotek.dtu.dk/en/use-the-library/events/calendar', icon: '◷' },
+            { text: 'Library News', url: 'https://www.bibliotek.dtu.dk/en/news', icon: '✦' }
         ];
 
         var linksGrid = document.createElement('div');
@@ -14768,7 +17202,17 @@
             a.href = lnk.url;
             a.target = '_blank';
             a.rel = 'noopener noreferrer';
-            a.textContent = lnk.text;
+
+            var icon = document.createElement('span');
+            icon.className = 'dtu-library-link-icon';
+            icon.textContent = lnk.icon || '•';
+
+            var label = document.createElement('span');
+            label.className = 'dtu-library-link-label';
+            label.textContent = lnk.text;
+
+            a.appendChild(icon);
+            a.appendChild(label);
             linksGrid.appendChild(a);
         });
 
@@ -14791,13 +17235,648 @@
         overlay.appendChild(panel);
         document.body.appendChild(overlay);
 
+        var latestCrowdingResp = _libraryCrowdingCache || null;
+        var latestEventsResp = _libraryEventsCache || null;
+
+        function renderLibraryCrowdingViews() {
+            renderLibraryHeaderOccupancy(headerOccupancy, latestCrowdingResp);
+            renderLibraryTrendSection(trendSection, latestCrowdingResp, null, latestEventsResp);
+        }
+
+        function fetchLibraryCrowdingAndRender(forceRefresh) {
+            requestLibraryCrowding(function (crowdResp) {
+                latestCrowdingResp = crowdResp || null;
+                renderLibraryCrowdingViews();
+            }, forceRefresh);
+        }
+
+        trendSection.onRetry = function () { fetchLibraryCrowdingAndRender(true); };
+        headerOccupancy.onRefresh = function () { fetchLibraryCrowdingAndRender(true); };
+
         // Fetch data
         requestLibraryEvents(function (resp) {
+            latestEventsResp = resp || null;
             renderLibraryFeedItems(eventsSection, resp, 'events');
+            renderLibraryCrowdingViews();
         });
         requestLibraryNews(function (resp) {
             renderLibraryFeedItems(newsSection, resp, 'news');
         });
+        fetchLibraryCrowdingAndRender(false);
+
+        if (_libraryOccupancyAutoTimer) {
+            clearInterval(_libraryOccupancyAutoTimer);
+            _libraryOccupancyAutoTimer = null;
+        }
+        _libraryOccupancyAutoTimer = setInterval(function () {
+            if (!document.querySelector('.dtu-library-panel')) {
+                clearInterval(_libraryOccupancyAutoTimer);
+                _libraryOccupancyAutoTimer = null;
+                return;
+            }
+            fetchLibraryCrowdingAndRender(false);
+        }, 60000);
+    }
+
+    function createLibraryHeaderOccupancy() {
+        var container = document.createElement('div');
+        container.className = 'dtu-library-header-occupancy';
+
+        var nowItem = document.createElement('span');
+        nowItem.className = 'dtu-library-header-occ-item';
+        var nowLabel = document.createElement('span');
+        nowLabel.className = 'dtu-library-header-occ-label';
+        nowLabel.textContent = 'Now';
+        var nowValue = document.createElement('span');
+        nowValue.className = 'dtu-library-header-occ-value';
+        nowValue.textContent = '--';
+        nowItem.appendChild(nowLabel);
+        nowItem.appendChild(nowValue);
+
+        var todayItem = document.createElement('span');
+        todayItem.className = 'dtu-library-header-occ-item';
+        var todayLabel = document.createElement('span');
+        todayLabel.className = 'dtu-library-header-occ-label';
+        todayLabel.textContent = 'Today';
+        var todayValue = document.createElement('span');
+        todayValue.className = 'dtu-library-header-occ-value';
+        todayValue.textContent = '--';
+        todayItem.appendChild(todayLabel);
+        todayItem.appendChild(todayValue);
+
+        var freeItem = document.createElement('span');
+        freeItem.className = 'dtu-library-header-occ-item';
+        var freeLabel = document.createElement('span');
+        freeLabel.className = 'dtu-library-header-occ-label';
+        freeLabel.textContent = 'Free';
+        var freeValue = document.createElement('span');
+        freeValue.className = 'dtu-library-header-occ-value';
+        freeValue.textContent = '--';
+        freeItem.appendChild(freeLabel);
+        freeItem.appendChild(freeValue);
+
+        container.appendChild(nowItem);
+        container.appendChild(todayItem);
+        container.appendChild(freeItem);
+
+        var updatedEl = document.createElement('span');
+        updatedEl.className = 'dtu-library-header-updated';
+        updatedEl.textContent = 'Updating...';
+
+        var refreshBtn = document.createElement('button');
+        refreshBtn.type = 'button';
+        refreshBtn.className = 'dtu-library-header-occ-refresh';
+        refreshBtn.textContent = 'Refresh';
+        refreshBtn.setAttribute('aria-label', 'Refresh library occupancy');
+
+        return {
+            container: container,
+            refreshBtn: refreshBtn,
+            updatedEl: updatedEl,
+            nowValue: nowValue,
+            todayValue: todayValue,
+            freeValue: freeValue,
+            onRefresh: null
+        };
+    }
+
+    function formatLibraryOccupancyCount(value) {
+        if (typeof value !== 'number' || !isFinite(value)) return '--';
+        try { return value.toLocaleString('en-GB'); } catch (e0) { return String(value); }
+    }
+
+    function renderLibraryHeaderOccupancy(slot, resp) {
+        if (!slot || !slot.container) return;
+
+        if (!slot._dtuRefreshHooked && slot.refreshBtn) {
+            slot._dtuRefreshHooked = true;
+            slot.refreshBtn.addEventListener('click', function (e) {
+                try { e.preventDefault(); } catch (e0) { }
+                if (slot.updatedEl) slot.updatedEl.textContent = 'Refreshing...';
+                if (typeof slot.onRefresh === 'function') {
+                    slot.onRefresh();
+                } else {
+                    requestLibraryCrowding(function (r) { renderLibraryHeaderOccupancy(slot, r); }, true);
+                }
+            });
+        }
+
+        var snap = extractLibraryCurrentSnapshot(
+            (resp && resp.current) || (resp && resp.latest) || (resp && resp.historical) ? resp : null,
+            (resp && resp.occupancy) ? resp : null
+        );
+
+        if (!snap || !snap.hasCurrent) {
+            if (slot.nowValue) slot.nowValue.textContent = '--';
+            if (slot.todayValue) slot.todayValue.textContent = '--';
+            if (slot.freeValue) slot.freeValue.textContent = '--';
+            if (slot.updatedEl) slot.updatedEl.textContent = 'Occupancy unavailable';
+            return;
+        }
+
+        if (slot.nowValue) slot.nowValue.textContent = formatLibraryOccupancyCount(snap.visitors);
+        if (slot.todayValue) slot.todayValue.textContent = formatLibraryOccupancyCount(snap.today);
+        if (slot.freeValue) slot.freeValue.textContent = formatLibraryOccupancyCount(snap.freeSeats);
+
+        var updated = '';
+        if (snap.fetchedAt) {
+            try { updated = new Date(snap.fetchedAt).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit', hour12: false }); } catch (e1) { updated = ''; }
+        }
+        if (slot.updatedEl) slot.updatedEl.textContent = updated ? ('Updated ' + updated) : 'Updated just now';
+
+        if (snap.source) {
+            slot.container.title = 'Source: ' + snap.source;
+            if (slot.updatedEl) slot.updatedEl.title = 'Source: ' + snap.source;
+        }
+
+    }
+
+    function setLibraryHeatmapOpenState(section, expanded) {
+        if (!section || !section.heatmap || !section.heatmapToggle) return;
+        if (expanded) section.heatmap.classList.add('is-open');
+        else section.heatmap.classList.remove('is-open');
+        section.heatmapToggle.textContent = expanded ? 'Hide weekly pattern' : 'Show weekly pattern';
+        setLibraryHeatmapExpanded(expanded);
+    }
+
+    function renderLibraryHeatmap(section, model) {
+        if (!section || !section.heatmapGrid) return;
+        while (section.heatmapGrid.firstChild) section.heatmapGrid.removeChild(section.heatmapGrid.firstChild);
+
+        if (!model || !model.heatmapAvailable) {
+            if (section.heatmapToggle) section.heatmapToggle.style.display = 'none';
+            if (section.heatmap) section.heatmap.classList.remove('is-open');
+            return;
+        }
+
+        var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+        var dayShort = { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri' };
+        var hourStart = 8;
+        var hourEnd = 21;
+
+        if (section.heatmapToggle) section.heatmapToggle.style.display = '';
+        setLibraryHeatmapOpenState(section, isLibraryHeatmapExpanded());
+
+        var allValues = [];
+        days.forEach(function (day) {
+            var rows = model.weekdayMap[day] || [];
+            rows.forEach(function (r) {
+                if (r.hour >= hourStart && r.hour <= hourEnd && isFinite(r.avg)) allValues.push(r.avg);
+            });
+        });
+        var minV = allValues.length ? Math.min.apply(null, allValues) : 0;
+        var maxV = allValues.length ? Math.max.apply(null, allValues) : 1;
+        if (!isFinite(minV)) minV = 0;
+        if (!isFinite(maxV) || maxV <= minV) maxV = minV + 1;
+
+        var head = document.createElement('div');
+        head.className = 'dtu-library-crowd-heatmap-head';
+        var blank = document.createElement('div');
+        blank.className = 'dtu-library-crowd-heatmap-hour';
+        head.appendChild(blank);
+        days.forEach(function (day) {
+            var cellHead = document.createElement('div');
+            cellHead.className = 'dtu-library-crowd-heatmap-day';
+            cellHead.textContent = dayShort[day];
+            head.appendChild(cellHead);
+        });
+        section.heatmapGrid.appendChild(head);
+
+        for (var hour = hourStart; hour <= hourEnd; hour++) {
+            var row = document.createElement('div');
+            row.className = 'dtu-library-crowd-heatmap-row';
+
+            var hourCell = document.createElement('div');
+            hourCell.className = 'dtu-library-crowd-heatmap-hour';
+            hourCell.textContent = ((hour - hourStart) % 2 === 0) ? ((hour < 10 ? '0' : '') + hour + ':00') : '';
+            row.appendChild(hourCell);
+
+            days.forEach(function (day) {
+                var rowData = (model.weekdayMap[day] || []).find(function (r) { return r.hour === hour; }) || null;
+                var avg = rowData && isFinite(rowData.avg) ? rowData.avg : null;
+                var frac = avg == null ? 0 : Math.max(0, Math.min(1, (avg - minV) / (maxV - minV)));
+                var alpha = avg == null ? 0.04 : (0.10 + 0.78 * frac);
+                var cell = document.createElement('button');
+                cell.type = 'button';
+                cell.className = 'dtu-library-crowd-heatmap-cell';
+                cell.style.setProperty('background', 'rgba(var(--dtu-ad-accent-rgb),' + alpha.toFixed(3) + ')', 'important');
+                cell.setAttribute('aria-label', (dayShort[day] + ' ' + (hour < 10 ? '0' : '') + hour + ':00')
+                    + (avg == null ? ' - no data' : (' - avg ' + Math.round(avg) + ' visitors')));
+                if (avg == null) {
+                    cell.title = dayShort[day] + ' ' + (hour < 10 ? '0' : '') + hour + ':00 - no data';
+                } else {
+                    var pct = (model.snapshot && model.snapshot.capacity) ? Math.round((avg / Math.max(1, model.snapshot.capacity)) * 100) : null;
+                    cell.title = dayShort[day] + ' ' + (hour < 10 ? '0' : '') + hour + ':00 - avg ' + Math.round(avg)
+                        + ' visitors' + (pct != null ? (' (' + pct + '% full)') : '');
+                }
+                row.appendChild(cell);
+            });
+
+            section.heatmapGrid.appendChild(row);
+        }
+    }
+
+    function createLibraryTrendSection() {
+        var container = document.createElement('div');
+        container.className = 'dtu-library-section';
+        container.setAttribute('data-dtu-library-feed-type', 'occupancy-trend');
+        markExt(container);
+
+        var header = document.createElement('div');
+        header.className = 'dtu-library-section-header';
+        markExt(header);
+
+        var h3 = document.createElement('div');
+        h3.className = 'dtu-library-section-title';
+        h3.textContent = '';
+        h3.style.display = 'none';
+        markExt(h3);
+
+        var actions = document.createElement('div');
+        actions.className = 'dtu-library-actions';
+        markExt(actions);
+
+        var retryBtn = document.createElement('button');
+        retryBtn.type = 'button';
+        retryBtn.className = 'dtu-library-action-btn';
+        retryBtn.textContent = 'Retry';
+        retryBtn.style.display = 'none';
+        markExt(retryBtn);
+        actions.appendChild(retryBtn);
+
+        header.appendChild(h3);
+        header.appendChild(actions);
+        container.appendChild(header);
+
+        var body = document.createElement('div');
+        body.className = 'dtu-library-crowd';
+        markExt(body);
+
+        var hero = document.createElement('div');
+        hero.className = 'dtu-library-crowd-card dtu-library-crowd-hero';
+        markExt(hero);
+
+        var freeValue = document.createElement('div');
+        freeValue.className = 'dtu-library-crowd-free';
+        freeValue.textContent = '--%';
+        var freeUnit = document.createElement('div');
+        freeUnit.className = 'dtu-library-crowd-free-unit';
+        freeUnit.textContent = 'filled';
+        markExt(freeUnit);
+        var freeWrap = document.createElement('div');
+        freeWrap.className = 'dtu-library-crowd-free-wrap';
+        markExt(freeWrap);
+        freeWrap.appendChild(freeValue);
+        freeWrap.appendChild(freeUnit);
+        var status = document.createElement('div');
+        status.className = 'dtu-library-crowd-status';
+        status.textContent = 'Waiting for data...';
+        var heroTop = document.createElement('div');
+        heroTop.className = 'dtu-library-crowd-hero-top';
+        markExt(heroTop);
+        var heroMain = document.createElement('div');
+        heroMain.className = 'dtu-library-crowd-hero-main';
+        markExt(heroMain);
+        heroMain.appendChild(freeWrap);
+        heroMain.appendChild(status);
+
+        var heroStats = document.createElement('div');
+        heroStats.className = 'dtu-library-crowd-hero-stats';
+        markExt(heroStats);
+        function createHeroStat(label, hint) {
+            var stat = document.createElement('div');
+            stat.className = 'dtu-library-crowd-hero-stat';
+            markExt(stat);
+            var statLabel = document.createElement('div');
+            statLabel.className = 'dtu-library-crowd-hero-stat-label';
+            statLabel.textContent = label;
+            markExt(statLabel);
+            var statValue = document.createElement('div');
+            statValue.className = 'dtu-library-crowd-hero-stat-value';
+            statValue.textContent = '--';
+            markExt(statValue);
+            var statHint = document.createElement('div');
+            statHint.className = 'dtu-library-crowd-hero-stat-hint';
+            statHint.textContent = hint || '';
+            markExt(statHint);
+            stat.appendChild(statLabel);
+            stat.appendChild(statValue);
+            stat.appendChild(statHint);
+            heroStats.appendChild(stat);
+            return statValue;
+        }
+        var nowStatValue = createHeroStat('Now', 'in library');
+        var todayStatValue = createHeroStat('Today', 'visits today');
+        var freeStatValue = createHeroStat('Free', 'seats available');
+
+        var progress = document.createElement('div');
+        progress.className = 'dtu-library-crowd-progress';
+        progress.setAttribute('role', 'progressbar');
+        progress.setAttribute('aria-valuemin', '0');
+        progress.setAttribute('aria-valuemax', '100');
+        progress.setAttribute('aria-valuenow', '0');
+        progress.setAttribute('aria-valuetext', 'Unknown');
+        var progressFill = document.createElement('div');
+        progressFill.className = 'dtu-library-crowd-progress-fill';
+        progress.appendChild(progressFill);
+
+        heroTop.appendChild(heroMain);
+        heroTop.appendChild(heroStats);
+        hero.appendChild(heroTop);
+        hero.appendChild(progress);
+
+        var chartWrap = document.createElement('div');
+        chartWrap.className = 'dtu-library-crowd-chart-wrap';
+        chartWrap.style.setProperty('position', 'relative', 'important');
+        markExt(chartWrap);
+        var chartCanvas = document.createElement('canvas');
+        chartCanvas.className = 'dtu-library-crowd-chart';
+        chartCanvas.setAttribute('role', 'img');
+        chartCanvas.setAttribute('aria-label', 'Library occupancy chart');
+        markExt(chartCanvas);
+        var chartNote = document.createElement('div');
+        chartNote.className = 'dtu-library-crowd-chart-note';
+        chartNote.textContent = 'Building historical averages...';
+        markExt(chartNote);
+        var eventLegend = document.createElement('div');
+        eventLegend.className = 'dtu-library-crowd-events';
+        eventLegend.style.display = 'none';
+        markExt(eventLegend);
+        var chartTooltip = document.createElement('div');
+        chartTooltip.className = 'dtu-library-crowd-chart-tooltip';
+        chartTooltip.style.cssText = 'display:none;position:absolute;pointer-events:none;z-index:10;background:rgba(20,20,20,0.88);color:#f0f0f0;font-size:11px;line-height:1.4;padding:5px 8px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.35);';
+        markExt(chartTooltip);
+        chartWrap.appendChild(chartCanvas);
+        chartWrap.appendChild(chartTooltip);
+
+        var chartLegend = document.createElement('div');
+        chartLegend.className = 'dtu-library-crowd-chart-legend';
+        chartLegend.style.cssText = 'display:flex !important;gap:12px !important;justify-content:flex-end !important;margin:4px 2px 2px !important;flex-wrap:wrap !important;';
+        markExt(chartLegend);
+        chartWrap.appendChild(chartLegend);
+
+        chartWrap.appendChild(chartNote);
+        chartWrap.appendChild(eventLegend);
+
+        var confidence = document.createElement('div');
+        confidence.className = 'dtu-library-crowd-confidence';
+        confidence.textContent = '';
+        markExt(confidence);
+
+        var heatmapToggle = document.createElement('button');
+        heatmapToggle.type = 'button';
+        heatmapToggle.className = 'dtu-library-crowd-heatmap-toggle';
+        heatmapToggle.textContent = 'Show weekly pattern';
+        heatmapToggle.style.display = 'none';
+        markExt(heatmapToggle);
+
+        var heatmap = document.createElement('div');
+        heatmap.className = 'dtu-library-crowd-heatmap';
+        markExt(heatmap);
+        var heatmapGrid = document.createElement('div');
+        markExt(heatmapGrid);
+        heatmap.appendChild(heatmapGrid);
+
+        var state = document.createElement('div');
+        state.className = 'dtu-library-crowd-state';
+        state.style.display = 'none';
+        state.textContent = 'Library data unavailable.';
+        markExt(state);
+
+        body.appendChild(hero);
+        body.appendChild(chartWrap);
+        body.appendChild(confidence);
+        body.appendChild(heatmapToggle);
+        body.appendChild(heatmap);
+        body.appendChild(state);
+        container.appendChild(body);
+
+        var sectionRef = {
+            container: container,
+            titleEl: h3,
+            retryBtn: retryBtn,
+            freeValue: freeValue,
+            status: status,
+            nowStatValue: nowStatValue,
+            todayStatValue: todayStatValue,
+            freeStatValue: freeStatValue,
+            progress: progress,
+            progressFill: progressFill,
+            chartCanvas: chartCanvas,
+            chartTooltip: chartTooltip,
+            chartLegend: chartLegend,
+            chartNote: chartNote,
+            eventLegend: eventLegend,
+            confidence: confidence,
+            heatmapToggle: heatmapToggle,
+            heatmap: heatmap,
+            heatmapGrid: heatmapGrid,
+            state: state,
+            onRetry: null
+        };
+
+        retryBtn.addEventListener('click', function () {
+            if (typeof sectionRef.onRetry === 'function') sectionRef.onRetry();
+        });
+        heatmapToggle.addEventListener('click', function () {
+            var next = !sectionRef.heatmap.classList.contains('is-open');
+            setLibraryHeatmapOpenState(sectionRef, next);
+        });
+
+        return sectionRef;
+    }
+
+    function renderLibraryTrendSection(section, crowdingResp, fallbackOccupancyResp, eventsResp) {
+        if (!section) return;
+        var model = buildLibraryCrowdingModel(crowdingResp, fallbackOccupancyResp);
+        var eventIntervals = buildLibraryEventIntervals(eventsResp, model);
+        var snap = model.snapshot || {};
+        var tier = getLibraryCrowdingTier(model.occupancyRatio);
+        var insightLine = buildLibraryCrowdingInsightLine(model);
+
+        if (section.titleEl) section.titleEl.textContent = '';
+        // isFinite(null) === true in JS — must check for null explicitly
+        var pct = (model.occupancyRatio != null && isFinite(model.occupancyRatio) ? Math.round(model.occupancyRatio * 100) : null);
+        if (section.freeValue) section.freeValue.textContent = (pct == null ? '--%' : (pct + '%'));
+        if (section.status) {
+            section.status.textContent = tier.label;
+            section.status.style.setProperty('color', tier.color, 'important');
+        }
+        if (section.nowStatValue) section.nowStatValue.textContent = formatLibraryOccupancyCount(snap.visitors);
+        if (section.todayStatValue) section.todayStatValue.textContent = formatLibraryOccupancyCount(snap.today);
+        if (section.freeStatValue) section.freeStatValue.textContent = formatLibraryOccupancyCount(snap.freeSeats);
+
+        if (section.progress) {
+            section.progress.setAttribute('aria-valuenow', String(pct == null ? 0 : pct));
+            section.progress.setAttribute('aria-valuetext', tier.label);
+            if (tier.key === 'medium') section.progress.setAttribute('aria-valuetext', 'Moderate');
+            if (tier.key === 'high') section.progress.setAttribute('aria-valuetext', 'Busy');
+            if (section.progressFill) {
+                section.progressFill.style.setProperty('width', String(Math.max(0, Math.min(100, pct || 0))) + '%', 'important');
+                section.progressFill.style.setProperty('background', tier.color, 'important');
+            }
+        }
+        var chartFlags = drawLibraryCrowdingChart(section.chartCanvas, model, eventIntervals) || {};
+        if (section.chartNote) {
+            section.chartNote.textContent = insightLine;
+        }
+
+        // Update the HTML legend below the canvas
+        if (section.chartLegend) {
+            var accentRgbForLeg = (getComputedStyle(document.documentElement).getPropertyValue('--dtu-ad-accent-rgb') || '31,122,224').trim();
+            var accentForLeg = (getComputedStyle(document.documentElement).getPropertyValue('--dtu-ad-accent') || '#1f7ae0').trim();
+            var legMuted = darkModeEnabled ? '#888' : '#667084';
+            while (section.chartLegend.firstChild) section.chartLegend.removeChild(section.chartLegend.firstChild);
+            function makeLegItem(label, svgHtml) {
+                var item = document.createElement('span');
+                item.style.cssText = 'display:inline-flex !important;align-items:center !important;gap:5px !important;font-size:9px !important;color:' + legMuted + ' !important;white-space:nowrap !important;';
+                markExt(item);
+                var icon = document.createElement('span');
+                icon.innerHTML = svgHtml;
+                markExt(icon);
+                var lbl = document.createElement('span');
+                lbl.textContent = label;
+                markExt(lbl);
+                item.appendChild(icon);
+                item.appendChild(lbl);
+                return item;
+            }
+            // Solid line swatch — Current
+            section.chartLegend.appendChild(makeLegItem('Current',
+                '<svg width="18" height="8" viewBox="0 0 18 8" style="display:block"><line x1="0" y1="4" x2="18" y2="4" stroke="' + accentForLeg + '" stroke-width="2.2" stroke-linecap="round"/></svg>'
+            ));
+            // Dashed line swatch — Typical (only if typical data exists)
+            if (chartFlags.hasTypical) {
+                section.chartLegend.appendChild(makeLegItem('Typical',
+                    '<svg width="18" height="8" viewBox="0 0 18 8" style="display:block"><line x1="0" y1="4" x2="18" y2="4" stroke="rgba(' + accentRgbForLeg + ',0.60)" stroke-width="1.4" stroke-dasharray="4 3" stroke-linecap="round"/></svg>'
+                ));
+            }
+            // Shaded band swatch — only when enough historical data
+            if (chartFlags.showHistoricalBand && chartFlags.hasTypical) {
+                section.chartLegend.appendChild(makeLegItem('Hist. range',
+                    '<svg width="18" height="8" viewBox="0 0 18 8" style="display:block"><rect x="0" y="1" width="18" height="6" fill="rgba(' + accentRgbForLeg + ',0.15)" stroke="rgba(' + accentRgbForLeg + ',0.55)" stroke-width="0.8" rx="1"/></svg>'
+                ));
+            }
+        }
+
+        if (section.chartCanvas) {
+            section.chartCanvas.setAttribute(
+                'aria-label',
+                'Library occupancy chart. Currently '
+                + formatLibraryOccupancyCount(snap.visitors)
+                + ' visitors, '
+                + formatLibraryOccupancyCount(snap.freeSeats)
+                + ' free seats.'
+            );
+
+            // Store live model reference for the tooltip handler
+            section.chartCanvas._dtuModel = model;
+
+            // Set up hover tooltip (once per canvas element)
+            if (!section.chartCanvas._dtuTooltipBound && section.chartTooltip) {
+                section.chartCanvas._dtuTooltipBound = true;
+                var _tip = section.chartTooltip;
+                var _cnv = section.chartCanvas;
+
+                _cnv.addEventListener('mousemove', function (e) {
+                    var m = _cnv._dtuModel;
+                    if (!m) { _tip.style.display = 'none'; return; }
+                    var dpr = Math.max(1, window.devicePixelRatio || 1);
+                    var cssW = Math.max(320, Math.round(_cnv.clientWidth || 640));
+                    var pad = { left: 38, right: 16, top: 14, bottom: 24 };
+                    var innerW = Math.max(10, cssW - pad.left - pad.right);
+                    var rect = _cnv.getBoundingClientRect();
+                    var mouseX = e.clientX - rect.left;
+                    // Convert canvas x to minute
+                    var startMinute = m.startHour * 60;
+                    var endMinute = m.endHour * 60;
+                    var t = (mouseX - pad.left) / Math.max(1, innerW);
+                    var hoverMinute = Math.round(startMinute + t * (endMinute - startMinute));
+                    hoverMinute = Math.max(startMinute, Math.min(endMinute, hoverMinute));
+                    var hoverHour = Math.floor(hoverMinute / 60);
+                    var hoverMin = hoverMinute % 60;
+                    var timeLabel = (hoverHour < 10 ? '0' : '') + hoverHour + ':' + (hoverMin < 10 ? '0' : '') + hoverMin;
+
+                    // Find closest today sample
+                    var todaySamples = (m.todaySamples || []).filter(function (p) { return isFinite(p.minute) && isFinite(p.visitors); });
+                    var closestToday = null, bestDist = Infinity;
+                    todaySamples.forEach(function (p) {
+                        var d = Math.abs(p.minute - hoverMinute);
+                        if (d < bestDist) { bestDist = d; closestToday = p; }
+                    });
+
+                    // Find typical row for this hour
+                    var typicalRows = (m.typicalRows || []);
+                    var typicalRow = typicalRows.find(function (r) { return r.hour === hoverHour; }) || null;
+
+                    var parts = [timeLabel];
+                    if (closestToday && bestDist <= 30) parts.push('Current: ' + Math.round(closestToday.visitors));
+                    if (typicalRow && isFinite(typicalRow.avg)) parts.push('Typical: ' + Math.round(typicalRow.avg));
+
+                    if (parts.length <= 1) { _tip.style.display = 'none'; return; }
+                    _tip.textContent = parts.join('  |  ');
+
+                    // Position tooltip: above cursor, clamped inside chartWrap
+                    var wrapRect = _cnv.parentNode.getBoundingClientRect();
+                    var tipLeft = e.clientX - wrapRect.left + 10;
+                    var tipTop = e.clientY - wrapRect.top - 32;
+                    _tip.style.display = 'block';
+                    _tip.style.left = tipLeft + 'px';
+                    _tip.style.top = Math.max(2, tipTop) + 'px';
+                });
+
+                _cnv.addEventListener('mouseleave', function () {
+                    _tip.style.display = 'none';
+                });
+            }
+        }
+
+        if (section.eventLegend) {
+            while (section.eventLegend.firstChild) section.eventLegend.removeChild(section.eventLegend.firstChild);
+            if (eventIntervals.length) {
+                section.eventLegend.style.display = '';
+                var maxLegendItems = 4;
+                eventIntervals.slice(0, maxLegendItems).forEach(function (itv) {
+                    var row = document.createElement('div');
+                    row.className = 'dtu-library-crowd-event';
+                    markExt(row);
+                    var dot = document.createElement('span');
+                    dot.className = 'dtu-library-crowd-event-dot';
+                    markExt(dot);
+                    var txt = document.createElement('span');
+                    txt.className = 'dtu-library-crowd-event-text';
+                    txt.textContent = formatLibraryMinuteRange(itv.startMinute, itv.endMinute) + ' \u00b7 ' + (itv.title || 'DTU Library event');
+                    markExt(txt);
+                    row.appendChild(dot);
+                    row.appendChild(txt);
+                    section.eventLegend.appendChild(row);
+                });
+                if (eventIntervals.length > maxLegendItems) {
+                    var more = document.createElement('div');
+                    more.className = 'dtu-library-crowd-event';
+                    more.textContent = '+' + (eventIntervals.length - maxLegendItems) + ' more DTU Library event overlay' + (eventIntervals.length - maxLegendItems === 1 ? '' : 's');
+                    markExt(more);
+                    section.eventLegend.appendChild(more);
+                }
+            } else {
+                section.eventLegend.style.display = 'none';
+            }
+        }
+
+        if (section.confidence) section.confidence.textContent = buildLibraryCrowdingConfidenceLine(model);
+
+        renderLibraryHeatmap(section, model);
+
+        var unavailable = !snap.hasCurrent;
+        if (section.state) {
+            if (unavailable) {
+                section.state.style.display = '';
+                section.state.textContent = 'Library data unavailable. Try refreshing.';
+            } else {
+                section.state.style.display = 'none';
+            }
+        }
+        if (section.retryBtn) section.retryBtn.style.display = unavailable ? '' : 'none';
     }
 
     function createLibraryFeedSection(title, type) {
@@ -15125,6 +18204,7 @@
                 insertGPARow();
                 insertECTSProgressBar();
                 insertGPASimulator();
+                syncCampusnetActualGradeExclusionControls();
             }
             if (featureKey === FEATURE_KURSER_GRADE_STATS_KEY && window.location.hostname === 'kurser.dtu.dk') {
                 insertKurserGradeStats();
@@ -15220,6 +18300,7 @@
         insertAfterDarkFeatureToggle('feature-kurser-grade-stats-toggle', 'Kurser Grade Stats', FEATURE_KURSER_GRADE_STATS_KEY);
         insertAfterDarkFeatureToggle('feature-kurser-course-eval-toggle', 'Course Evaluation (Kurser)', FEATURE_KURSER_COURSE_EVAL_KEY);
         insertAfterDarkFeatureToggle('feature-kurser-room-finder-toggle', 'Room Finder (Kurser)', FEATURE_KURSER_ROOM_FINDER_KEY);
+
         insertAfterDarkFeatureToggle('feature-smart-room-linker-toggle', 'Smart Room Links (MazeMap)', FEATURE_SMART_ROOM_LINKER_KEY);
         insertAfterDarkFeatureToggle('feature-kurser-textbook-linker-toggle', 'Textbook links (Kurser)', FEATURE_KURSER_TEXTBOOK_LINKER_KEY);
         insertAfterDarkFeatureToggle('feature-kurser-schedule-annotation-toggle', 'Schedule Annotation (Kurser)', FEATURE_KURSER_SCHEDULE_ANNOTATION_KEY);
@@ -15245,6 +18326,7 @@
             { id: 'feature-kurser-grade-stats-toggle', key: FEATURE_KURSER_GRADE_STATS_KEY },
             { id: 'feature-kurser-course-eval-toggle', key: FEATURE_KURSER_COURSE_EVAL_KEY },
             { id: 'feature-kurser-room-finder-toggle', key: FEATURE_KURSER_ROOM_FINDER_KEY },
+
             { id: 'feature-smart-room-linker-toggle', key: FEATURE_SMART_ROOM_LINKER_KEY },
             { id: 'feature-kurser-textbook-linker-toggle', key: FEATURE_KURSER_TEXTBOOK_LINKER_KEY },
             { id: 'feature-kurser-schedule-annotation-toggle', key: FEATURE_KURSER_SCHEDULE_ANNOTATION_KEY },
@@ -15279,7 +18361,7 @@
             }
         }
         if (featureKey === FEATURE_CAMPUSNET_GPA_TOOLS_KEY && window.location.hostname === 'campusnet.dtu.dk') {
-            insertGPARow(); insertECTSProgressBar(); insertGPASimulator();
+            insertGPARow(); insertECTSProgressBar(); insertGPASimulator(); syncCampusnetActualGradeExclusionControls();
         }
         if (featureKey === FEATURE_KURSER_GRADE_STATS_KEY && window.location.hostname === 'kurser.dtu.dk') {
             insertKurserGradeStats();
@@ -15342,6 +18424,49 @@
         } catch (e) { }
     }
 
+    function getAfterDarkDisclaimerText() {
+        return 'DTU After Dark is unofficial and not affiliated with DTU, Arcanic, or any service provider. '
+            + 'Information shown (exam dates, deadlines, grades, bus times) may be inaccurate or outdated. '
+            + 'Always verify critical information through official DTU channels. '
+            + 'The developer(s) accept no responsibility for any consequences arising from the use of this extension.';
+    }
+
+    function getAfterDarkDebugIdeasMailtoHref() {
+        var subject = 'DTU After Dark - Debug/Ideas';
+        var body = 'Hi Daniel,\n\nPage URL:\n\nIdea or issue:\n';
+        return 'mailto:daniel-yttesen@hotmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    }
+
+    function createAfterDarkDisclaimerFooter() {
+        var disclaimerFooter = document.createElement('div');
+        markExt(disclaimerFooter);
+        disclaimerFooter.style.cssText = 'padding:12px 18px 14px;font-size:10.5px;line-height:1.45;color:var(--dtu-am-muted);border-top:1px solid var(--dtu-am-border);margin-top:auto;';
+
+        var textNode = document.createElement('span');
+        markExt(textNode);
+        textNode.textContent = getAfterDarkDisclaimerText() + ' ';
+        disclaimerFooter.appendChild(textNode);
+
+        var debugIdeasBtn = document.createElement('button');
+        markExt(debugIdeasBtn);
+        debugIdeasBtn.type = 'button';
+        debugIdeasBtn.textContent = 'Debug/Ideas';
+        debugIdeasBtn.setAttribute('aria-label', 'Send Debug/Ideas email');
+        debugIdeasBtn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;vertical-align:baseline;'
+            + 'appearance:none;-webkit-appearance:none;margin:0 0 0 6px;padding:2px 8px;border-radius:999px;'
+            + 'border:1px solid var(--dtu-am-border);background:var(--dtu-am-input-bg);color:var(--dtu-am-active-text);'
+            + 'font-size:10px;font-weight:700;line-height:1.6;cursor:pointer;white-space:nowrap;'
+            + 'min-height:0;min-width:0;max-width:none;width:auto !important;';
+        debugIdeasBtn.addEventListener('click', function (e) {
+            try { if (e) e.preventDefault(); } catch (e0) { }
+            try { if (e) e.stopPropagation(); } catch (e1) { }
+            try { window.location.href = getAfterDarkDebugIdeasMailtoHref(); } catch (e2) { }
+        });
+        disclaimerFooter.appendChild(debugIdeasBtn);
+
+        return disclaimerFooter;
+    }
+
     function showSettingsModal() {
         if (!IS_TOP_WINDOW) return;
         // Remove any existing instance
@@ -15363,9 +18488,9 @@
             'bus-departures-toggle': {
                 getState: function () { return isBusEnabled(); },
                 onChange: function (checked, input) {
-                    if (checked && (isApiQuotaExhausted() || isDailyLimitReached())) {
+                    if (checked && isApiQuotaExhausted()) {
                         input.checked = false;
-                        showQuotaExhaustedMessage(isApiQuotaExhausted() ? 'monthly' : 'daily');
+                        showQuotaExhaustedMessage('monthly');
                         return;
                     }
                     localStorage.setItem(BUS_ENABLED_KEY, checked.toString());
@@ -15421,6 +18546,13 @@
                 onChange: function (checked) { setFeatureFlagEnabled(ft.key, checked); applyFeatureToggleImmediately(ft.key, checked); }
             };
         });
+        if (toggleHandlers['feature-content-shortcut-toggle']) {
+            toggleHandlers['feature-content-shortcut-toggle'].hasEdit = true;
+            toggleHandlers['feature-content-shortcut-toggle'].onEdit = function () {
+                hideSettingsModal();
+                showContentShortcutOverridesModal();
+            };
+        }
 
         // -- Category definitions --
         var categories = [
@@ -15432,17 +18564,18 @@
                 ]
             },
             {
-                id: 'interface', label: 'Interface', desc: 'Navigation and UI helpers', items: [
-                    { tid: 'feature-learn-nav-resource-links-toggle', title: 'Navigation Quick Links', desc: 'Adds Panopto and CampusNet to the Student Resources menu' }
+                id: 'interface', label: 'Shortcuts & Navigation', desc: 'Quick links, nav entries, and shortcut actions', items: [
+                    { tid: 'feature-learn-nav-resource-links-toggle', title: 'Navigation Quick Links', desc: 'Adds Panopto and CampusNet to the Student Resources menu' },
+                    { tid: 'feature-content-shortcut-toggle', title: 'Content Shortcut', desc: 'Direct link from course cards (Ctrl/Cmd+Shift+Click a button to set a custom link)' },
+                    { tid: 'library-dropdown-toggle', title: 'Library', desc: 'Quick links and live events/news from DTU Library' },
+                    { tid: 'feature-smart-room-linker-toggle', title: 'Smart Room Links', desc: 'Turn room mentions into MazeMap links (click-to-resolve)' }
                 ]
             },
             {
-                id: 'dashboard', label: 'Dashboard', desc: 'DTU Learn homepage widgets', items: [
+                id: 'dashboard', label: 'Dashboard Widgets', desc: 'DTU Learn homepage widgets and dashboard cards', items: [
                     { tid: 'bus-departures-toggle', title: 'Bus Departures', desc: 'Show live bus departure times around campus' },
                     { tid: 'deadlines-toggle', title: 'Deadlines Widget', desc: 'Timeline of upcoming assignments' },
                     { tid: 'search-widget-toggle', title: 'Course Search', desc: 'Quick course search on the dashboard' },
-                    { tid: 'feature-content-shortcut-toggle', title: 'Content Shortcut', desc: 'Direct link to course content from cards' },
-                    { tid: 'library-dropdown-toggle', title: 'Library', desc: 'Quick links and live events/news from DTU Library' },
                     { tid: 'feature-lessons-bulk-download-toggle', title: 'Course Content Download', desc: 'Enable course content download tools in DTU Learn Lessons pages' },
                     { tid: 'feature-lessons-bulk-single-zip-toggle', title: 'Bulk Download', desc: 'Download selected section files as one ZIP bundle', subToggleOf: 'feature-lessons-bulk-download-toggle' }
                 ]
@@ -15463,14 +18596,14 @@
                 ]
             },
             {
-                id: 'course-catalog', label: 'Course Catalog', desc: 'Enhancements for kurser.dtu.dk', items: [
+                id: 'course-catalog', label: 'Course Catalog', desc: 'Enhancements for kurser.dtu.dk and course resource pages', items: [
                     { tid: 'feature-kurser-grade-stats-toggle', title: 'Grade Statistics', desc: 'Show pass rates and grade histograms' },
                     { tid: 'feature-book-finder-toggle', title: 'Book Finder', desc: 'Find textbooks from DTU Learn pages' },
                     { tid: 'feature-kurser-textbook-linker-toggle', title: 'Textbook Links', desc: 'Direct links to textbooks on DTU FindIt' },
                     { tid: 'feature-kurser-course-eval-toggle', title: 'Course Evaluation', desc: 'Show evaluation scores on course pages' },
                     { tid: 'feature-kurser-myline-badges-toggle', title: 'MyLine Curriculum Badges', desc: 'Mark courses as Mandatory/Core/Elective pool based on your study line' },
                     { tid: 'feature-kurser-room-finder-toggle', title: 'Room Finder', desc: 'Clickable room numbers with locations' },
-                    { tid: 'feature-smart-room-linker-toggle', title: 'Smart Room Links', desc: 'Turn room mentions into MazeMap links (click-to-resolve)' },
+
                     { tid: 'feature-kurser-schedule-annotation-toggle', title: 'Schedule Annotation', desc: 'Enhanced schedule view on course pages' }
                 ]
             }
@@ -15854,13 +18987,7 @@
         });
 
         // Disclaimer footer
-        var disclaimerFooter = document.createElement('div');
-        markExt(disclaimerFooter);
-        disclaimerFooter.style.cssText = 'padding:12px 18px 14px;font-size:10.5px;line-height:1.45;color:var(--dtu-am-muted);border-top:1px solid var(--dtu-am-border);margin-top:auto;';
-        disclaimerFooter.textContent = 'DTU After Dark is unofficial and not affiliated with DTU, Arcanic, or any service provider. '
-            + 'Information shown (exam dates, deadlines, grades, bus times) may be inaccurate or outdated. '
-            + 'Always verify critical information through official DTU channels. '
-            + 'The developer(s) accept no responsibility for any consequences arising from the use of this extension.';
+        var disclaimerFooter = createAfterDarkDisclaimerFooter();
         contentArea.appendChild(disclaimerFooter);
 
         container.appendChild(sidebar);
@@ -16100,17 +19227,18 @@
                 ]
             },
             {
-                id: 'interface', label: 'Interface', desc: 'Navigation and UI helpers', items: [
-                    { tid: 'feature-learn-nav-resource-links-toggle', title: 'Navigation Quick Links', desc: 'Adds Panopto and CampusNet to the Student Resources menu' }
+                id: 'interface', label: 'Shortcuts & Navigation', desc: 'Quick links, nav entries, and shortcut actions', items: [
+                    { tid: 'feature-learn-nav-resource-links-toggle', title: 'Navigation Quick Links', desc: 'Adds Panopto and CampusNet to the Student Resources menu' },
+                    { tid: 'feature-content-shortcut-toggle', title: 'Content Shortcut', desc: 'Direct link from course cards (Ctrl/Cmd+Shift+Click a button to set a custom link)' },
+                    { tid: 'library-dropdown-toggle', title: 'Library', desc: 'Quick links and live events/news from DTU Library' },
+                    { tid: 'feature-smart-room-linker-toggle', title: 'Smart Room Links', desc: 'Turn room mentions into MazeMap links (click-to-resolve)' }
                 ]
             },
             {
-                id: 'dashboard', label: 'Dashboard', desc: 'DTU Learn homepage widgets', items: [
+                id: 'dashboard', label: 'Dashboard Widgets', desc: 'DTU Learn homepage widgets and dashboard cards', items: [
                     { tid: 'bus-departures-toggle', title: 'Bus Departures', desc: 'Show live bus departure times around campus' },
                     { tid: 'deadlines-toggle', title: 'Deadlines Widget', desc: 'Timeline of upcoming assignments' },
                     { tid: 'search-widget-toggle', title: 'Course Search', desc: 'Quick course search on the dashboard' },
-                    { tid: 'feature-content-shortcut-toggle', title: 'Content Shortcut', desc: 'Direct link to course content from cards' },
-                    { tid: 'library-dropdown-toggle', title: 'Library', desc: 'Quick links and live events/news from DTU Library' },
                     { tid: 'feature-lessons-bulk-download-toggle', title: 'Course Content Download', desc: 'Enable course content download tools in DTU Learn Lessons pages' },
                     { tid: 'feature-lessons-bulk-single-zip-toggle', title: 'Bulk Download', desc: 'Download selected section files as one ZIP bundle', subToggleOf: 'feature-lessons-bulk-download-toggle' }
                 ]
@@ -16131,14 +19259,14 @@
                 ]
             },
             {
-                id: 'course-catalog', label: 'Course Catalog', desc: 'Enhancements for kurser.dtu.dk', items: [
+                id: 'course-catalog', label: 'Course Catalog', desc: 'Enhancements for kurser.dtu.dk and course resource pages', items: [
                     { tid: 'feature-kurser-grade-stats-toggle', title: 'Grade Statistics', desc: 'Show pass rates and grade histograms' },
                     { tid: 'feature-book-finder-toggle', title: 'Book Finder', desc: 'Find textbooks from DTU Learn pages' },
                     { tid: 'feature-kurser-textbook-linker-toggle', title: 'Textbook Links', desc: 'Direct links to textbooks on DTU FindIt' },
                     { tid: 'feature-kurser-course-eval-toggle', title: 'Course Evaluation', desc: 'Show evaluation scores on course pages' },
                     { tid: 'feature-kurser-myline-badges-toggle', title: 'MyLine Curriculum Badges', desc: 'Mark courses as Mandatory/Core/Elective pool based on your study line' },
                     { tid: 'feature-kurser-room-finder-toggle', title: 'Room Finder', desc: 'Clickable room numbers with locations' },
-                    { tid: 'feature-smart-room-linker-toggle', title: 'Smart Room Links', desc: 'Turn room mentions into MazeMap links (click-to-resolve)' },
+
                     { tid: 'feature-kurser-schedule-annotation-toggle', title: 'Schedule Annotation', desc: 'Enhanced schedule view on course pages' }
                 ]
             }
@@ -16390,6 +19518,37 @@
 
                     actions.appendChild(editBtn);
                 }
+                if (item.tid === 'feature-content-shortcut-toggle') {
+                    var contentEditBtn = document.createElement('button');
+                    markExt(contentEditBtn);
+                    contentEditBtn.type = 'button';
+                    contentEditBtn.textContent = 'Edit';
+                    contentEditBtn.className = 'dtu-am-edit';
+                    contentEditBtn.addEventListener('click', function (e) {
+                        try { e.preventDefault(); } catch (e0) { }
+                        try { e.stopPropagation(); } catch (e00) { }
+                        try {
+                            var gearBtn2 = document.querySelector('button[aria-label="Admin Tools"]');
+                            if (gearBtn2) gearBtn2.click();
+                        } catch (e01) { }
+                        try {
+                            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+                        } catch (e02) { }
+                        setTimeout(function () {
+                            try { showContentShortcutOverridesModal(); } catch (e1) { }
+                        }, 60);
+                    });
+
+                    function syncContentEditVisibility() {
+                        var enabled2 = false;
+                        try { enabled2 = isFeatureFlagEnabled(FEATURE_CONTENT_SHORTCUT_KEY); } catch (e2) { enabled2 = !!input.checked; }
+                        contentEditBtn.style.display = enabled2 ? 'inline-flex' : 'none';
+                    }
+                    syncContentEditVisibility();
+                    input.addEventListener('change', function () { syncContentEditVisibility(); });
+
+                    actions.appendChild(contentEditBtn);
+                }
 
                 if (item && item.subToggleOf) {
                     row.classList.add('dtu-set-row-sub');
@@ -16445,13 +19604,7 @@
         });
 
         // Disclaimer footer at the bottom of the content area
-        var disclaimerFooter = document.createElement('div');
-        markExt(disclaimerFooter);
-        disclaimerFooter.style.cssText = 'padding:12px 18px 14px;font-size:10.5px;line-height:1.45;color:var(--dtu-am-muted);border-top:1px solid var(--dtu-am-border);margin-top:auto;';
-        disclaimerFooter.textContent = 'DTU After Dark is unofficial and not affiliated with DTU, Arcanic, or any service provider. '
-            + 'Information shown (exam dates, deadlines, grades, bus times) may be inaccurate or outdated. '
-            + 'Always verify critical information through official DTU channels. '
-            + 'The developer(s) accept no responsibility for any consequences arising from the use of this extension.';
+        var disclaimerFooter = createAfterDarkDisclaimerFooter();
         contentArea.appendChild(disclaimerFooter);
 
         container.appendChild(sidebar);
@@ -16595,7 +19748,7 @@
 
     // ===== API RATE LIMITING =====
     // Per-user daily limit for transit API usage (resets each day)
-    var DAILY_API_LIMIT = 200; // max API calls per user per day
+    var DAILY_API_LIMIT = 500; // max API calls per user per day
     var API_CALLS_KEY = 'dtuDarkModeBusApiCalls';
     var API_QUOTA_KEY = 'dtuDarkModeBusQuotaExhausted';
     var BUS_FETCH_TIMEOUT_MS = 8000;
@@ -16626,6 +19779,15 @@
 
     function isDailyLimitReached() {
         return getDailyApiCount().count >= DAILY_API_LIMIT;
+    }
+
+    function consumeBusApiRequestBudget() {
+        if (isDailyLimitReached()) {
+            showQuotaExhaustedMessage('daily');
+            return false;
+        }
+        incrementApiCount();
+        return true;
     }
 
     // Server-side quota exhaustion (HTTP 429/403) â€” persists until next month
@@ -16659,12 +19821,12 @@
     // Get departures for a specific stop
     async function getDepartures(stopId, options) {
         if (isApiQuotaExhausted()) return { departures: [], ok: false, reason: 'quota' };
-        if (isDailyLimitReached()) {
-            showQuotaExhaustedMessage('daily');
-            return { departures: [], ok: false, reason: 'daily_limit' };
+        var consumeBudget = !options || options.consumeBudget !== false;
+        if (consumeBudget && !consumeBusApiRequestBudget()) {
+            return { departures: [], ok: false, reason: 'daily' };
         }
         var maxJourneys = parseInt(options && options.maxJourneys, 10);
-        if (!Number.isFinite(maxJourneys) || maxJourneys <= 0) maxJourneys = 18;
+        if (!Number.isFinite(maxJourneys) || maxJourneys <= 0) maxJourneys = 30;
         const url = REJSEPLANEN_API + '/departureBoard?accessId=' + encodeURIComponent(REJSEPLANEN_KEY)
             + '&format=json&id=' + encodeURIComponent(stopId)
             + '&maxJourneys=' + encodeURIComponent(String(maxJourneys));
@@ -16696,7 +19858,6 @@
                     else if (d.Product && d.Product[0] && d.Product[0].line) d.line = d.Product[0].line;
                 }
             });
-            incrementApiCount();
             return { departures: arr, ok: true, reason: 'ok' };
         } catch (e) {
             if (e && e.name === 'AbortError') {
@@ -16846,12 +20007,25 @@
         return ' (+' + delay + ')';
     }
 
-    // Fetch departures sequentially, stopping early once we have 2 per configured line
-    var DEPS_PER_LINE = 2;
+    function mapBusDepartureForDisplay(dep) {
+        return {
+            line: dep.line,
+            direction: dep.direction,
+            time: formatDepartureTime(dep),
+            delayTag: formatDelayTag(dep),
+            minutes: minutesUntilDeparture(dep),
+            stop: dep.stop || '',
+            delayed: isDelayed(dep),
+            type: dep.type
+        };
+    }
 
-    async function fetchBusDepartures() {
+    // Fetch departures sequentially, stopping early once we have 3 per configured line
+    var DEPS_PER_LINE = 3;
+
+    async function fetchBusDeparturesLegacy(configOverride) {
         if (isApiQuotaExhausted()) return [];
-        const config = getBusConfig();
+        const config = configOverride || getBusConfig();
         if (!config || !config.stopIds || config.stopIds.length === 0) return [];
 
         _busFetchInProgress = true;
@@ -16872,7 +20046,7 @@
             // Fetch stops one by one, stop early when we have enough
             for (var i = 0; i < config.stopIds.length; i++) {
                 if (hasEnough()) break;
-                var depResult = await getDepartures(config.stopIds[i]);
+                var depResult = await getDepartures(config.stopIds[i], { consumeBudget: false });
                 requestCount++;
                 if (depResult && depResult.ok) successCount++;
                 else if (depResult && (depResult.reason === 'http' || depResult.reason === 'network')) errorCount++;
@@ -16881,8 +20055,13 @@
                     var configLine = config.lines.find(function (l) { return l.line === dep.line; });
                     if (!configLine) return;
                     if (lineCounts[dep.line] >= DEPS_PER_LINE) return;
-                    var matchesDir = configLine.directions.some(function (d) {
-                        return dep.direction && dep.direction.includes(d);
+                    var dirs = Array.isArray(configLine.directions) ? configLine.directions : [];
+                    var matchAnyDirection = !dirs.length || dirs.indexOf('*') !== -1;
+                    var matchesDir = matchAnyDirection || dirs.some(function (d) {
+                        var token = normalizeWhitespace(String(d || '')).toLowerCase();
+                        var depDir = normalizeWhitespace(String(dep.direction || '')).toLowerCase();
+                        if (!token || !depDir) return false;
+                        return depDir.indexOf(token) !== -1;
                     });
                     if (!matchesDir) return;
 
@@ -16891,16 +20070,7 @@
                     seen.add(key);
 
                     lineCounts[dep.line]++;
-                    allDeps.push({
-                        line: dep.line,
-                        direction: dep.direction,
-                        time: formatDepartureTime(dep),
-                        delayTag: formatDelayTag(dep),
-                        minutes: minutesUntilDeparture(dep),
-                        stop: dep.stop || '',
-                        delayed: isDelayed(dep),
-                        type: dep.type
-                    });
+                    allDeps.push(mapBusDepartureForDisplay(dep));
                 });
             }
         } catch (e) {
@@ -16911,6 +20081,15 @@
         noteBusFetchOutcome({ requestCount: requestCount, successCount: successCount, errorCount: errorCount });
         allDeps.sort(function (a, b) { return (a.minutes || 999) - (b.minutes || 999); });
         return allDeps;
+    }
+
+    async function fetchBusDepartures() {
+        if (isApiQuotaExhausted()) return [];
+        const config = getBusConfig();
+        if (!config || !config.stopIds || config.stopIds.length === 0) return [];
+
+        if (!consumeBusApiRequestBudget()) return [];
+        return fetchBusDeparturesLegacy(config);
     }
 
     // Insert or update the bus departure display in the navigation bar
@@ -16940,7 +20119,7 @@
         }
 
         // Ensure correct placement + theme even if the widget was injected by an older version.
-        container.style.cssText = 'display: flex; gap: 12px; padding: 8px 14px; '
+        container.style.cssText = 'display: flex; gap: 12px; padding: 2px 14px; '
             + 'font-size: 12px; margin-left: auto; margin-right: 12px; '
             + 'border-left: 2px solid var(--dtu-ad-accent); align-self: center; border-radius: 0 6px 6px 0; '
             + (darkModeEnabled
@@ -16974,14 +20153,14 @@
         // One column per line, side by side
         lineOrder.forEach(function (line, li) {
             var col = document.createElement('div');
-            col.style.cssText = 'display: flex; flex-direction: column; gap: 2px; min-width: 0;'
+            col.style.cssText = 'display: flex; flex-direction: column; gap: 1px; min-width: 0;'
                 + (li < lineOrder.length - 1 ? ' padding-right: 12px; border-right: 1px solid ' + (darkModeEnabled ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.1)') + ';' : '');
 
             // Line header badge
             var color = LINE_COLORS[line] || '#1565c0';
             var badge = document.createElement('span');
             badge.style.cssText = 'display: inline-block; background-color: ' + color + ' !important; color: #fff !important; '
-                + 'padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; margin-bottom: 3px; '
+                + 'padding: 1px 7px; border-radius: 4px; font-weight: 700; font-size: 11px; margin-bottom: 1px; '
                 + 'letter-spacing: 0.3px; text-align: center; align-self: flex-start;';
             badge.textContent = line;
             col.appendChild(badge);
@@ -17090,6 +20269,11 @@
     // Orchestrate: fetch + update display + start smart polling
     async function updateBusDepartures() {
         if (!IS_TOP_WINDOW) return;
+        if (_busConfigModalOpen) {
+            stopBusPolling();
+            abortInFlightBusRequests();
+            return;
+        }
         if (!isDTULearnHomepage() || !isBusEnabled()) {
             stopBusPolling();
             abortInFlightBusRequests();
@@ -17215,10 +20399,16 @@
     function showBusConfigModal() {
         if (!IS_TOP_WINDOW) return;
         const existing = document.querySelector('.dtu-bus-config-modal');
-        if (existing) existing.remove();
+        if (existing) {
+            _busConfigModalOpen = false;
+            existing.remove();
+        }
 
+        _busConfigModalOpen = true;
+        stopBusPolling();
+        abortInFlightBusRequests();
 
-        const MAX_LINES = 2;
+        const MAX_LINES = 3;
         const isDarkTheme = isDarkModeEnabled();
         const modalTheme = isDarkTheme
             ? {
@@ -17250,21 +20440,82 @@
 
         // Overlay
         const overlay = document.createElement('div');
+        markExt(overlay);
         overlay.className = 'dtu-bus-config-modal';
         overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000000; '
-            + 'background: transparent !important; backdrop-filter: blur(16px) brightness(2.5); '
-            + '-webkit-backdrop-filter: blur(16px) brightness(2.5); '
+            + 'background: transparent !important; background-color: transparent !important; '
+            + 'backdrop-filter: blur(4px) !important; -webkit-backdrop-filter: blur(4px) !important; '
             + 'display: flex; align-items: center; justify-content: center; '
             + 'font-family: sans-serif; opacity: 0; transition: opacity 0.3s;';
         requestAnimationFrame(function () { overlay.style.opacity = '1'; });
 
         var modal = document.createElement('div');
+        markExt(modal);
         modal.style.cssText = 'background: ' + modalTheme.background + '; border-radius: 14px; padding: 28px; max-width: 480px; '
             + 'width: 90%; max-height: 80vh; overflow-y: auto; color: ' + modalTheme.text + '; '
             + 'box-shadow: ' + modalTheme.overlayShadow + '; '
             + 'border: ' + modalTheme.overlayBorder + ';';
 
+        function getModalBusConfig() {
+            return getBusConfig() || buildDefaultBusConfig();
+        }
+
+        function getCampusLabels(campuses) {
+            return sanitizeBusCampusIds(campuses).map(function (cid) {
+                var preset = DTU_CAMPUS_PRESETS[cid];
+                return preset ? preset.label : cid;
+            });
+        }
+
+        function getLineCampusLabels(lineCode, campuses) {
+            var ids = sanitizeBusCampusIds(campuses);
+            if (!ids.length) ids = DTU_DEFAULT_CAMPUSES.slice();
+            var out = [];
+            ids.forEach(function (cid) {
+                var preset = DTU_CAMPUS_PRESETS[cid];
+                if (!preset || !Array.isArray(preset.lines)) return;
+                if (preset.lines.indexOf(lineCode) === -1) return;
+                out.push(preset.label || cid);
+            });
+            return out;
+        }
+
+        function getAllowedLineSet(campuses) {
+            var set = {};
+            getCampusLineCodes(campuses).forEach(function (line) { set[line] = true; });
+            return set;
+        }
+
+        function enforceBusLineBadgeStyle(badgeEl, lineColor) {
+            if (!badgeEl || !badgeEl.style) return;
+            var color = String(lineColor || '').trim() || '#1565c0';
+            // Darkmode CSS has broad button/text rules; force line chips to keep their route color.
+            badgeEl.style.setProperty('background-color', color, 'important');
+            badgeEl.style.setProperty('background', color, 'important');
+            badgeEl.style.setProperty('color', '#ffffff', 'important');
+            badgeEl.style.setProperty('border', 'none', 'important');
+            badgeEl.style.setProperty('opacity', '1', 'important');
+        }
+
+        function persistCampusSelection(campuses) {
+            var selected = sanitizeBusCampusIds(campuses);
+            if (!selected.length) selected = DTU_DEFAULT_CAMPUSES.slice();
+
+            var config = getModalBusConfig();
+            var allowedLineSet = getAllowedLineSet(selected);
+            config.campuses = selected.slice();
+            config.stopIds = getCampusStopIds(selected);
+            config.lines = normalizeBusLines(config.lines, allowedLineSet);
+            saveBusConfig(config);
+            return config;
+        }
+
+        var isClosing = false;
+
         function dismissModal() {
+            if (isClosing) return;
+            isClosing = true;
+
             var config = getBusConfig();
             if (!config || !config.lines || config.lines.length === 0) {
                 localStorage.setItem(BUS_ENABLED_KEY, 'false');
@@ -17274,18 +20525,118 @@
                     try { toggle.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) { }
                 }
             }
+            _busConfigModalOpen = false;
             overlay.style.opacity = '0';
-            setTimeout(function () { overlay.remove(); }, 200);
+            setTimeout(function () {
+                overlay.remove();
+                updateBusDepartures();
+            }, 200);
         }
 
         overlay.addEventListener('click', function (e) {
             if (e.target === overlay) dismissModal();
         });
 
+        function renderCampusSelectionView(firstTime) {
+            while (modal.firstChild) modal.removeChild(modal.firstChild);
+            var config = getModalBusConfig();
+            var selected = {};
+            sanitizeBusCampusIds(config.campuses).forEach(function (cid) { selected[cid] = true; });
+            if (!Object.keys(selected).length) {
+                DTU_DEFAULT_CAMPUSES.forEach(function (cid0) { selected[cid0] = true; });
+            }
+
+            var titleEl = document.createElement('h2');
+            titleEl.style.cssText = 'margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: ' + modalTheme.heading + '; letter-spacing: -0.3px;';
+            titleEl.textContent = 'Choose Campus Stops';
+            modal.appendChild(titleEl);
+
+            var subtitle = document.createElement('p');
+            subtitle.style.cssText = 'margin: 0 0 16px 0; font-size: 14px; color: ' + modalTheme.subtle + '; line-height: 1.45;';
+            subtitle.textContent = 'Select one or more campuses. The bus widget will use the combined stop list.';
+            modal.appendChild(subtitle);
+
+            var listWrap = document.createElement('div');
+            listWrap.style.cssText = 'display: flex; flex-direction: column; gap: 8px;';
+
+            DTU_CAMPUS_ORDER.forEach(function (cid) {
+                var preset = DTU_CAMPUS_PRESETS[cid];
+                if (!preset) return;
+
+                var row = document.createElement('label');
+                row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:10px 12px;'
+                    + 'border:1px solid ' + modalTheme.border + ';border-radius:8px;cursor:pointer;';
+
+                var cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = !!selected[cid];
+                cb.style.cssText = 'margin-top:2px;width:16px;height:16px;accent-color:var(--dtu-ad-accent);cursor:pointer;';
+                cb.addEventListener('change', function () {
+                    selected[cid] = !!cb.checked;
+                });
+
+                var text = document.createElement('div');
+                text.style.cssText = 'flex:1;min-width:0;';
+
+                var name = document.createElement('div');
+                name.style.cssText = 'font-size:14px;font-weight:700;color:' + modalTheme.text + ';';
+                name.textContent = preset.label;
+
+                var meta = document.createElement('div');
+                meta.style.cssText = 'font-size:12px;color:' + modalTheme.muted + ';line-height:1.35;margin-top:2px;';
+                meta.textContent = String((preset.stopIds || []).length) + ' stops | '
+                    + (preset.lines || []).join(', ');
+
+                text.appendChild(name);
+                text.appendChild(meta);
+                row.appendChild(cb);
+                row.appendChild(text);
+                listWrap.appendChild(row);
+            });
+
+            modal.appendChild(listWrap);
+
+            var errorEl = document.createElement('div');
+            errorEl.style.cssText = 'font-size:12px;color:#ef5350;margin-top:10px;display:none;';
+            modal.appendChild(errorEl);
+
+            var btnRow = document.createElement('div');
+            btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:18px;';
+
+            var backBtn = document.createElement('button');
+            backBtn.style.cssText = 'background: transparent; color: ' + modalTheme.muted + '; border: 1px solid ' + modalTheme.softBorder + '; '
+                + 'padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 13px;';
+            backBtn.textContent = firstTime ? 'Cancel' : 'Back';
+            backBtn.addEventListener('click', function () {
+                if (firstTime) dismissModal();
+                else renderManageView();
+            });
+
+            var saveBtn = document.createElement('button');
+            saveBtn.style.cssText = 'background: #1565c0; color: #fff; border: none; padding: 8px 20px; '
+                + 'border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;';
+            saveBtn.textContent = firstTime ? 'Continue' : 'Apply';
+            saveBtn.addEventListener('click', function () {
+                var campusIds = DTU_CAMPUS_ORDER.filter(function (cid) { return !!selected[cid]; });
+                if (!campusIds.length) {
+                    errorEl.textContent = 'Select at least one campus.';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                var updated = persistCampusSelection(campusIds);
+                if (firstTime && (!updated.lines || !updated.lines.length)) renderAddLineView();
+                else renderManageView();
+            });
+
+            btnRow.appendChild(backBtn);
+            btnRow.appendChild(saveBtn);
+            modal.appendChild(btnRow);
+        }
+
         // ---- Manage View: show configured lines with delete, add button ----
         function renderManageView() {
             while (modal.firstChild) modal.removeChild(modal.firstChild);
-            var config = getBusConfig();
+            var config = getModalBusConfig();
 
             var titleEl = document.createElement('h2');
             titleEl.style.cssText = 'margin: 0 0 6px 0; font-size: 22px; font-weight: 700; color: ' + modalTheme.heading + '; letter-spacing: -0.3px;';
@@ -17294,8 +20645,22 @@
 
             var subtitle = document.createElement('p');
             subtitle.style.cssText = 'margin: 0 0 20px 0; font-size: 14px; color: ' + modalTheme.subtle + '; line-height: 1.4;';
-            subtitle.textContent = 'Manage your configured bus lines (max ' + MAX_LINES + ').';
+            var campusLabels = getCampusLabels(config.campuses);
+            subtitle.textContent = 'Manage your configured bus lines (max ' + MAX_LINES + ').'
+                + (campusLabels.length ? ' Campuses: ' + campusLabels.join(' + ') + '.' : '');
             modal.appendChild(subtitle);
+
+            var campusBtnRow = document.createElement('div');
+            campusBtnRow.style.cssText = 'display: flex; justify-content: flex-end; margin: -8px 0 12px;';
+            var campusBtn = document.createElement('button');
+            campusBtn.style.cssText = 'background: transparent; border: 1px solid ' + modalTheme.softBorder + '; color: ' + modalTheme.subtle + '; '
+                + 'padding: 6px 10px; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 600;';
+            campusBtn.textContent = 'Campuses';
+            campusBtn.addEventListener('click', function () {
+                renderCampusSelectionView(false);
+            });
+            campusBtnRow.appendChild(campusBtn);
+            modal.appendChild(campusBtnRow);
 
             var lineCount = (config && config.lines) ? config.lines.length : 0;
 
@@ -17311,10 +20676,13 @@
                     badge.style.cssText = 'background-color: ' + color + '; color: #fff; padding: 4px 0; '
                         + 'border-radius: 5px; font-weight: 800; font-size: 16px; min-width: 48px; text-align: center;';
                     badge.textContent = lineCfg.line;
+                    badge.setAttribute('data-dtu-bus-line-badge', lineCfg.line);
+                    enforceBusLineBadgeStyle(badge, color);
 
                     var info = document.createElement('div');
                     info.style.cssText = 'flex: 1; font-size: 13px; color: ' + modalTheme.subtle + '; overflow: hidden; text-overflow: ellipsis;';
-                    info.textContent = lineCfg.directions.join(', ');
+                    var dirs = Array.isArray(lineCfg.directions) ? lineCfg.directions : [];
+                    info.textContent = (dirs.length === 0 || dirs.indexOf('*') !== -1) ? 'All directions' : dirs.join(', ');
 
                     var delBtn = document.createElement('button');
                     delBtn.style.cssText = 'background: transparent; border: 1px solid ' + modalTheme.softBorder + '; color: ' + modalTheme.muted + '; '
@@ -17366,10 +20734,7 @@
             doneBtn.style.cssText = 'background: #1565c0; color: #fff; border: none; padding: 8px 24px; '
                 + 'border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;';
             doneBtn.textContent = 'Done';
-            doneBtn.addEventListener('click', function () {
-                overlay.style.opacity = '0';
-                setTimeout(function () { overlay.remove(); }, 200);
-            });
+            doneBtn.addEventListener('click', function () { dismissModal(); });
             btnRow.appendChild(doneBtn);
             modal.appendChild(btnRow);
         }
@@ -17377,7 +20742,7 @@
         // ---- Add Line View: pick one bus line to add ----
         function renderAddLineView() {
             while (modal.firstChild) modal.removeChild(modal.firstChild);
-            var config = getBusConfig() || { stopIds: DTU_AREA_STOP_IDS.slice(), lines: [] };
+            var config = getModalBusConfig();
             if (config.lines.length >= MAX_LINES) { renderManageView(); return; }
             var configuredLineNames = config.lines.map(function (l) { return l.line; });
 
@@ -17388,13 +20753,17 @@
 
             var subtitle = document.createElement('p');
             subtitle.style.cssText = 'margin: 0 0 20px 0; font-size: 14px; color: ' + modalTheme.subtle + '; line-height: 1.4;';
-            subtitle.textContent = 'Select a bus line to add:';
+            var selectedCampusLabels = getCampusLabels(config.campuses);
+            subtitle.textContent = 'Select a bus line to add'
+                + (selectedCampusLabels.length ? ' for ' + selectedCampusLabels.join(' + ') : '')
+                + ':';
             modal.appendChild(subtitle);
 
             var grid = document.createElement('div');
             grid.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 10px;';
 
-            var availableLines = DTU_BUS_LINES.filter(function (bus) { return configuredLineNames.indexOf(bus.line) === -1; });
+            var campusLines = getCampusLineDefinitions(config.campuses);
+            var availableLines = campusLines.filter(function (bus) { return configuredLineNames.indexOf(bus.line) === -1; });
 
             availableLines.forEach(function (bus) {
                 var color = LINE_COLORS[bus.line] || '#1565c0';
@@ -17410,19 +20779,47 @@
                     + 'border-radius: 6px; font-weight: 800; font-size: 18px; min-width: 56px; text-align: center; '
                     + 'letter-spacing: 0.5px;';
                 badge.textContent = bus.line;
+                badge.setAttribute('data-dtu-bus-line-badge', bus.line);
+                enforceBusLineBadgeStyle(badge, color);
+
+                var textCol = document.createElement('div');
+                textCol.style.cssText = 'display:flex;flex-direction:column;gap:6px;min-width:0;';
 
                 var label = document.createElement('span');
                 label.style.cssText = 'font-size: 13px; color: ' + modalTheme.muted + ';';
                 label.textContent = bus.name;
 
+                var campusTagRow = document.createElement('div');
+                campusTagRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;';
+                var campusTags = getLineCampusLabels(bus.line, config.campuses);
+                campusTags.forEach(function (campusLabel) {
+                    var tag = document.createElement('span');
+                    tag.style.cssText = 'font-size:11px;font-weight:700;line-height:1;'
+                        + 'padding:4px 6px;border-radius:999px;border:1px solid ' + modalTheme.softBorder + ';'
+                        + 'background:' + (isDarkTheme ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.06)') + ';'
+                        + 'color:' + modalTheme.subtle + ';';
+                    tag.textContent = campusLabel;
+                    campusTagRow.appendChild(tag);
+                });
+
+                textCol.appendChild(label);
+                if (campusTags.length) textCol.appendChild(campusTagRow);
+
                 card.appendChild(badge);
-                card.appendChild(label);
+                card.appendChild(textCol);
                 grid.appendChild(card);
 
                 card.addEventListener('click', function () { renderDirectionView(bus.line); });
             });
 
-            modal.appendChild(grid);
+            if (availableLines.length) {
+                modal.appendChild(grid);
+            } else {
+                var noLines = document.createElement('div');
+                noLines.style.cssText = 'font-size: 13px; color: ' + modalTheme.muted + '; font-style: italic; padding: 8px 0;';
+                noLines.textContent = 'No more lines available for the selected campuses.';
+                modal.appendChild(noLines);
+            }
 
             // Back button
             var btnRow = document.createElement('div');
@@ -17430,18 +20827,18 @@
             var backBtn = document.createElement('button');
             backBtn.style.cssText = 'background: transparent; color: ' + modalTheme.muted + '; border: 1px solid ' + modalTheme.softBorder + '; '
                 + 'padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 13px;';
-            backBtn.textContent = config.lines.length > 0 ? 'Back' : 'Cancel';
+            backBtn.textContent = config.lines.length > 0 ? 'Back' : 'Campuses';
             backBtn.addEventListener('click', function () {
                 var c = getBusConfig();
                 if (c && c.lines && c.lines.length > 0) { renderManageView(); }
-                else { dismissModal(); }
+                else { renderCampusSelectionView(false); }
             });
             btnRow.appendChild(backBtn);
             modal.appendChild(btnRow);
         }
 
         // ---- Direction View: pick directions for one line, then save ----
-        async function renderDirectionView(selectedLine) {
+        function renderDirectionView(selectedLine) {
             while (modal.firstChild) modal.removeChild(modal.firstChild);
 
             var color = LINE_COLORS[selectedLine] || '#1565c0';
@@ -17457,41 +20854,48 @@
             var lineTag = document.createElement('span');
             lineTag.style.cssText = 'background-color: ' + color + '; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 13px;';
             lineTag.textContent = selectedLine;
+            lineTag.setAttribute('data-dtu-bus-line-badge', selectedLine);
+            enforceBusLineBadgeStyle(lineTag, color);
             subtitle.appendChild(document.createTextNode('Select directions for '));
             subtitle.appendChild(lineTag);
             subtitle.appendChild(document.createTextNode(':'));
             modal.appendChild(subtitle);
 
-            // Loading
-            var statusEl = document.createElement('div');
-            statusEl.style.cssText = 'font-size: 13px; color: ' + modalTheme.muted + ';';
-            statusEl.textContent = 'Finding available directions...';
-            modal.appendChild(statusEl);
-
-            // Fetch departures to discover directions
-            var allDepartures = [];
-            for (var si = 0; si < DTU_AREA_STOP_IDS.length; si++) {
-                var depResult = await getDepartures(DTU_AREA_STOP_IDS[si], { maxJourneys: 40 });
-                var deps = depResult && Array.isArray(depResult.departures) ? depResult.departures : [];
-                for (var di = 0; di < deps.length; di++) allDepartures.push(deps[di]);
-            }
-
-            var dirSet = new Map();
-            allDepartures.forEach(function (d) {
-                if (d.line === selectedLine && d.direction && !dirSet.has(d.direction)) {
-                    dirSet.set(d.direction, d.direction);
-                }
+            var configForDirection = getModalBusConfig();
+            var directions = getLocalBusDirectionOptions(selectedLine, configForDirection);
+            directions.sort(function (a, b) {
+                var ax = String(a || '').toLowerCase();
+                var bx = String(b || '').toLowerCase();
+                if (ax < bx) return -1;
+                if (ax > bx) return 1;
+                return 0;
             });
-            var directions = Array.from(dirSet.values());
-
-            statusEl.remove();
 
             if (directions.length === 0) {
                 var noDir = document.createElement('div');
                 noDir.style.cssText = 'font-size: 13px; color: ' + modalTheme.muted + '; font-style: italic; padding: 8px 0;';
-                noDir.textContent = 'No departures found for ' + selectedLine + ' right now. Try again later.';
+                noDir.textContent = 'No saved direction options found for ' + selectedLine + '. You can still save with "All directions".';
                 modal.appendChild(noDir);
             }
+
+            var anyRow = document.createElement('label');
+            anyRow.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 8px 12px; '
+                + 'cursor: pointer; border-radius: 6px; margin-bottom: 2px; transition: background 0.15s;';
+            anyRow.addEventListener('mouseenter', function () { anyRow.style.backgroundColor = modalTheme.hoverRow; });
+            anyRow.addEventListener('mouseleave', function () { anyRow.style.backgroundColor = 'transparent'; });
+
+            var anyCb = document.createElement('input');
+            anyCb.type = 'checkbox';
+            anyCb.checked = directions.length === 0;
+            anyCb.style.cssText = 'width: 16px; height: 16px; accent-color: var(--dtu-ad-accent); cursor: pointer;';
+
+            var anyText = document.createElement('span');
+            anyText.style.cssText = 'font-size: 13px; color: ' + modalTheme.text + '; font-weight: 700;';
+            anyText.textContent = directions.length === 0 ? 'All directions (recommended)' : 'All directions';
+
+            anyRow.appendChild(anyCb);
+            anyRow.appendChild(anyText);
+            modal.appendChild(anyRow);
 
             var dirCheckboxes = [];
             directions.forEach(function (direction) {
@@ -17503,7 +20907,9 @@
 
                 var cb = document.createElement('input');
                 cb.type = 'checkbox';
-                cb.checked = true;
+                var isCampusInbound = (/\bdtu\b/i.test(direction) && selectedLine !== '40E')
+                    || /\bris[øo]\b/i.test(direction);
+                cb.checked = !isCampusInbound;
                 cb.style.cssText = 'width: 16px; height: 16px; accent-color: var(--dtu-ad-accent); cursor: pointer;';
 
                 var arrow = document.createElement('span');
@@ -17542,17 +20948,25 @@
             saveBtn.textContent = 'Add Line';
 
             saveBtn.addEventListener('click', function () {
-                var selectedDirs = dirCheckboxes.filter(function (dc) { return dc.cb.checked; }).map(function (dc) { return dc.direction; });
+                var selectedDirs = [];
+                if (anyCb.checked) {
+                    selectedDirs = ['*'];
+                } else {
+                    selectedDirs = dirCheckboxes.filter(function (dc) { return dc.cb.checked; }).map(function (dc) { return dc.direction; });
+                }
                 if (selectedDirs.length === 0) {
                     errorEl.textContent = 'Please select at least one direction.';
                     errorEl.style.display = 'block';
                     return;
                 }
 
-                var config = getBusConfig() || { stopIds: DTU_AREA_STOP_IDS.slice(), lines: [] };
+                var config = getModalBusConfig();
+                config.lines = Array.isArray(config.lines) ? config.lines.filter(function (entry) {
+                    return entry && entry.line !== selectedLine;
+                }) : [];
                 config.lines.push({ line: selectedLine, directions: selectedDirs });
                 if (!config.stopIds || config.stopIds.length === 0) {
-                    config.stopIds = DTU_AREA_STOP_IDS.slice();
+                    config.stopIds = getCampusStopIds(config.campuses);
                 }
                 saveBusConfig(config);
                 localStorage.setItem(BUS_ENABLED_KEY, 'true');
@@ -17570,7 +20984,9 @@
 
         // Decide which view to show initially
         var config = getBusConfig();
-        if (config && config.lines && config.lines.length > 0) {
+        if (!config) {
+            renderCampusSelectionView(true);
+        } else if (config && config.lines && config.lines.length > 0) {
             renderManageView();
         } else {
             renderAddLineView();
@@ -17617,9 +21033,9 @@
         toggle.style.cssText = 'width: 16px; height: 16px; cursor: pointer; accent-color: var(--dtu-ad-accent);';
 
         toggle.addEventListener('change', () => {
-            if (toggle.checked && (isApiQuotaExhausted() || isDailyLimitReached())) {
+            if (toggle.checked && isApiQuotaExhausted()) {
                 toggle.checked = false;
-                showQuotaExhaustedMessage(isApiQuotaExhausted() ? 'monthly' : 'daily');
+                showQuotaExhaustedMessage('monthly');
                 return;
             }
             localStorage.setItem(BUS_ENABLED_KEY, toggle.checked.toString());
@@ -17717,6 +21133,20 @@
             else if (!minor.test(words[w])) return false; // non-minor word not capitalized = not Title Case
         }
         return capitalizedCount >= Math.ceil(words.length / 2);
+    }
+
+    function isLikelyBookFinderTitleCandidate(rawTitle) {
+        if (!rawTitle) return false;
+        var title = rawTitle.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+        if (title.length < 10) return false;
+        if (isNotesOnlyLiterature(title)) return false;
+        if (/https?:\/\//i.test(title)) return false;
+
+        var genericResourceNoise = /\b(relevant|additional|supplementary|other|various|selected|assorted)\s+(articles?|papers?|tools?|materials?|resources?)\b|\barticles?\s*,\s*tools?\b|\bmaterials?\s+from\s+the\s+internet\b|\bfrom\s+the\s+internet\b|\bonline\s+materials?\b|\bweb\s+resources?\b|\binternet\s+resources?\b/i;
+        var genericCourseNoise = /\b(research\s+articles?|lecture\s+notes?|course\s+compendium|supplements?\s+will\s+be\s+provided|will\s+be\s+made\s+accessible|can\s+be\s+used\s+as\s+well|freely\s+available)\b/i;
+        if (genericResourceNoise.test(title) || genericCourseNoise.test(title)) return false;
+
+        return true;
     }
 
     function createBookFinderBar(isbn, title) {
@@ -17855,7 +21285,7 @@
                     .trim();
                 // Remove trailing period
                 bookInfo = bookInfo.replace(/\.\s*$/, '').trim();
-                if (bookInfo.length >= 10 && !titleHits.some(function (h) { return h.title === bookInfo; })) {
+                if (isLikelyBookFinderTitleCandidate(bookInfo) && !titleHits.some(function (h) { return h.title === bookInfo; })) {
                     titleHits.push({ element: container, title: bookInfo, isbn: null });
                 }
             }
@@ -17866,7 +21296,7 @@
                 var qMatch;
                 while ((qMatch = QUOTED_TITLE_REGEX.exec(cText)) !== null) {
                     var candidateTitle = qMatch[1].trim();
-                    if (isTitleCase(candidateTitle) && !titleHits.some(function (h) { return h.title === candidateTitle; })) {
+                    if (isTitleCase(candidateTitle) && isLikelyBookFinderTitleCandidate(candidateTitle) && !titleHits.some(function (h) { return h.title === candidateTitle; })) {
                         titleHits.push({ element: container, title: candidateTitle, isbn: null });
                     }
                 }
@@ -17876,6 +21306,7 @@
                 for (var e = 0; e < emEls.length; e++) {
                     var emText = emEls[e].textContent.trim();
                     if (isTitleCase(emText) && emText.split(/\s+/).length >= 3
+                        && isLikelyBookFinderTitleCandidate(emText)
                         && !titleHits.some(function (h) { return h.title === emText; })) {
                         titleHits.push({ element: container, title: emText, isbn: null });
                     }
@@ -18802,6 +22233,13 @@
             if (/\brow\b/.test(cls)) return row;
         }
         return titleEl;
+    }
+
+    function setInlineImportant(el, styles) {
+        if (!el || !el.style || !styles) return;
+        Object.keys(styles).forEach(function (prop) {
+            try { el.style.setProperty(prop, styles[prop], 'important'); } catch (e) { }
+        });
     }
 
     function buildGradeStatsSemesters() {
@@ -19964,6 +23402,7 @@
     function shouldRunSmartRoomLinkerInThisWindow() {
         if (!isFeatureFlagEnabled(FEATURE_SMART_ROOM_LINKER_KEY)) return false;
         if (!isSmartRoomLinkerAllowedOnHost()) return false;
+        if (isDTULearnLegacyDropboxPage()) return false;
         if (IS_TOP_WINDOW) return true;
         // DTU Learn Content uses same-origin iframes (smart-curriculum). Enable there too.
         return window.location.hostname === 'learn.inside.dtu.dk';
@@ -21850,6 +25289,79 @@
         applyCampusnetAccentElements();
     }
 
+    function fixStudentPortalStyling(rootNode) {
+        if (!IS_TOP_WINDOW) return;
+        if (!darkModeEnabled) return;
+        if (window.location.hostname !== 'student.dtu.dk') return;
+
+        var scope = (rootNode && rootNode.querySelectorAll) ? rootNode : document;
+        var scopes = (scope === document) ? [document] : [document, scope];
+        var dark1 = '#1a1a1a';
+        var dark2 = '#2d2d2d';
+        var dark2 = '#2d2d2d';
+
+        function setStyles(selector, fn) {
+            scopes.forEach(function (s) {
+                try {
+                    s.querySelectorAll(selector).forEach(function (el) {
+                        if (!el || !el.style) return;
+                        fn(el);
+                    });
+                } catch (e0) { }
+            });
+        }
+
+        setStyles('.h-header, .h-header__inner, .h-header__item, .h-header__navigation, .o-primary-nav, .o-primary-nav__list, .o-utility-nav, .o-utility-nav__list', function (el) {
+            el.style.setProperty('background', dark2, 'important');
+            el.style.setProperty('background-color', dark2, 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+        });
+
+        setStyles('.js-main-wrapper.h-page__wrapper.h-page__wrapper--fullwidth', function (el) {
+            el.style.setProperty('background', dark1, 'important');
+            el.style.setProperty('background-color', dark1, 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+        });
+
+        setStyles('.h-header', function (el) {
+            el.style.setProperty('border-top', '5px solid var(--dtu-ad-accent)', 'important');
+        });
+
+        setStyles('.o-factbox, .o-factbox__articles, .o-factbox__articles article', function (el) {
+            el.style.setProperty('background', dark1, 'important');
+            el.style.setProperty('background-color', dark1, 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+        });
+
+        setStyles('.o-sdb div.subject-Bachelor_Technological, .o-sdb div.subject-Cand_Technological, .u-theme-purple', function (el) {
+            el.style.setProperty('--color-theme-base', 'var(--dtu-ad-accent-deep)', 'important');
+            el.style.setProperty('--color-theme-dark', 'var(--dtu-ad-accent-deep)', 'important');
+            el.style.setProperty('--color-purple', 'var(--dtu-ad-accent-deep)', 'important');
+        });
+
+        setStyles('.m-badge, .r-badge', function (el) {
+            el.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
+            el.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+        });
+
+        setStyles('.h-footer__social', function (el) {
+            el.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
+            el.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+            el.style.setProperty('--color-theme-dark', 'var(--dtu-ad-accent-deep)', 'important');
+        });
+
+        // Keep native inline DTU SVG logo visible and avoid accidental dark fills.
+        setStyles('.h-header__item--identity .h-header__logo-asset, .h-header__item--identity .a-icon__asset, .h-header__item--identity svg, .h-header__item--identity use', function (el) {
+            el.style.setProperty('background', 'transparent', 'important');
+            el.style.setProperty('background-color', 'transparent', 'important');
+            el.style.setProperty('background-image', 'none', 'important');
+            el.style.setProperty('color', 'var(--dtu-ad-accent-deep)', 'important');
+            el.style.setProperty('fill', 'currentColor', 'important');
+        });
+    }
+
     // ===== KURSER.DTU.DK ACCENT ELEMENTS (light mode) =====
     function applyKurserAccentElements() {
         if (window.location.hostname !== 'kurser.dtu.dk') return;
@@ -21917,9 +25429,136 @@
     var _studyplanExamClusterLastSig = '';
     var _studyplanExamClusterLastRenderedSig = '';
     var _studyplanExamClusterLastCalendar = null;
+    var _studyplanExamChoiceEditorOpen = false;
+    var STUDYPLAN_EXAM_CHOICE_KEY = 'dtuAfterDarkStudyplanExamChoicesV1';
+    var STUDYPLAN_EXAM_TIMELINE_OVERRIDES_KEY = 'dtuAfterDarkStudyplanExamTimelineOverridesV1';
 
     function normalizeExamClusterText(text) {
         return (text || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function getStoredStudyplanExamChoices() {
+        try {
+            var raw = localStorage.getItem(STUDYPLAN_EXAM_CHOICE_KEY);
+            if (!raw) return {};
+            var parsed = JSON.parse(raw);
+            return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function saveStoredStudyplanExamChoices(choices) {
+        try {
+            localStorage.setItem(STUDYPLAN_EXAM_CHOICE_KEY, JSON.stringify(choices && typeof choices === 'object' ? choices : {}));
+        } catch (e) { }
+    }
+
+    function buildStudyplanExamChoiceCourseKey(course) {
+        if (!course) return '';
+        return [
+            String(course.code || '').toUpperCase(),
+            normalizeExamClusterText(course.placementText || ''),
+            normalizeExamClusterText(course.periodText || ''),
+            Array.isArray(course.tokens) ? course.tokens.join(',') : '',
+            Array.isArray(course.placementMonthTags) ? course.placementMonthTags.join(',') : ''
+        ].join('|');
+    }
+
+    function buildStudyplanExamChoiceOptionKey(candidate) {
+        var entry = candidate && candidate.entry ? candidate.entry : candidate;
+        if (!entry) return '';
+        return [
+            entry.dateIso || '',
+            normalizeExamClusterText(entry.text || ''),
+            Array.isArray(candidate && candidate.matchedTokens) ? candidate.matchedTokens.slice().sort().join(',') : ''
+        ].join('|');
+    }
+
+    function setStoredStudyplanExamChoice(courseKey, optionKey) {
+        if (!courseKey) return;
+        var choices = getStoredStudyplanExamChoices();
+        if (!optionKey) {
+            delete choices[courseKey];
+        } else {
+            choices[courseKey] = optionKey;
+        }
+        saveStoredStudyplanExamChoices(choices);
+    }
+
+    function getStoredStudyplanExamTimelineOverrides() {
+        try {
+            var raw = localStorage.getItem(STUDYPLAN_EXAM_TIMELINE_OVERRIDES_KEY);
+            if (!raw) return { edits: {}, deleted: {}, custom: [] };
+            var parsed = JSON.parse(raw);
+            var edits = parsed && parsed.edits && typeof parsed.edits === 'object' ? parsed.edits : {};
+            var deleted = parsed && parsed.deleted && typeof parsed.deleted === 'object' ? parsed.deleted : {};
+            var custom = parsed && Array.isArray(parsed.custom) ? parsed.custom : [];
+            return { edits: edits, deleted: deleted, custom: custom };
+        } catch (e) {
+            return { edits: {}, deleted: {}, custom: [] };
+        }
+    }
+
+    function saveStoredStudyplanExamTimelineOverrides(overrides) {
+        var clean = overrides && typeof overrides === 'object' ? overrides : {};
+        try {
+            localStorage.setItem(STUDYPLAN_EXAM_TIMELINE_OVERRIDES_KEY, JSON.stringify({
+                edits: clean.edits && typeof clean.edits === 'object' ? clean.edits : {},
+                deleted: clean.deleted && typeof clean.deleted === 'object' ? clean.deleted : {},
+                custom: Array.isArray(clean.custom) ? clean.custom : []
+            }));
+        } catch (e) { }
+    }
+
+    function buildStudyplanExamTimelineBaseKey(item) {
+        if (!item) return '';
+        return [
+            String(item.code || '').toUpperCase(),
+            item.dateIso || '',
+            normalizeExamClusterText(item.examText || ''),
+            normalizeExamClusterText(item.periodText || ''),
+            normalizeExamClusterText(item.name || '')
+        ].join('|');
+    }
+
+    function buildStudyplanExamTimelineCustomId() {
+        return 'custom_' + String(Date.now()) + '_' + String(Math.floor(Math.random() * 100000));
+    }
+
+    function getExpectedStudyplanExamTags(course) {
+        var tags = [];
+        function add(tag) {
+            if (tag && tags.indexOf(tag) === -1) tags.push(tag);
+        }
+        if (!course) return tags;
+
+        var kind = String(course.periodKind || '').toLowerCase();
+        var text = normalizeExamClusterText(course.periodText || '').toLowerCase();
+        var monthTags = Array.isArray(course.monthTags) ? course.monthTags : [];
+
+        if (monthTags.indexOf('reexam') !== -1 || /\bre-?exam\b|\breeksamen\b/.test(text)) add('reexam');
+        if (kind === 'spring_13w' || kind === 'summer_exam' || kind === 'summer_jja') add('summer_period');
+        if (kind === 'autumn_13w' || kind === 'winter_exam') add('winter_period');
+        if (/\bspring\b|\bfor\u00e5r\b/.test(text)) add('summer_period');
+        if (/\bautumn\b|\bfall\b|\befter\u00e5r\b/.test(text)) add('winter_period');
+        if (/\bsummer\b|\bsommer\b/.test(text)) add('summer_period');
+        if (/\bwinter\b|\bvinter\b/.test(text)) add('winter_period');
+
+        return tags;
+    }
+
+    function shouldPromptForStudyplanExamChoice(course) {
+        if (!course) return false;
+        var placement = normalizeExamClusterText(course.placementText || '');
+        var tokens = Array.isArray(course.tokens) ? course.tokens.filter(Boolean) : [];
+        var explicitMonths = extractStudyplanExplicitMonthTags(placement);
+        if (!placement) return true;
+        if (explicitMonths.length) return false;
+        if (/^\s*[FE]\s*$/i.test(placement)) return true;
+        if (!tokens.length) return true;
+        if (tokens.length > 1) return true;
+        return false;
     }
 
     function normalizeExamSlotToken(rawToken) {
@@ -21935,6 +25574,30 @@
         var m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
         if (!m) return iso || '';
         return m[3] + '/' + m[2] + ' ' + m[1];
+    }
+
+    function formatStudyplanExamEditDate(iso) {
+        var m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!m) return '';
+        return m[3] + '/' + m[2] + '/' + m[1];
+    }
+
+    function parseStudyplanExamEditDate(text) {
+        var value = normalizeExamClusterText(text);
+        if (!value) return '';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+        var m = value.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](20\d{2})$/);
+        if (!m) return '';
+        var day = parseInt(m[1], 10);
+        var month = parseInt(m[2], 10);
+        var year = parseInt(m[3], 10);
+        if (!day || !month || !year || month < 1 || month > 12 || day < 1 || day > 31) return '';
+        var iso = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+        var ts = parseIsoToUtcTs(iso);
+        if (ts === null) return '';
+        var d = new Date(ts);
+        if (d.getUTCFullYear() !== year || d.getUTCMonth() !== (month - 1) || d.getUTCDate() !== day) return '';
+        return iso;
     }
 
     function parseIsoToUtcTs(iso) {
@@ -22576,7 +26239,9 @@
 
     function buildStudyplanExamCourseSig(courses) {
         if (!Array.isArray(courses) || !courses.length) return 'none';
+        var storedChoices = getStoredStudyplanExamChoices();
         return courses.map(function (c) {
+            var courseKey = buildStudyplanExamChoiceCourseKey(c);
             return [
                 c.code,
                 c.tokens.join(','),
@@ -22584,7 +26249,8 @@
                 (Array.isArray(c.placementMonthTags) ? c.placementMonthTags.join(',') : ''),
                 c.placementText,
                 c.periodText,
-                c.semesterNumber || ''
+                c.semesterNumber || '',
+                storedChoices[courseKey] || ''
             ].join('|');
         }).join('||');
     }
@@ -22620,8 +26286,15 @@
             tags: Array.isArray(entry.tags) ? entry.tags.map(function (t) { return String(t || '').toLowerCase(); }) : []
         };
     }
-    function chooseExamEntryForCourse(course, entries, todayTs) {
-        if (!course || !Array.isArray(entries) || !entries.length) return null;
+    function sortExamClusterCandidates(a, b) {
+        if (a.score !== b.score) return b.score - a.score;
+        if (a.upcoming !== b.upcoming) return a.upcoming ? -1 : 1;
+        if (a.upcoming && b.upcoming) return a.entry.dateTs - b.entry.dateTs;
+        return b.entry.dateTs - a.entry.dateTs;
+    }
+
+    function getExamCandidatesForCourse(course, entries, todayTs) {
+        if (!course || !Array.isArray(entries) || !entries.length) return [];
 
         function getIsoMonth(iso) {
             var mm = String(iso || '').match(/^\d{4}-(\d{2})-\d{2}$/);
@@ -22631,6 +26304,10 @@
         }
 
         var placementMonthTags = Array.isArray(course.placementMonthTags) ? course.placementMonthTags : [];
+        var expectedExamTags = getExpectedStudyplanExamTags(course);
+        var exactSingleSlotPlacement = !shouldPromptForStudyplanExamChoice(course)
+            && Array.isArray(course.tokens)
+            && course.tokens.length === 1;
         var strictCandidates = [];
         var fallbackCandidates = [];
 
@@ -22656,7 +26333,11 @@
             var placementMonthMatch = textMonthMatch || periodMonthMatch || dateMonthMatch;
             var periodTagMatch = arrayIntersects(course.monthTags, entry.tags);
             var isReplacementExam = /\breplacement\s+exam\b|\berstatningseksamen\b/i.test(entry.text || '');
-            var tokenMatch = arrayIntersects(course.tokens, entry.tokens);
+            var expectedTagMatch = expectedExamTags.length && arrayIntersects(expectedExamTags, entry.tags);
+            var matchedTokens = (Array.isArray(course.tokens) ? course.tokens : []).filter(function (token, idx, arr) {
+                return token && arr.indexOf(token) === idx && Array.isArray(entry.tokens) && entry.tokens.indexOf(token) !== -1;
+            });
+            var tokenMatch = matchedTokens.length > 0;
             var codeMatch = entry.codes.indexOf(course.code) !== -1;
 
             if (codeMatch) {
@@ -22681,14 +26362,24 @@
                     score -= 20;
                 }
             }
-            if (!score) return;
+            if (tokenMatch && expectedTagMatch) score += 45;
+            if (!tokenMatch && expectedTagMatch) score += 20;
+            if (expectedExamTags.length && !expectedTagMatch) {
+                if (tokenMatch) score -= 35;
+                else score -= 20;
+            }
+            if (exactSingleSlotPlacement && tokenMatch) score += 60;
+            if (exactSingleSlotPlacement && codeMatch && !tokenMatch) score -= 80;
+            if (isReplacementExam && course.monthTags.indexOf('reexam') === -1) score -= 40;
+            if (!score || score < 1) return;
 
             var candidate = {
                 score: score,
                 reason: reason,
                 entry: entry,
                 upcoming: entry.dateTs >= todayTs,
-                placementMonthMatch: !!placementMonthMatch
+                placementMonthMatch: !!placementMonthMatch,
+                matchedTokens: matchedTokens
             };
 
             if (placementMonthTags.length) {
@@ -22699,68 +26390,210 @@
             }
         });
 
-        // Hard safety: explicit month placement must not map cross-month.
+        var candidates = [];
         if (placementMonthTags.length) {
-            if (!strictCandidates.length) return null;
-            strictCandidates.sort(function (a, b) {
-                if (a.score !== b.score) return b.score - a.score;
-                if (a.upcoming !== b.upcoming) return a.upcoming ? -1 : 1;
-                if (a.upcoming && b.upcoming) return a.entry.dateTs - b.entry.dateTs;
-                return b.entry.dateTs - a.entry.dateTs;
-            });
-            return strictCandidates[0];
+            if (!strictCandidates.length) return [];
+            candidates = strictCandidates.slice();
+        } else {
+            candidates = strictCandidates.length ? strictCandidates.slice() : fallbackCandidates.slice();
         }
 
-        var candidates = strictCandidates.length ? strictCandidates : fallbackCandidates;
-        if (!candidates.length) return null;
-        candidates.sort(function (a, b) {
-            if (a.score !== b.score) return b.score - a.score;
-            if (a.upcoming !== b.upcoming) return a.upcoming ? -1 : 1;
-            if (a.upcoming && b.upcoming) return a.entry.dateTs - b.entry.dateTs;
-            return b.entry.dateTs - a.entry.dateTs;
-        });
-        return candidates[0];
+        if (!candidates.length) return [];
+        candidates.sort(sortExamClusterCandidates);
+        return candidates;
     }
 
-    function mapStudyplanCoursesToExamDates(courses, rawEntries) {
+    function dedupeExamChoiceOptions(candidates) {
+        var byKey = Object.create(null);
+        (candidates || []).forEach(function (candidate) {
+            if (!candidate || !candidate.entry) return;
+            var key = buildStudyplanExamChoiceOptionKey(candidate);
+            if (!key) return;
+            if (!byKey[key] || sortExamClusterCandidates(candidate, byKey[key]) < 0) {
+                byKey[key] = candidate;
+            }
+        });
+        return Object.keys(byKey).map(function (key) {
+            var candidate = byKey[key];
+            candidate.choiceKey = key;
+            return candidate;
+        }).sort(function (a, b) {
+            if (a.entry.dateTs !== b.entry.dateTs) return a.entry.dateTs - b.entry.dateTs;
+            return sortExamClusterCandidates(a, b);
+        });
+    }
+
+    function resolveExamTimelineChoiceForCourse(course, entries, todayTs, storedChoices) {
+        var candidates = getExamCandidatesForCourse(course, entries, todayTs);
+        if (!candidates.length) {
+            return {
+                mapped: [],
+                choicePrompt: null
+            };
+        }
+
+        var promptEligible = shouldPromptForStudyplanExamChoice(course);
+        var concreteCandidates = candidates.filter(function (candidate) {
+            return candidate.reason === 'slot' || candidate.reason === 'course';
+        });
+        var slotCandidates = concreteCandidates.filter(function (candidate) {
+            return candidate.reason === 'slot' && Array.isArray(candidate.matchedTokens) && candidate.matchedTokens.length > 0;
+        });
+        var preferredCandidates = slotCandidates.length ? slotCandidates : (concreteCandidates.length ? concreteCandidates : candidates);
+        var choiceOptions = dedupeExamChoiceOptions(preferredCandidates);
+        var needsChoice = promptEligible && choiceOptions.length > 1;
+
+        if (!needsChoice) {
+            return {
+                mapped: [choiceOptions[0] || candidates[0]],
+                choicePrompt: null
+            };
+        }
+
+        var courseKey = buildStudyplanExamChoiceCourseKey(course);
+        var selectedChoiceKey = storedChoices && storedChoices[courseKey] ? String(storedChoices[courseKey]) : '';
+        var selectedOption = null;
+        for (var i = 0; i < choiceOptions.length; i++) {
+            if (choiceOptions[i].choiceKey === selectedChoiceKey) {
+                selectedOption = choiceOptions[i];
+                break;
+            }
+        }
+
+        return {
+            mapped: selectedOption ? [selectedOption] : [],
+            choicePrompt: {
+                courseKey: courseKey,
+                code: course.code,
+                name: course.name,
+                placementText: course.placementText,
+                options: choiceOptions,
+                selectedChoiceKey: selectedOption ? selectedOption.choiceKey : '',
+                required: !selectedOption
+            }
+        };
+    }
+
+    function resolveStudyplanExamTimelineData(courses, rawEntries) {
 
 
         var todayTs = startOfTodayUtcTs();
         var entries = (rawEntries || []).map(normalizeExamCalendarEntry).filter(Boolean);
-        var mapped = [];
+        var storedChoices = getStoredStudyplanExamChoices();
+        var baseMapped = [];
+        var choicePrompts = [];
+        var allChoicePrompts = [];
 
         courses.forEach(function (course) {
-            var match = chooseExamEntryForCourse(course, entries, todayTs);
-            if (!match || !match.entry) return;
-            var dayDelta = diffDaysUtc(todayTs, match.entry.dateTs);
-            mapped.push({
-                code: course.code,
-                name: course.name,
-                placementText: course.placementText,
-                periodText: course.periodText,
-                matchReason: match.reason,
-                dateTs: match.entry.dateTs,
-                dateIso: match.entry.dateIso,
-                dateLabel: match.entry.dateLabel || formatIsoDateForDisplay(match.entry.dateIso),
-                examPeriod: match.entry.period,
-                examText: match.entry.text,
-                daysUntil: dayDelta
+            var resolution = resolveExamTimelineChoiceForCourse(course, entries, todayTs, storedChoices);
+            if (resolution.choicePrompt) {
+                allChoicePrompts.push(resolution.choicePrompt);
+                if (resolution.choicePrompt.required) choicePrompts.push(resolution.choicePrompt);
+            }
+
+            (resolution.mapped || []).forEach(function (match) {
+                if (!match || !match.entry) return;
+                var dayDelta = diffDaysUtc(todayTs, match.entry.dateTs);
+                baseMapped.push({
+                    code: course.code,
+                    name: course.name,
+                    placementText: course.placementText,
+                    periodText: course.periodText,
+                    matchReason: match.reason,
+                    matchedTokens: Array.isArray(match.matchedTokens) ? match.matchedTokens.slice() : [],
+                    dateTs: match.entry.dateTs,
+                    dateIso: match.entry.dateIso,
+                    dateLabel: match.entry.dateLabel || formatIsoDateForDisplay(match.entry.dateIso),
+                    examPeriod: match.entry.period,
+                    examText: match.entry.text,
+                    examChoiceCount: resolution.choicePrompt && Array.isArray(resolution.choicePrompt.options) ? resolution.choicePrompt.options.length : 1,
+                    examChoiceKey: resolution.choicePrompt ? resolution.choicePrompt.selectedChoiceKey : '',
+                    baseKey: '',
+                    daysUntil: dayDelta
+                });
             });
         });
 
-        mapped = mapped.filter(function (item) {
-            return item.dateTs >= todayTs;
+        baseMapped.forEach(function (item) {
+            item.baseKey = buildStudyplanExamTimelineBaseKey(item);
+        });
+        var mapped = applyStudyplanExamTimelineOverrides(baseMapped, todayTs);
+        return {
+            mapped: mapped,
+            baseMapped: baseMapped,
+            choicePrompts: choicePrompts,
+            allChoicePrompts: allChoicePrompts
+        };
+    }
+
+    function applyStudyplanExamTimelineOverrides(baseMapped, todayTs) {
+        var overrides = getStoredStudyplanExamTimelineOverrides();
+        var out = [];
+
+        (baseMapped || []).forEach(function (item) {
+            if (!item) return;
+            var baseKey = item.baseKey || buildStudyplanExamTimelineBaseKey(item);
+            if (overrides.deleted && overrides.deleted[baseKey]) return;
+
+            var edit = overrides.edits && overrides.edits[baseKey] ? overrides.edits[baseKey] : null;
+            var next = Object.assign({}, item);
+            next.baseKey = baseKey;
+            next.isCustom = false;
+
+            if (edit && typeof edit === 'object') {
+                if (edit.code) next.code = String(edit.code).trim().toUpperCase();
+                if (edit.name !== undefined) next.name = String(edit.name).trim();
+                if (edit.dateIso) {
+                    var overrideTs = parseIsoToUtcTs(edit.dateIso);
+                    if (overrideTs !== null) {
+                        next.dateIso = edit.dateIso;
+                        next.dateTs = overrideTs;
+                        next.dateLabel = formatIsoDateForDisplay(edit.dateIso);
+                    }
+                }
+            }
+
+            if (next.dateTs >= todayTs) {
+                next.daysUntil = diffDaysUtc(todayTs, next.dateTs);
+                out.push(next);
+            }
         });
 
-        mapped.sort(function (a, b) {
+        (overrides.custom || []).forEach(function (entry) {
+            if (!entry || !entry.dateIso) return;
+            var ts = parseIsoToUtcTs(entry.dateIso);
+            if (ts === null || ts < todayTs) return;
+            var code = String(entry.code || '').trim().toUpperCase();
+            var name = String(entry.name || '').trim();
+            out.push({
+                code: code || 'CUSTOM',
+                name: name || 'Custom exam',
+                placementText: '',
+                periodText: '',
+                matchReason: 'manual',
+                matchedTokens: [],
+                dateTs: ts,
+                dateIso: entry.dateIso,
+                dateLabel: formatIsoDateForDisplay(entry.dateIso),
+                examPeriod: 'Manual',
+                examText: 'Manual entry',
+                examChoiceCount: 1,
+                examChoiceKey: '',
+                baseKey: String(entry.id || ''),
+                isCustom: true,
+                customId: String(entry.id || ''),
+                daysUntil: diffDaysUtc(todayTs, ts)
+            });
+        });
+
+        out.sort(function (a, b) {
             return a.dateTs - b.dateTs;
         });
-
-        for (var i = 1; i < mapped.length; i++) {
-            mapped[i].gapFromPrev = diffDaysUtc(mapped[i - 1].dateTs, mapped[i].dateTs);
+        for (var i = 1; i < out.length; i++) {
+            out[i].gapFromPrev = diffDaysUtc(out[i - 1].dateTs, out[i].dateTs);
         }
-        if (mapped.length) mapped[0].gapFromPrev = null;
-        return mapped;
+        if (out.length) out[0].gapFromPrev = null;
+        return out;
     }
 
     function buildExamClusterWarnings(mapped) {
@@ -22856,12 +26689,19 @@
             var title = document.createElement('div');
             markExt(title);
             title.setAttribute('data-dtu-exam-cluster-title', '1');
-            title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap;';
+            title.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;';
             var titleText = document.createElement('span');
             markExt(titleText);
-            titleText.textContent = 'Exam Timeline and Clash Risk';
-            titleText.style.cssText = 'font-weight:700;font-size:14px;';
+            titleText.setAttribute('data-dtu-exam-cluster-title-text', '1');
+            titleText.textContent = 'Exam Schedule & Gaps';
+            titleText.style.cssText = 'font-weight:700;font-size:14px;min-width:0;flex:1 1 auto;';
             title.appendChild(titleText);
+
+            var titleMeta = document.createElement('div');
+            markExt(titleMeta);
+            titleMeta.setAttribute('data-dtu-exam-cluster-title-meta', '1');
+            titleMeta.style.cssText = 'display:flex;align-items:center;gap:8px;margin-left:auto;flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end;';
+            title.appendChild(titleMeta);
             container.appendChild(title);
 
             var body = document.createElement('div');
@@ -22912,21 +26752,762 @@
         body.setAttribute('data-dtu-exam-cluster-state', isWarn ? 'warn' : 'info');
     }
 
-    function renderStudyplanExamCluster(courses, mapped, response, errorText) {
+    function formatExamClusterShortDate(ts) {
+        var d = new Date(ts);
+        var weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        var wd = weekdays[d.getUTCDay()];
+        var mon = months[d.getUTCMonth()];
+        var day = d.getUTCDate();
+        return wd + ', ' + mon + ' ' + day;
+    }
+
+    function renderStudyplanExamChoicePrompts(body, choicePrompts, isDark, opts) {
+        if (!body || !Array.isArray(choicePrompts) || !choicePrompts.length) return;
+        opts = opts || {};
+
+        var panel = document.createElement('div');
+        markExt(panel);
+        panel.style.cssText = 'margin-bottom:10px;padding:10px 12px;border-radius:3px;';
+        panel.style.setProperty('border', '1px solid ' + (isDark ? '#4a4130' : '#e5c46a'), 'important');
+        panel.style.setProperty('background', isDark ? 'rgba(255,214,102,0.05)' : 'rgba(255,214,102,0.08)', 'important');
+        panel.style.setProperty('background-color', isDark ? 'rgba(255,214,102,0.05)' : 'rgba(255,214,102,0.08)', 'important');
+        panel.style.setProperty('max-height', '280px', 'important');
+        panel.style.setProperty('overflow-y', 'auto', 'important');
+        panel.style.setProperty('padding-right', '8px', 'important');
+
+        var title = document.createElement('div');
+        markExt(title);
+        title.textContent = opts.titleText || 'Choose exam date';
+        title.style.cssText = 'font-size:12px;font-weight:700;margin-bottom:3px;';
+        panel.appendChild(title);
+
+        var subtitle = document.createElement('div');
+        markExt(subtitle);
+        var pendingCount = choicePrompts.filter(function (choice) { return choice && choice.required; }).length;
+        subtitle.textContent = opts.subtitleText || (pendingCount
+            ? pendingCount + ' course' + (pendingCount !== 1 ? 's need' : ' needs') + ' your exam-date selection before they can be placed in the timeline.'
+            : 'Courses with multiple possible exam dates can be adjusted here.');
+        subtitle.style.cssText = 'font-size:11px;opacity:0.82;margin-bottom:8px;';
+        panel.appendChild(subtitle);
+
+        choicePrompts.forEach(function (choice) {
+            if (!choice || !Array.isArray(choice.options) || !choice.options.length) return;
+
+            var row = document.createElement('div');
+            markExt(row);
+            row.style.cssText = 'padding:8px 0;';
+            row.style.setProperty('border-top', panel.childNodes.length > 2 ? '1px solid ' + (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)') : 'none', 'important');
+
+            var head = document.createElement('div');
+            markExt(head);
+            head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;';
+
+            var courseLabel = document.createElement('div');
+            markExt(courseLabel);
+            courseLabel.style.cssText = 'display:flex;flex-direction:column;gap:1px;min-width:0;';
+
+            var courseCode = document.createElement('div');
+            markExt(courseCode);
+            courseCode.textContent = choice.code;
+            courseCode.style.cssText = 'font-size:12px;font-weight:700;';
+            courseLabel.appendChild(courseCode);
+
+            if (choice.name) {
+                var courseName = document.createElement('div');
+                markExt(courseName);
+                courseName.textContent = choice.name;
+                courseName.style.cssText = 'font-size:11px;opacity:0.82;';
+                courseLabel.appendChild(courseName);
+            }
+            head.appendChild(courseLabel);
+
+            var status = document.createElement('span');
+            markExt(status);
+            status.textContent = choice.required ? 'Selection needed' : 'Selected';
+            var statusColor = choice.required ? 'var(--dtu-ad-status-warning)' : 'var(--dtu-ad-status-success)';
+            status.style.cssText = 'padding-left:8px;font-size:10px;font-weight:700;';
+            status.style.setProperty('color', statusColor, 'important');
+            status.style.setProperty('border-left', '3px solid ' + statusColor, 'important');
+            status.style.setProperty('background', 'transparent', 'important');
+            status.style.setProperty('background-color', 'transparent', 'important');
+            head.appendChild(status);
+            row.appendChild(head);
+
+            var optionsWrap = document.createElement('div');
+            markExt(optionsWrap);
+            optionsWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+
+            choice.options.forEach(function (option) {
+                if (!option || !option.entry) return;
+                var btn = document.createElement('button');
+                markExt(btn);
+                btn.type = 'button';
+                var choiceKey = option.choiceKey || buildStudyplanExamChoiceOptionKey(option);
+                var selected = choice.selectedChoiceKey && choice.selectedChoiceKey === choiceKey;
+                btn.textContent = formatExamClusterShortDate(option.entry.dateTs) + ' · ' + (option.entry.text || option.entry.dateLabel || '');
+                btn.style.cssText = 'padding:0 0 1px 0;border-radius:0;font-size:10px;font-weight:700;cursor:pointer;'
+                    + 'max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                btn.style.setProperty('border', '0', 'important');
+                btn.style.setProperty('border-bottom', '1px solid ' + (selected ? 'var(--dtu-ad-accent)' : (isDark ? '#6a624f' : '#c8b787')), 'important');
+                btn.style.setProperty('background', 'transparent', 'important');
+                btn.style.setProperty('background-color', 'transparent', 'important');
+                btn.style.setProperty('box-shadow', 'none', 'important');
+                btn.style.setProperty('appearance', 'none', 'important');
+                btn.style.setProperty('-webkit-appearance', 'none', 'important');
+                btn.style.setProperty('color', selected
+                    ? (isDark ? 'var(--dtu-ad-accent-soft)' : 'var(--dtu-ad-accent-deep)')
+                    : (isDark ? '#f2f2f2' : '#2f2f2f'), 'important');
+                btn.title = option.entry.text || option.entry.dateLabel || '';
+                btn.addEventListener('click', function () {
+                    setStoredStudyplanExamChoice(choice.courseKey, choiceKey);
+                    _studyplanExamClusterLastRenderedSig = '';
+                    insertStudyplanExamCluster();
+                });
+                optionsWrap.appendChild(btn);
+            });
+
+            if (choice.selectedChoiceKey) {
+                var clearBtn = document.createElement('button');
+                markExt(clearBtn);
+                clearBtn.type = 'button';
+                clearBtn.textContent = 'Clear';
+                clearBtn.style.cssText = 'padding:0 0 1px 0;border-radius:0;font-size:10px;font-weight:700;cursor:pointer;';
+                clearBtn.style.setProperty('border', '0', 'important');
+                clearBtn.style.setProperty('border-bottom', '1px solid ' + (isDark ? '#666' : '#c7c7c7'), 'important');
+                clearBtn.style.setProperty('background', 'transparent', 'important');
+                clearBtn.style.setProperty('background-color', 'transparent', 'important');
+                clearBtn.style.setProperty('box-shadow', 'none', 'important');
+                clearBtn.style.setProperty('appearance', 'none', 'important');
+                clearBtn.style.setProperty('-webkit-appearance', 'none', 'important');
+                clearBtn.style.setProperty('color', isDark ? '#d9d9d9' : '#4b5563', 'important');
+                clearBtn.addEventListener('click', function () {
+                    setStoredStudyplanExamChoice(choice.courseKey, '');
+                    _studyplanExamClusterLastRenderedSig = '';
+                    insertStudyplanExamCluster();
+                });
+                optionsWrap.appendChild(clearBtn);
+            }
+
+            row.appendChild(optionsWrap);
+            panel.appendChild(row);
+        });
+
+        body.appendChild(panel);
+    }
+
+    function renderStudyplanExamEditorEmptyState(body, isDark) {
+        if (!body) return;
+        var panel = document.createElement('div');
+        markExt(panel);
+        panel.style.cssText = 'margin-bottom:10px;padding:10px 12px;border-radius:3px;';
+        panel.style.setProperty('border', '1px solid ' + (isDark ? '#4b5563' : '#cbd5e1'), 'important');
+        panel.style.setProperty('background', isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.72)', 'important');
+        panel.style.setProperty('background-color', isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.72)', 'important');
+
+        var title = document.createElement('div');
+        markExt(title);
+        title.textContent = 'Edit exam choices';
+        title.style.cssText = 'font-size:12px;font-weight:700;margin-bottom:3px;';
+        panel.appendChild(title);
+
+        var text = document.createElement('div');
+        markExt(text);
+        text.textContent = 'There are no ambiguous exam-date choices on this page right now.';
+        text.style.cssText = 'font-size:11px;opacity:0.82;';
+        panel.appendChild(text);
+
+        body.appendChild(panel);
+    }
+
+    function removeStudyplanExamEditorModal() {
+        var existing = document.querySelector('.dtu-studyplan-exam-editor-modal');
+        if (!existing) return;
+        existing.remove();
+    }
+
+    function closeStudyplanExamEditorModal() {
+        _studyplanExamChoiceEditorOpen = false;
+        removeStudyplanExamEditorModal();
+        _studyplanExamClusterLastRenderedSig = '';
+        insertStudyplanExamCluster();
+    }
+
+    function showStudyplanExamEditorModal(baseMapped, allChoicePrompts, isDark) {
+        if (!IS_TOP_WINDOW) return;
+
+        removeStudyplanExamEditorModal();
+
+        var overlay = document.createElement('div');
+        markExt(overlay);
+        overlay.className = 'dtu-studyplan-exam-editor-modal';
+        overlay.tabIndex = -1;
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:1000001;display:flex;align-items:center;justify-content:center;'
+            + 'background:transparent !important;background-color:transparent !important;'
+            + 'backdrop-filter:blur(4px) !important;-webkit-backdrop-filter:blur(4px) !important;'
+            + 'opacity:0;transition:opacity .2s ease;';
+
+        var modal = document.createElement('div');
+        markExt(modal);
+        modal.style.cssText = 'width:min(960px,94vw);max-height:84vh;overflow:auto;border-radius:8px;padding:20px 20px 16px;'
+            + 'background:' + (isDark ? 'rgba(30,30,30,0.94)' : 'rgba(255,255,255,0.96)') + ';'
+            + 'color:' + (isDark ? '#e0e0e0' : '#1f2937') + ';'
+            + 'border:1px solid ' + (isDark ? '#404040' : '#d1d5db') + ';'
+            + 'box-shadow:' + (isDark
+                ? '0 18px 52px rgba(0,0,0,0.45)'
+                : '0 18px 52px rgba(15,23,42,0.22)') + ';'
+            + 'font-family:sans-serif;';
+
+        var header = document.createElement('div');
+        markExt(header);
+        header.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:12px;';
+
+        var headerCopy = document.createElement('div');
+        markExt(headerCopy);
+        headerCopy.style.cssText = 'min-width:0;flex:1;';
+
+        var title = document.createElement('div');
+        markExt(title);
+        title.textContent = 'Edit timeline entries';
+        title.style.cssText = 'font-size:18px;font-weight:700;margin-bottom:4px;';
+        headerCopy.appendChild(title);
+
+        var subtitle = document.createElement('div');
+        markExt(subtitle);
+        subtitle.textContent = 'Adjust exam-date choices and manual timeline entries without replacing the main timeline view.';
+        subtitle.style.cssText = 'font-size:12px;line-height:1.45;opacity:0.82;';
+        headerCopy.appendChild(subtitle);
+
+        header.appendChild(headerCopy);
+
+        var closeBtn = document.createElement('button');
+        markExt(closeBtn);
+        closeBtn.type = 'button';
+        closeBtn.textContent = 'Close';
+        closeBtn.style.cssText = 'padding:0;border:0;border-radius:0;background:transparent;font-size:12px;font-weight:700;cursor:pointer;';
+        closeBtn.style.setProperty('background', 'transparent', 'important');
+        closeBtn.style.setProperty('background-color', 'transparent', 'important');
+        closeBtn.style.setProperty('background-image', 'none', 'important');
+        closeBtn.style.setProperty('box-shadow', 'none', 'important');
+        closeBtn.style.setProperty('appearance', 'none', 'important');
+        closeBtn.style.setProperty('-webkit-appearance', 'none', 'important');
+        closeBtn.style.setProperty('color', isDark ? '#e5e7eb' : '#334155', 'important');
+        closeBtn.addEventListener('click', closeStudyplanExamEditorModal);
+        header.appendChild(closeBtn);
+
+        modal.appendChild(header);
+
+        var modalBody = document.createElement('div');
+        markExt(modalBody);
+        modalBody.style.cssText = 'display:flex;flex-direction:column;';
+
+        if (Array.isArray(allChoicePrompts) && allChoicePrompts.length) {
+            renderStudyplanExamChoicePrompts(modalBody, allChoicePrompts, isDark, {
+                titleText: 'Exam-date choices',
+                subtitleText: 'Resolve ambiguous courses or switch between valid exam dates here.'
+            });
+        }
+
+        if (Array.isArray(baseMapped) && baseMapped.length) {
+            renderStudyplanExamTimelineEditor(modalBody, baseMapped, isDark, { hideHeading: true });
+        } else {
+            renderStudyplanExamEditorEmptyState(modalBody, isDark);
+        }
+
+        modal.appendChild(modalBody);
+        overlay.appendChild(modal);
+
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) closeStudyplanExamEditorModal();
+        });
+        overlay.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closeStudyplanExamEditorModal();
+            }
+        });
+
+        document.body.appendChild(overlay);
+        requestAnimationFrame(function () {
+            overlay.style.opacity = '1';
+            try { overlay.focus(); } catch (eFocus) { }
+        });
+    }
+
+    function renderStudyplanExamTimelineEditor(body, baseMapped, isDark, opts) {
+        if (!body) return;
+        opts = opts || {};
+        var overrides = getStoredStudyplanExamTimelineOverrides();
+        var panel = document.createElement('div');
+        markExt(panel);
+        panel.style.cssText = 'margin-bottom:10px;padding:10px 12px;border-radius:3px;';
+        panel.style.setProperty('border', '1px solid ' + (isDark ? '#4b5563' : '#cbd5e1'), 'important');
+        panel.style.setProperty('background', isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.72)', 'important');
+        panel.style.setProperty('background-color', isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.72)', 'important');
+
+        var head = document.createElement('div');
+        markExt(head);
+        head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;';
+        if (!opts.hideHeading) {
+            var title = document.createElement('div');
+            markExt(title);
+            title.textContent = 'Edit timeline entries';
+            title.style.cssText = 'font-size:12px;font-weight:700;';
+            head.appendChild(title);
+        } else {
+            head.style.justifyContent = 'flex-end';
+        }
+        var resetBtn = document.createElement('button');
+        markExt(resetBtn);
+        resetBtn.type = 'button';
+        resetBtn.textContent = 'Reset edits';
+        resetBtn.style.cssText = 'padding:0;border-radius:0;font-size:10px;font-weight:700;cursor:pointer;';
+        resetBtn.style.setProperty('border', '0', 'important');
+        resetBtn.style.setProperty('background', 'transparent', 'important');
+        resetBtn.style.setProperty('background-color', 'transparent', 'important');
+        resetBtn.style.setProperty('background-image', 'none', 'important');
+        resetBtn.style.setProperty('box-shadow', 'none', 'important');
+        resetBtn.style.setProperty('appearance', 'none', 'important');
+        resetBtn.style.setProperty('-webkit-appearance', 'none', 'important');
+        resetBtn.style.setProperty('color', isDark ? '#e5e7eb' : '#334155', 'important');
+        resetBtn.addEventListener('click', function () {
+            saveStoredStudyplanExamTimelineOverrides({ edits: {}, deleted: {}, custom: [] });
+            _studyplanExamClusterLastRenderedSig = '';
+            insertStudyplanExamCluster();
+        });
+        head.appendChild(resetBtn);
+        panel.appendChild(head);
+
+        if (!opts.hideHeading) {
+            var subtitle = document.createElement('div');
+            markExt(subtitle);
+            subtitle.textContent = 'Adjust code, name, or date for existing entries, delete them from the timeline, or add your own custom exam dates.';
+            subtitle.style.cssText = 'font-size:11px;opacity:0.82;margin-bottom:10px;';
+            panel.appendChild(subtitle);
+        }
+
+        var list = document.createElement('div');
+        markExt(list);
+        list.style.cssText = 'display:flex;flex-direction:column;gap:0;max-height:320px;overflow-y:auto;padding-right:6px;';
+        panel.appendChild(list);
+
+        function rerender() {
+            _studyplanExamClusterLastRenderedSig = '';
+            insertStudyplanExamCluster();
+        }
+
+        function buildField(labelText, value, type, placeholder) {
+            var wrap = document.createElement('label');
+            markExt(wrap);
+            wrap.style.cssText = 'display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 140px;';
+            var label = document.createElement('span');
+            markExt(label);
+            label.textContent = labelText;
+            label.style.cssText = 'font-size:10px;opacity:0.72;';
+            wrap.appendChild(label);
+            var controlWrap = document.createElement('div');
+            markExt(controlWrap);
+            controlWrap.style.cssText = 'position:relative;display:flex;align-items:center;min-width:0;';
+            var input = document.createElement('input');
+            markExt(input);
+            input.type = (type === 'date') ? 'text' : (type || 'text');
+            input.value = (type === 'date') ? formatStudyplanExamEditDate(value || '') : (value || '');
+            if (placeholder) input.placeholder = placeholder;
+            input.style.cssText = 'height:30px;padding:4px 8px;border-radius:3px;font-size:11px;width:100%;min-width:0;';
+            if (type === 'date') {
+                input.style.paddingRight = '34px';
+                input.inputMode = 'numeric';
+                input.autocomplete = 'off';
+            }
+            input.style.setProperty('border', '1px solid ' + (isDark ? '#56606f' : '#cbd5e1'), 'important');
+            input.style.setProperty('background', isDark ? '#1a1a1a' : '#ffffff', 'important');
+            input.style.setProperty('background-color', isDark ? '#1a1a1a' : '#ffffff', 'important');
+            input.style.setProperty('color', isDark ? '#f3f4f6' : '#111827', 'important');
+            controlWrap.appendChild(input);
+
+            if (type === 'date') {
+                var pickerShell = document.createElement('div');
+                markExt(pickerShell);
+                pickerShell.style.cssText = 'position:absolute;right:6px;top:50%;transform:translateY(-50%);width:18px;height:18px;display:flex;align-items:center;justify-content:center;color:' + (isDark ? '#cbd5e1' : '#64748b') + ';';
+
+                var pickerIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                pickerIcon.setAttribute('viewBox', '0 0 24 24');
+                pickerIcon.setAttribute('width', '15');
+                pickerIcon.setAttribute('height', '15');
+                pickerIcon.setAttribute('fill', 'none');
+                var pickerPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                pickerPath.setAttribute('d', 'M7 2v2M17 2v2M3.5 9.5h17M6 5.5h12a2.5 2.5 0 0 1 2.5 2.5v10A2.5 2.5 0 0 1 18 20.5H6A2.5 2.5 0 0 1 3.5 18V8A2.5 2.5 0 0 1 6 5.5Z');
+                pickerPath.setAttribute('stroke', 'currentColor');
+                pickerPath.setAttribute('stroke-width', '1.8');
+                pickerPath.setAttribute('stroke-linecap', 'round');
+                pickerPath.setAttribute('stroke-linejoin', 'round');
+                pickerIcon.appendChild(pickerPath);
+                pickerShell.appendChild(pickerIcon);
+
+                var pickerInput = document.createElement('input');
+                markExt(pickerInput);
+                pickerInput.type = 'date';
+                pickerInput.value = value || '';
+                pickerInput.setAttribute('aria-label', labelText + ' picker');
+                pickerInput.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer;margin:0;padding:0;border:0;';
+                pickerInput.style.setProperty('background', 'transparent', 'important');
+                pickerInput.style.setProperty('background-color', 'transparent', 'important');
+                pickerInput.addEventListener('input', function () {
+                    input.value = formatStudyplanExamEditDate(pickerInput.value || '');
+                });
+                pickerInput.addEventListener('change', function () {
+                    input.value = formatStudyplanExamEditDate(pickerInput.value || '');
+                });
+                input.addEventListener('change', function () {
+                    var parsedIso = parseStudyplanExamEditDate(input.value || '');
+                    if (parsedIso) pickerInput.value = parsedIso;
+                });
+                input.addEventListener('blur', function () {
+                    var parsedIso = parseStudyplanExamEditDate(input.value || '');
+                    if (parsedIso) {
+                        pickerInput.value = parsedIso;
+                        input.value = formatStudyplanExamEditDate(parsedIso);
+                    }
+                });
+                pickerShell.appendChild(pickerInput);
+                controlWrap.appendChild(pickerShell);
+                wrap.appendChild(controlWrap);
+                return { wrap: wrap, input: input, pickerInput: pickerInput };
+            }
+
+            wrap.appendChild(controlWrap);
+            return { wrap: wrap, input: input };
+        }
+
+        function buildActionButton(text, kind) {
+            var btn = document.createElement('button');
+            markExt(btn);
+            btn.type = 'button';
+            btn.textContent = text;
+            btn.style.cssText = 'padding:0;border-radius:0;font-size:10px;font-weight:700;cursor:pointer;';
+            var color = kind === 'danger'
+                ? 'var(--dtu-ad-status-danger)'
+                : (kind === 'positive'
+                    ? 'var(--dtu-ad-status-success)'
+                    : (isDark ? '#94a3b8' : '#475569'));
+            btn.style.setProperty('border', '0', 'important');
+            btn.style.setProperty('background', 'transparent', 'important');
+            btn.style.setProperty('background-color', 'transparent', 'important');
+            btn.style.setProperty('background-image', 'none', 'important');
+            btn.style.setProperty('box-shadow', 'none', 'important');
+            btn.style.setProperty('appearance', 'none', 'important');
+            btn.style.setProperty('-webkit-appearance', 'none', 'important');
+            btn.style.setProperty('color', color, 'important');
+            btn.addEventListener('mouseenter', function () {
+                try { btn.style.setProperty('text-decoration', 'underline', 'important'); } catch (eBtn1) { }
+            });
+            btn.addEventListener('mouseleave', function () {
+                try { btn.style.setProperty('text-decoration', 'none', 'important'); } catch (eBtn2) { }
+            });
+            return btn;
+        }
+
+        function appendExistingRow(editorItem) {
+            if (!editorItem || !editorItem.item) return;
+            var item = editorItem.item;
+            var baseKey = editorItem.baseKey || item.baseKey || buildStudyplanExamTimelineBaseKey(item);
+            var deleted = !!editorItem.deleted;
+            var effectiveIso = editorItem.dateIso || item.dateIso;
+            var effectiveTs = editorItem.dateTs || item.dateTs;
+
+            var card = document.createElement('div');
+            markExt(card);
+            card.style.cssText = 'padding:8px 0 10px 10px;border-radius:0;';
+            card.style.setProperty('border', '0', 'important');
+            card.style.setProperty('border-left', '3px solid ' + (deleted ? 'var(--dtu-ad-status-danger)' : 'var(--dtu-ad-accent)'), 'important');
+            card.style.setProperty('border-bottom', '1px solid ' + (isDark ? '#3f4652' : '#dbe1e8'), 'important');
+            card.style.setProperty('background', 'transparent', 'important');
+            card.style.setProperty('background-color', 'transparent', 'important');
+
+            var meta = document.createElement('div');
+            markExt(meta);
+            meta.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;';
+            var metaLabel = document.createElement('div');
+            markExt(metaLabel);
+            metaLabel.textContent = (editorItem.code || item.code || 'Course') + ' · ' + formatExamClusterShortDate(effectiveTs);
+            metaLabel.style.cssText = 'font-size:11px;font-weight:700;';
+            meta.appendChild(metaLabel);
+            var metaState = document.createElement('span');
+            markExt(metaState);
+            metaState.textContent = deleted ? 'Deleted' : 'Official';
+            metaState.style.cssText = 'font-size:10px;font-weight:700;';
+            metaState.style.setProperty('color', deleted ? 'var(--dtu-ad-status-danger)' : (isDark ? '#94a3b8' : '#64748b'), 'important');
+            meta.appendChild(metaState);
+            card.appendChild(meta);
+
+            var fields = document.createElement('div');
+            markExt(fields);
+            fields.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+            var codeField = buildField('Course code', editorItem.code || item.code, 'text');
+            var nameField = buildField('Course name', editorItem.name || item.name, 'text');
+            var dateField = buildField('Exam date', effectiveIso, 'date', 'DD/MM/YYYY');
+            fields.appendChild(codeField.wrap);
+            fields.appendChild(nameField.wrap);
+            fields.appendChild(dateField.wrap);
+            card.appendChild(fields);
+
+            var actions = document.createElement('div');
+            markExt(actions);
+            actions.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px;';
+            if (deleted) {
+                var restoreBtn = buildActionButton('Restore', 'positive');
+                restoreBtn.addEventListener('click', function () {
+                    var next = getStoredStudyplanExamTimelineOverrides();
+                    if (next.deleted) delete next.deleted[baseKey];
+                    saveStoredStudyplanExamTimelineOverrides(next);
+                    rerender();
+                });
+                actions.appendChild(restoreBtn);
+            } else {
+                var saveBtn = buildActionButton('Save', 'positive');
+                saveBtn.addEventListener('click', function () {
+                    var next = getStoredStudyplanExamTimelineOverrides();
+                    var code = String(codeField.input.value || '').trim().toUpperCase();
+                    var name = String(nameField.input.value || '').trim();
+                    var dateIso = parseStudyplanExamEditDate(dateField.input.value || '');
+                    if (!dateIso) return;
+                    var patch = {};
+                    if (code !== String(item.code || '').trim().toUpperCase()) patch.code = code;
+                    if (name !== String(item.name || '').trim()) patch.name = name;
+                    if (dateIso !== String(item.dateIso || '').trim()) patch.dateIso = dateIso;
+                    if (!next.edits || typeof next.edits !== 'object') next.edits = {};
+                    if (Object.keys(patch).length) next.edits[baseKey] = patch;
+                    else delete next.edits[baseKey];
+                    if (next.deleted) delete next.deleted[baseKey];
+                    saveStoredStudyplanExamTimelineOverrides(next);
+                    rerender();
+                });
+                actions.appendChild(saveBtn);
+
+                var deleteBtn = buildActionButton('Delete', 'danger');
+                deleteBtn.addEventListener('click', function () {
+                    var next = getStoredStudyplanExamTimelineOverrides();
+                    if (!next.deleted || typeof next.deleted !== 'object') next.deleted = {};
+                    next.deleted[baseKey] = true;
+                    saveStoredStudyplanExamTimelineOverrides(next);
+                    rerender();
+                });
+                actions.appendChild(deleteBtn);
+            }
+            card.appendChild(actions);
+            list.appendChild(card);
+        }
+
+        function appendCustomRow(entry) {
+            var effectiveIso = entry && entry.dateIso ? entry.dateIso : '';
+            var effectiveTs = effectiveIso ? parseIsoToUtcTs(effectiveIso) : null;
+
+            var card = document.createElement('div');
+            markExt(card);
+            card.style.cssText = 'padding:8px 0 10px 10px;border-radius:0;';
+            card.style.setProperty('border', '0', 'important');
+            card.style.setProperty('border-left', '3px solid ' + (isDark ? '#4f46e5' : '#7c3aed'), 'important');
+            card.style.setProperty('border-bottom', '1px solid ' + (isDark ? '#3f4652' : '#dbe1e8'), 'important');
+            card.style.setProperty('background', 'transparent', 'important');
+            card.style.setProperty('background-color', 'transparent', 'important');
+
+            var meta = document.createElement('div');
+            markExt(meta);
+            meta.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;';
+            var label = document.createElement('div');
+            markExt(label);
+            label.textContent = effectiveTs ? 'Custom · ' + formatExamClusterShortDate(effectiveTs) : 'Add custom entry';
+            label.style.cssText = 'font-size:11px;font-weight:700;';
+            meta.appendChild(label);
+            var state = document.createElement('span');
+            markExt(state);
+            state.textContent = entry && entry.id ? 'Custom' : 'New';
+            state.style.cssText = 'font-size:10px;font-weight:700;';
+            state.style.setProperty('color', isDark ? '#a78bfa' : '#6d28d9', 'important');
+            meta.appendChild(state);
+            card.appendChild(meta);
+
+            var fields = document.createElement('div');
+            markExt(fields);
+            fields.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+            var codeField = buildField('Course code', entry && entry.code ? entry.code : '', 'text');
+            var nameField = buildField('Course name', entry && entry.name ? entry.name : '', 'text');
+            var dateField = buildField('Exam date', effectiveIso, 'date', 'DD/MM/YYYY');
+            fields.appendChild(codeField.wrap);
+            fields.appendChild(nameField.wrap);
+            fields.appendChild(dateField.wrap);
+            card.appendChild(fields);
+
+            var actions = document.createElement('div');
+            markExt(actions);
+            actions.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px;';
+            var saveBtn = buildActionButton(entry && entry.id ? 'Save' : 'Add', 'positive');
+            saveBtn.addEventListener('click', function () {
+                var dateIso = parseStudyplanExamEditDate(dateField.input.value || '');
+                if (!dateIso) return;
+                var next = getStoredStudyplanExamTimelineOverrides();
+                if (!Array.isArray(next.custom)) next.custom = [];
+                var payload = {
+                    id: entry && entry.id ? entry.id : buildStudyplanExamTimelineCustomId(),
+                    code: String(codeField.input.value || '').trim().toUpperCase(),
+                    name: String(nameField.input.value || '').trim(),
+                    dateIso: dateIso
+                };
+                var replaced = false;
+                next.custom = next.custom.map(function (item) {
+                    if (item && item.id === payload.id) {
+                        replaced = true;
+                        return payload;
+                    }
+                    return item;
+                });
+                if (!replaced) next.custom.push(payload);
+                saveStoredStudyplanExamTimelineOverrides(next);
+                rerender();
+            });
+            actions.appendChild(saveBtn);
+
+            if (entry && entry.id) {
+                var deleteBtn = buildActionButton('Delete', 'danger');
+                deleteBtn.addEventListener('click', function () {
+                    var next = getStoredStudyplanExamTimelineOverrides();
+                    next.custom = Array.isArray(next.custom) ? next.custom.filter(function (item) {
+                        return !item || item.id !== entry.id;
+                    }) : [];
+                    saveStoredStudyplanExamTimelineOverrides(next);
+                    rerender();
+                });
+                actions.appendChild(deleteBtn);
+            }
+            card.appendChild(actions);
+            list.appendChild(card);
+        }
+
+        var editorItems = [];
+        (baseMapped || []).forEach(function (item) {
+            if (!item) return;
+            var baseKey = item.baseKey || buildStudyplanExamTimelineBaseKey(item);
+            var edit = overrides.edits && overrides.edits[baseKey] ? overrides.edits[baseKey] : {};
+            var effectiveIso = edit && edit.dateIso ? edit.dateIso : item.dateIso;
+            var effectiveTs = parseIsoToUtcTs(effectiveIso);
+            editorItems.push({
+                kind: 'official',
+                item: item,
+                baseKey: baseKey,
+                deleted: !!(overrides.deleted && overrides.deleted[baseKey]),
+                code: edit && edit.code !== undefined ? String(edit.code).trim().toUpperCase() : item.code,
+                name: edit && edit.name !== undefined ? String(edit.name).trim() : item.name,
+                dateIso: effectiveIso,
+                dateTs: effectiveTs === null ? item.dateTs : effectiveTs
+            });
+        });
+        (overrides.custom || []).forEach(function (entry) {
+            if (!entry) return;
+            editorItems.push({
+                kind: 'custom',
+                entry: entry,
+                dateTs: parseIsoToUtcTs(entry.dateIso || '') || Number.MAX_SAFE_INTEGER
+            });
+        });
+        editorItems.sort(function (a, b) {
+            if (a.dateTs !== b.dateTs) return a.dateTs - b.dateTs;
+            var aCode = a.kind === 'official' ? String(a.code || '') : String(a.entry && a.entry.code || '');
+            var bCode = b.kind === 'official' ? String(b.code || '') : String(b.entry && b.entry.code || '');
+            return aCode.localeCompare(bCode);
+        });
+
+        if (!editorItems.length) {
+            var empty = document.createElement('div');
+            markExt(empty);
+            empty.textContent = 'No current timeline entries yet. Add a custom exam below.';
+            empty.style.cssText = 'font-size:11px;opacity:0.78;';
+            list.appendChild(empty);
+        }
+
+        editorItems.forEach(function (editorItem) {
+            if (editorItem.kind === 'official') appendExistingRow(editorItem);
+            else appendCustomRow(editorItem.entry);
+        });
+        appendCustomRow(null);
+
+        body.appendChild(panel);
+    }
+
+    function renderStudyplanExamClusterControls(container, allChoicePrompts, isDark) {
+        if (!container) return;
+        var titleRow = container.querySelector('[data-dtu-exam-cluster-title]');
+        if (!titleRow) return;
+        var titleMeta = titleRow.querySelector('[data-dtu-exam-cluster-title-meta]') || titleRow;
+
+        var control = titleMeta.querySelector('[data-dtu-exam-cluster-edit]');
+        if (!control) {
+            control = document.createElement('button');
+            markExt(control);
+            control.type = 'button';
+            control.setAttribute('data-dtu-exam-cluster-edit', '1');
+            control.setAttribute('aria-label', 'Edit exam choices');
+            control.style.cssText = 'width:30px;height:30px;padding:0;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;';
+            var gearSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            gearSvg.setAttribute('viewBox', '0 0 24 24');
+            gearSvg.setAttribute('width', '16');
+            gearSvg.setAttribute('height', '16');
+            gearSvg.setAttribute('fill', 'none');
+            var gearPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            gearPath.setAttribute('d', 'M19.43 12.98c.04-.32.07-.65.07-.98s-.03-.66-.07-.98l2.11-1.65a.5.5 0 0 0 .12-.64l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1a7.9 7.9 0 0 0-1.69-.98L14.5 2.42A.5.5 0 0 0 14 2h-4a.5.5 0 0 0-.5.42l-.37 2.65c-.61.24-1.18.57-1.69.98l-2.49-1a.5.5 0 0 0-.61.22l-2 3.46a.5.5 0 0 0 .12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65a.5.5 0 0 0-.12.64l2 3.46c.13.22.39.31.61.22l2.49-1c.51.41 1.08.74 1.69.98l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.61-.24 1.18-.57 1.69-.98l2.49 1c.22.09.48 0 .61-.22l2-3.46a.5.5 0 0 0-.12-.64l-2.11-1.65ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z');
+            gearPath.setAttribute('data-dtu-gear-shell', '1');
+            gearPath.setAttribute('fill-rule', 'evenodd');
+            gearPath.setAttribute('clip-rule', 'evenodd');
+            gearPath.setAttribute('fill', 'currentColor');
+            gearSvg.appendChild(gearPath);
+            control.appendChild(gearSvg);
+            control.addEventListener('click', function () {
+                _studyplanExamChoiceEditorOpen = !_studyplanExamChoiceEditorOpen;
+                if (!_studyplanExamChoiceEditorOpen) removeStudyplanExamEditorModal();
+                _studyplanExamClusterLastRenderedSig = '';
+                insertStudyplanExamCluster();
+            });
+            titleMeta.appendChild(control);
+        }
+        control.style.display = 'inline-flex';
+        control.style.setProperty('order', '2', 'important');
+
+        control.style.setProperty('border', '1px solid ' + (_studyplanExamChoiceEditorOpen
+            ? 'var(--dtu-ad-accent)'
+            : (isDark ? '#5b6470' : '#cbd5e1')), 'important');
+        control.style.setProperty('background', isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.78)', 'important');
+        control.style.setProperty('background-color', isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.78)', 'important');
+        var gearColor = isDark ? '#ffffff' : '#1f2937';
+        control.style.setProperty('color', gearColor, 'important');
+        try {
+            var gearShellEl = control.querySelector('[data-dtu-gear-shell]');
+            if (gearShellEl) {
+                gearShellEl.setAttribute('fill', gearColor);
+                gearShellEl.style.setProperty('fill', gearColor, 'important');
+            }
+        } catch (eGear) { }
+        control.title = _studyplanExamChoiceEditorOpen
+            ? 'Close exam choice editor'
+            : 'Open exam choice editor';
+    }
+
+    function renderStudyplanExamCluster(courses, mapped, baseMapped, response, errorText, choicePrompts, allChoicePrompts) {
         var container = ensureStudyplanExamClusterContainer();
         var body = container.querySelector('[data-dtu-exam-cluster-body]');
         if (!body) return;
+        body.style.removeProperty('max-height');
+        body.style.removeProperty('overflow-y');
+        body.style.removeProperty('padding-right');
 
         if (errorText) {
+            removeStudyplanExamEditorModal();
+            _studyplanExamChoiceEditorOpen = false;
             renderExamClusterStatus(body, errorText, true);
             return;
         }
         if (!courses.length) {
+            removeStudyplanExamEditorModal();
+            _studyplanExamChoiceEditorOpen = false;
             renderExamClusterStatus(body, 'No upcoming courses with exam placement found in Study Planner.', false);
-            return;
-        }
-        if (!mapped.length) {
-            renderExamClusterStatus(body, 'No matching exam dates found for current planned courses.', true);
             return;
         }
 
@@ -22945,19 +27526,30 @@
         // Keep period detection available for future use, but do not surface it in the UI by default.
         // var currentPeriodLabel = detectCurrentStudyplanPeriodLabel(courses, todayTs);
 
-        // Inject animation keyframes once (used for the tightest-gap pulse).
-        try {
-            if (!document.querySelector('#dtu-exam-cluster-tl-style')) {
-                var st = document.createElement('style');
-                st.id = 'dtu-exam-cluster-tl-style';
-                st.textContent = '@keyframes dtuExamTightGapPulse{'
-                    + '0%{transform:scale(1);box-shadow:0 0 0 0 rgba(var(--dtu-exam-pulse-rgb,232,63,72),0.35);}'
-                    + '55%{transform:scale(1.03);box-shadow:0 0 0 8px rgba(var(--dtu-exam-pulse-rgb,232,63,72),0);}'
-                    + '100%{transform:scale(1);box-shadow:0 0 0 0 rgba(var(--dtu-exam-pulse-rgb,232,63,72),0);}'
-                    + '}';
-                document.head.appendChild(st);
-            }
-        } catch (eS) { }
+        renderStudyplanExamClusterControls(container, allChoicePrompts, isDark);
+
+        if (_studyplanExamChoiceEditorOpen) {
+            showStudyplanExamEditorModal(baseMapped || [], allChoicePrompts || [], isDark);
+        } else {
+            removeStudyplanExamEditorModal();
+        }
+
+        if (!_studyplanExamChoiceEditorOpen) {
+            renderStudyplanExamChoicePrompts(body, choicePrompts, isDark);
+        }
+
+        if (!mapped.length) {
+            var emptyState = document.createElement('div');
+            markExt(emptyState);
+            emptyState.textContent = choicePrompts && choicePrompts.some(function (choice) { return choice && choice.required; })
+                ? 'Choose the applicable exam date above to place those courses in the timeline.'
+                : 'No matching exam dates found for current planned courses.';
+            emptyState.style.cssText = 'font-size: 12px; color: '
+                + (darkModeEnabled ? 'var(--dtu-ad-status-warning)' : 'var(--dtu-ad-status-warning-strong)') + ';';
+            body.appendChild(emptyState);
+            body.setAttribute('data-dtu-exam-cluster-state', 'warn');
+            return;
+        }
 
         var upcoming = mapped.filter(function (m) { return m.daysUntil >= 0; });
         var nextItem = upcoming.length ? upcoming[0] : mapped[0];
@@ -22966,16 +27558,6 @@
             if (typeof m.gapFromPrev !== 'number') return;
             if (tightestGap === null || m.gapFromPrev < tightestGap) tightestGap = m.gapFromPrev;
         });
-
-        function formatShortWeekdayMonthDayUtc(ts) {
-            var d = new Date(ts);
-            var weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            var wd = weekdays[d.getUTCDay()];
-            var mon = months[d.getUTCMonth()];
-            var day = d.getUTCDate();
-            return wd + ', ' + mon + ' ' + day;
-        }
 
         function classifyGap(days) {
             if (typeof days !== 'number') return { level: 'none', color: muted };
@@ -23009,7 +27591,7 @@
                 : (riskSummary.level === 'high'
                     ? (darkModeEnabled ? 'rgba(var(--dtu-ad-status-warning-rgb),0.14)' : 'rgba(var(--dtu-ad-status-warning-strong-rgb),0.10)')
                     : (darkModeEnabled ? 'rgba(var(--dtu-ad-status-info-rgb),0.12)' : 'rgba(var(--dtu-ad-status-info-rgb),0.08)'));
-            riskBox.style.cssText = 'margin-bottom:8px; padding:8px 10px; border-radius:6px; border:1px solid ' + riskBorder + '; background:' + riskBg + ';';
+            riskBox.style.cssText = 'margin-bottom:8px; padding:8px 10px; border-radius:3px; border:1px solid ' + riskBorder + '; background:' + riskBg + ';';
 
             var riskTitle = document.createElement('div');
             markExt(riskTitle);
@@ -23052,32 +27634,26 @@
         timeline.style.setProperty('overflow-y', 'auto', 'important');
         timeline.style.setProperty('padding-right', '6px', 'important');
 
-        // Tightest gap pill -- insert into the title row (same horizontal line)
+        // Tightest gap summary -- keep it in the title row, but as compact text instead of a pill.
         if (tightestGap !== null) {
             var titleRow = container.querySelector('[data-dtu-exam-cluster-title]');
             if (titleRow) {
-                // Remove any previous pill (re-render)
-                var oldPill = titleRow.querySelector('[data-dtu-exam-tightest]');
-                if (oldPill) oldPill.remove();
+                var titleMeta = titleRow.querySelector('[data-dtu-exam-cluster-title-meta]') || titleRow;
+                var oldSummary = titleMeta.querySelector('[data-dtu-exam-tightest]');
+                if (oldSummary) oldSummary.remove();
 
                 var tgMeta = classifyGap(tightestGap);
-                var tgPill = document.createElement('span');
-                markExt(tgPill);
-                tgPill.setAttribute('data-dtu-exam-tightest', '1');
-                tgPill.textContent = 'Tightest gap: ' + tightestGap + 'd';
-                tgPill.style.cssText = 'padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700;flex-shrink:0;';
-                tgPill.style.setProperty('color', tgMeta.color, 'important');
-                tgPill.style.setProperty('border', '1px solid ' + tgMeta.color, 'important');
-                var tgPillBg = isDark
-                    ? (tgMeta.level === 'danger' ? 'rgba(var(--dtu-ad-status-danger-rgb),0.15)' : (tgMeta.level === 'caution' ? 'rgba(var(--dtu-ad-status-warning-rgb),0.12)' : 'rgba(var(--dtu-ad-status-success-rgb),0.10)'))
-                    : (tgMeta.level === 'danger' ? 'rgba(var(--dtu-ad-status-danger-rgb),0.08)' : (tgMeta.level === 'caution' ? 'rgba(var(--dtu-ad-status-warning-strong-rgb),0.06)' : 'rgba(var(--dtu-ad-status-success-rgb),0.06)'));
-                tgPill.style.setProperty('background', tgPillBg, 'important');
-                tgPill.style.setProperty('background-color', tgPillBg, 'important');
-                if (tgMeta.level === 'danger') {
-                    tgPill.style.setProperty('--dtu-exam-pulse-rgb', '232,63,72');
-                    tgPill.style.setProperty('animation', 'dtuExamTightGapPulse 1.4s ease-out infinite', 'important');
-                }
-                titleRow.appendChild(tgPill);
+                var tgSummary = document.createElement('span');
+                markExt(tgSummary);
+                tgSummary.setAttribute('data-dtu-exam-tightest', '1');
+                tgSummary.textContent = 'Tightest gap ' + tightestGap + 'd';
+                tgSummary.style.cssText = 'display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;flex-shrink:0;';
+                tgSummary.style.setProperty('order', '1', 'important');
+                tgSummary.style.setProperty('padding-left', '8px', 'important');
+                tgSummary.style.setProperty('margin-right', '2px', 'important');
+                tgSummary.style.setProperty('color', tgMeta.color, 'important');
+                tgSummary.style.setProperty('border-left', '3px solid ' + tgMeta.color, 'important');
+                titleMeta.appendChild(tgSummary);
             }
         }
 
@@ -23087,13 +27663,13 @@
             var meta = classifyGap(gapDays);
             var h = computeGapHeight(gapDays);
 
-            // Wrapper: centers the pill badge on the rail line
+            // Wrapper: centers the gap label on the rail line
             var row = document.createElement('div');
             markExt(row);
             row.style.cssText = 'position:relative;z-index:2;display:flex;align-items:center;'
                 + 'height:' + h + 'px;min-height:' + h + 'px;padding:4px 0;margin:2px 0;';
 
-            // Rail segment (colored bar behind the pill)
+            // Rail segment
             var railCol = document.createElement('div');
             markExt(railCol);
             railCol.style.cssText = 'width:22px;flex:0 0 22px;position:relative;display:flex;justify-content:center;align-self:stretch;';
@@ -23106,25 +27682,15 @@
             railCol.appendChild(seg);
             row.appendChild(railCol);
 
-            // Pill badge anchored to the rail
-            var pill = document.createElement('div');
-            markExt(pill);
+            // Plain gap label anchored to the rail
+            var label = document.createElement('div');
+            markExt(label);
             var txt = (gapDays === 0) ? 'Same day' : (gapDays + 'd gap');
-            pill.textContent = txt;
-            pill.style.cssText = 'margin-left:-4px;padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700;'
+            label.textContent = txt;
+            label.style.cssText = 'margin-left:2px;padding-left:10px;font-size:11px;font-weight:700;'
                 + 'white-space:nowrap;line-height:1.4;z-index:3;';
-            var pillBg = isDark
-                ? (meta.level === 'danger' ? 'rgba(var(--dtu-ad-status-danger-rgb),0.18)' : (meta.level === 'caution' ? 'rgba(var(--dtu-ad-status-warning-rgb),0.15)' : 'rgba(var(--dtu-ad-status-success-rgb),0.12)'))
-                : (meta.level === 'danger' ? 'rgba(var(--dtu-ad-status-danger-rgb),0.12)' : (meta.level === 'caution' ? 'rgba(var(--dtu-ad-status-warning-strong-rgb),0.10)' : 'rgba(var(--dtu-ad-status-success-rgb),0.08)'));
-            pill.style.setProperty('background', pillBg, 'important');
-            pill.style.setProperty('background-color', pillBg, 'important');
-            pill.style.setProperty('color', meta.color, 'important');
-            pill.style.setProperty('border', '1px solid ' + meta.color, 'important');
-            if (meta.level === 'danger') {
-                pill.style.setProperty('--dtu-exam-pulse-rgb', '232,63,72');
-                pill.style.setProperty('animation', 'dtuExamTightGapPulse 1.4s ease-out infinite', 'important');
-            }
-            row.appendChild(pill);
+            label.style.setProperty('color', meta.color, 'important');
+            row.appendChild(label);
 
             return row;
         }
@@ -23172,7 +27738,7 @@
             var card = document.createElement('div');
             markExt(card);
             card.style.cssText = 'flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:8px;'
-                + 'padding:' + (isHero ? '8px 12px' : '6px 10px') + ';border-radius:8px;';
+                + 'padding:' + (isHero ? '8px 12px' : '6px 10px') + ';border-radius:3px;';
 
             // Risk-tinted background for danger/caution gaps
             var cardBg = softBg;
@@ -23195,16 +27761,16 @@
             markExt(left);
             left.style.cssText = 'min-width:0;flex:1;display:flex;flex-direction:column;gap:1px;';
 
-            // Hero badge row
+            // Hero label row
             if (isHero) {
                 var heroBadge = document.createElement('span');
                 markExt(heroBadge);
                 heroBadge.textContent = 'Next up';
-                heroBadge.style.cssText = 'display:inline-block;padding:1px 7px;border-radius:999px;font-size:9px;font-weight:700;'
+                heroBadge.style.cssText = 'display:inline-block;font-size:9px;font-weight:700;'
                     + 'text-transform:uppercase;letter-spacing:0.6px;margin-bottom:2px;width:fit-content;';
-                heroBadge.style.setProperty('background', 'var(--dtu-ad-accent)', 'important');
-                heroBadge.style.setProperty('background-color', 'var(--dtu-ad-accent)', 'important');
-                heroBadge.style.setProperty('color', '#fff', 'important');
+                heroBadge.style.setProperty('background', 'transparent', 'important');
+                heroBadge.style.setProperty('background-color', 'transparent', 'important');
+                heroBadge.style.setProperty('color', 'var(--dtu-ad-accent)', 'important');
                 left.appendChild(heroBadge);
             }
 
@@ -23221,6 +27787,16 @@
             name.style.setProperty('background-color', 'transparent', 'important');
             name.style.setProperty('background', 'transparent', 'important');
             left.appendChild(name);
+
+            if (item.examChoiceCount > 1 && item.examText) {
+                var slotMeta = document.createElement('div');
+                markExt(slotMeta);
+                slotMeta.textContent = item.examText;
+                slotMeta.style.cssText = 'font-size:10px;opacity:0.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                slotMeta.style.setProperty('background-color', 'transparent', 'important');
+                slotMeta.style.setProperty('background', 'transparent', 'important');
+                left.appendChild(slotMeta);
+            }
 
             // --- Right: date + countdown for hero ---
             var right = document.createElement('div');
@@ -23239,7 +27815,7 @@
 
             var date = document.createElement('div');
             markExt(date);
-            date.textContent = formatShortWeekdayMonthDayUtc(item.dateTs);
+            date.textContent = formatExamClusterShortDate(item.dateTs);
             date.style.cssText = 'font-weight:600;font-size:11px;color:' + muted + ';';
             right.appendChild(date);
 
@@ -23375,11 +27951,17 @@
         if (!isFeatureFlagEnabled(FEATURE_STUDYPLAN_EXAM_CLUSTER_KEY)) {
             var existing = document.querySelector('[data-dtu-exam-cluster]');
             if (existing) existing.remove();
+            removeStudyplanExamEditorModal();
+            _studyplanExamChoiceEditorOpen = false;
             _studyplanExamClusterLastRenderedSig = '';
             _studyplanExamClusterLastCalendar = null;
             return;
         }
-        if (window.location.hostname !== 'studieplan.dtu.dk') return;
+        if (window.location.hostname !== 'studieplan.dtu.dk') {
+            removeStudyplanExamEditorModal();
+            _studyplanExamChoiceEditorOpen = false;
+            return;
+        }
 
         var courses = collectStudyplanUpcomingExamCourses();
         var courseSig = buildStudyplanExamCourseSig(courses);
@@ -23387,7 +27969,7 @@
         if (!courses.length) {
             if (_studyplanExamClusterLastRenderedSig !== 'none') {
                 _studyplanExamClusterLastRenderedSig = 'none';
-                renderStudyplanExamCluster(courses, [], null, null);
+                renderStudyplanExamCluster(courses, [], [], null, null, [], []);
             }
             return;
         }
@@ -23428,14 +28010,18 @@
                     var firstAttempt = response.debug.attempts[0];
                     if (firstAttempt && firstAttempt.step) errText += ' (' + firstAttempt.step + ')';
                 }
-                renderStudyplanExamCluster(courses, [], response, errText);
+                renderStudyplanExamCluster(courses, [], [], response, errText, [], []);
                 return;
             }
 
             _studyplanExamClusterLastCalendar = response;
             _studyplanExamClusterLastRenderedSig = requestedSig;
-            var mapped = mapStudyplanCoursesToExamDates(courses, response.entries);
-            renderStudyplanExamCluster(courses, mapped, response, null);
+            var timelineData = resolveStudyplanExamTimelineData(courses, response.entries);
+            var mapped = timelineData && Array.isArray(timelineData.mapped) ? timelineData.mapped : [];
+            var baseMapped = timelineData && Array.isArray(timelineData.baseMapped) ? timelineData.baseMapped : [];
+            var choicePrompts = timelineData && Array.isArray(timelineData.choicePrompts) ? timelineData.choicePrompts : [];
+            var allChoicePrompts = timelineData && Array.isArray(timelineData.allChoicePrompts) ? timelineData.allChoicePrompts : [];
+            renderStudyplanExamCluster(courses, mapped, baseMapped, response, null, choicePrompts, allChoicePrompts);
             injectGradeCountdowns(mapped);
         });
     }
@@ -23459,6 +28045,90 @@
         anchor.style.setProperty('background-color', color, 'important');
         anchor.style.setProperty('color', '#ffffff', 'important');
         anchor.style.setProperty('border-color', color, 'important');
+    }
+
+    function repositionStudyPlannerBasketActions() {
+        if (!IS_TOP_WINDOW) return;
+        if (window.location.hostname !== 'studieplan.dtu.dk') return;
+
+        var basketTitle = document.querySelector('.box.droppable.drag-item-container.dropZone h2');
+        if (!basketTitle) return;
+        var titleText = normalizeWhitespace(basketTitle.textContent || '').toLowerCase();
+        if (titleText.indexOf('basket') === -1) return;
+
+        var slot = basketTitle.querySelector('.dtu-basket-actions-slot');
+        if (!slot) {
+            slot = document.createElement('span');
+            slot.className = 'dtu-basket-actions-slot';
+            slot.style.cssText = 'float:right;display:inline-flex;align-items:center;gap:8px;'
+                + 'margin-right:8px;font-size:13px;font-weight:400;line-height:1;';
+            basketTitle.appendChild(slot);
+        }
+
+        var candidates = Array.from(document.querySelectorAll('div')).filter(function (el) {
+            if (!el || !el.children || !el.children.length) return false;
+            var children = Array.from(el.children);
+            var hasCreate = children.some(function (child) {
+                return child.matches && child.matches('button[data-target="#createActivity"]');
+            });
+            var hasFind = children.some(function (child) {
+                return child.matches && child.matches('button[data-target="#searchCourseCatalogDialog"]');
+            });
+            var hasPdf = children.some(function (child) {
+                return child.matches && child.matches('a[href*="/pdf/download"]');
+            });
+            return hasCreate || hasFind || hasPdf;
+        });
+        if (!candidates.length) return;
+
+        var preferred = null;
+        for (var i = candidates.length - 1; i >= 0; i--) {
+            if (!candidates[i].closest('.dtu-basket-actions-slot')) {
+                preferred = candidates[i];
+                break;
+            }
+        }
+        if (!preferred) preferred = candidates[candidates.length - 1];
+        if (!preferred) return;
+
+        if (preferred.parentElement !== slot) {
+            slot.appendChild(preferred);
+        }
+
+        preferred.setAttribute('data-dtu-basket-actions', '1');
+        preferred.style.setProperty('float', 'none', 'important');
+        preferred.style.setProperty('margin-top', '0', 'important');
+        preferred.style.setProperty('display', 'inline-flex', 'important');
+        preferred.style.setProperty('align-items', 'center', 'important');
+        preferred.style.setProperty('gap', '8px', 'important');
+        preferred.style.setProperty('white-space', 'nowrap', 'important');
+
+        Array.from(preferred.children).forEach(function (btn) {
+            if (!btn.matches || !btn.matches('button.btn')) return;
+            if (!btn || !btn.style) return;
+            btn.style.setProperty('margin', '0', 'important');
+            btn.style.setProperty('padding', '4px 10px', 'important');
+            btn.style.setProperty('font-size', '12px', 'important');
+            btn.style.setProperty('line-height', '1.2', 'important');
+        });
+
+        Array.from(preferred.children).forEach(function (a) {
+            if (!a.matches || !a.matches('a[href*="/pdf/download"]')) return;
+            if (!a || !a.style) return;
+            a.style.setProperty('display', 'inline-flex', 'important');
+            a.style.setProperty('align-items', 'center', 'important');
+            a.style.setProperty('margin', '0', 'important');
+            a.style.setProperty('font-size', '12px', 'important');
+            a.style.setProperty('line-height', '1.2', 'important');
+        });
+
+        // Remove stale duplicates if KO re-rendered and left older moved blocks behind.
+        candidates.forEach(function (el) {
+            if (!el || el === preferred) return;
+            if (el.parentElement === slot) {
+                try { el.remove(); } catch (e0) { }
+            }
+        });
     }
 
     function styleStudyPlannerTabs() {
@@ -23560,8 +28230,9 @@
                 document.querySelectorAll('.pull-right .caret').forEach(function (caret) {
                     if (!caret || !caret.style) return;
                     caret.style.setProperty('border-top-color', '#ffffff', 'important');
-                    caret.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
-                    caret.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
+                    caret.style.setProperty('background-color', 'transparent', 'important');
+                    caret.style.setProperty('background', 'transparent', 'important');
+                    caret.style.setProperty('background-image', 'none', 'important');
                 });
             } catch (eSp) { }
         }
@@ -23573,7 +28244,7 @@
             el.style.setProperty('color', '#ffffff', 'important');
             el.style.setProperty('border-color', 'var(--dtu-ad-accent-deep)', 'important');
             // Children: container, row, col, pull-right and all child spans
-            el.querySelectorAll('.container, .row, .col-md-12, .pull-right, .pull-right > span').forEach(function (child) {
+            el.querySelectorAll('.container, .row, .col-md-12, .pull-right, .pull-right > span:not(.caret)').forEach(function (child) {
                 child.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
                 child.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
                 child.style.setProperty('background-image', 'none', 'important');
@@ -23599,6 +28270,9 @@
             });
             el.querySelectorAll('.caret').forEach(function (caret) {
                 caret.style.setProperty('border-top-color', '#ffffff', 'important');
+                caret.style.setProperty('background-color', 'transparent', 'important');
+                caret.style.setProperty('background', 'transparent', 'important');
+                caret.style.setProperty('background-image', 'none', 'important');
             });
         });
 
@@ -23607,6 +28281,8 @@
             h3.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
             h3.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
             h3.style.setProperty('color', '#ffffff', 'important');
+            h3.style.setProperty('border-left', '1px solid var(--dtu-ad-accent-deep)', 'important');
+            h3.style.setProperty('border-right', '1px solid var(--dtu-ad-accent-deep)', 'important');
             h3.style.setProperty('border-bottom-width', '2px', 'important');
             h3.style.setProperty('border-bottom-style', 'solid', 'important');
             h3.style.setProperty('border-bottom-color', 'var(--dtu-ad-accent-deep)', 'important');
@@ -23666,6 +28342,10 @@
             btn.style.setProperty('color', '#ffffff', 'important');
             btn.style.setProperty('border-color', 'var(--dtu-ad-accent-deep)', 'important');
         });
+
+        if (host === 'studieplan.dtu.dk') {
+            repositionStudyPlannerBasketActions();
+        }
     }
 
     function forceDTULearnAccentInRoot(root) {
@@ -23711,6 +28391,24 @@
         } catch (e0) { }
 
         try {
+            root.querySelectorAll('.d2l-navigation-s-mobile-menu, .d2l-navigation-s-mobile-menu-mask, .d2l-navigation-s-mobile-menu-content, .d2l-navigation-s-mobile-menu-nav, .d2l-navigation-s-mobile-menu-course-menu').forEach(function (el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background', dark1, 'important');
+                el.style.setProperty('background-color', dark1, 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+                el.style.setProperty('color', DARK_TEXT, 'important');
+            });
+            root.querySelectorAll('.d2l-navigation-s-mobile-menu-mask-close, .d2l-navigation-s-mobile-menu-color-strip, .d2l-navigation-s-mobile-menu-header, .d2l-navigation-s-mobile-menu-header > div, .d2l-navigation-s-mobile-menu-branded-header, .d2l-navigation-s-mobile-menu-branded-header > div, .d2l-navigation-s-mobile-menu-course-selector, .d2l-navigation-s-mobile-menu-header-course-menu, .d2l-navigation-s-gutter, .d2l-navigation-s-header-logo-area, .d2l-navigation-s-header-no-home-icon, .d2l-navigation-s-logo-divider, .d2l-navigation-s-mobile-menu d2l-button-icon, .d2l-navigation-s-mobile-menu d2l-labs-navigation-button-icon, .d2l-navigation-s-mobile-menu d2l-labs-navigation-separator, .d2l-navigation-s-mobile-menu d2l-menu-item-separator').forEach(function (el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background', dark2, 'important');
+                el.style.setProperty('background-color', dark2, 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+                el.style.setProperty('border-color', DARK_BORDER, 'important');
+                el.style.setProperty('color', DARK_TEXT, 'important');
+            });
+        } catch (e0m) { }
+
+        try {
             root.querySelectorAll('.d2l-w2d-count, .d2l-w2d-heading-3-count').forEach(function (el) {
                 if (!el || !el.style) return;
                 el.style.setProperty('background', w2dBadgeBg, 'important');
@@ -23736,6 +28434,20 @@
                 el.style.setProperty('background', 'transparent', 'important');
                 el.style.setProperty('background-color', 'transparent', 'important');
                 el.style.setProperty('color', '#ffffff', 'important');
+            });
+            // Notification bell + unread dot can live in nested shadow roots and are often repainted
+            // by global dark-mode sweeps. Re-assert desired colors inline every accent pass.
+            root.querySelectorAll('.d2l-labs-navigation-notification-icon-indicator').forEach(function (el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background', 'var(--dtu-ad-accent)', 'important');
+                el.style.setProperty('background-color', 'var(--dtu-ad-accent)', 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+            });
+            root.querySelectorAll('d2l-icon[icon="tier3:notification-bell"], d2l-icon[icon="tier3:notification-bell"] *').forEach(function (el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background', 'transparent', 'important');
+                el.style.setProperty('background-color', 'transparent', 'important');
+                el.style.setProperty('background-image', 'none', 'important');
             });
         } catch (e1) { }
 
@@ -23832,6 +28544,7 @@
     function forceDTULearnAccentElements(root) {
         if (!root) return;
         if (window.location.hostname !== 'learn.inside.dtu.dk') return;
+        if (isDTULearnLegacyDropboxPage()) return;
 
         // Always apply to the full document first. In our unified observer pipeline we often
         // call this with a small mutation root that doesn't include the badges.
@@ -23872,9 +28585,15 @@
         return host === 'learn.inside.dtu.dk' || host === 's.brightspace.com';
     }
 
+    function shouldUseBrightspaceShadowDomProcessing() {
+        if (!usesBrightspaceShadowDom()) return false;
+        if (isDTULearnLegacyDropboxPage()) return false;
+        return true;
+    }
+
     function runDarkModeChecks(rootNode) {
         if (!darkModeEnabled) return;
-        var useBrightspaceShadowDom = usesBrightspaceShadowDom();
+        var useBrightspaceShadowDom = shouldUseBrightspaceShadowDomProcessing();
 
         if (rootNode && rootNode.nodeType === 1) {
             if (useBrightspaceShadowDom) {
@@ -23937,6 +28656,47 @@
         });
     }
 
+    function fixDTULearnLegacyDropboxStyling(rootNode) {
+        if (window.location.hostname !== 'learn.inside.dtu.dk') return;
+        if (!isDTULearnLegacyDropboxPage()) return;
+
+        var scope = (rootNode && rootNode.querySelectorAll) ? rootNode : document;
+        var dark2 = '#2d2d2d';
+        var selectors = [
+            '.dco.d2l-foldername',
+            '.dco.d2l-foldername > .dco_c',
+            '.dco.d2l-foldername-medium-font',
+            '.dco.d2l-foldername-medium-font > .dco_c',
+            '.dco.d2l-folderdates-wrapper',
+            '.dco.d2l-folderdates-wrapper > .dco_c',
+            '.dco.d2l-folderdates-wrapper .dco_c',
+            '.dco.d2l-dates-text',
+            '.dco.d2l-dates-text > .dco_c',
+            '.dco.d2l-dates-text .dco_c',
+            '.dco.d2l-dates-text label',
+            '.dco.d2l-dates-text strong',
+            'td.d_gt',
+            'td.d_gt > a.d2l-link.d2l-link-inline',
+            'a.d2l-link.d2l-link-inline[href*="/d2l/lms/dropbox/user/folder_submit_files.d2l"]',
+            'a.d2l-link.d2l-link-inline[href*="/d2l/lms/dropbox/user/folders_history.d2l"]'
+        ];
+
+        selectors.forEach(function (selector) {
+            var nodes = [];
+            try {
+                nodes = scope.querySelectorAll(selector);
+            } catch (e0) {
+                nodes = [];
+            }
+            nodes.forEach(function (el) {
+                if (!el || !el.style) return;
+                el.style.setProperty('background-color', dark2, 'important');
+                el.style.setProperty('background', dark2, 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+            });
+        });
+    }
+
     function runTopWindowFeatureChecks(rootNode, refreshBus) {
         if (!IS_TOP_WINDOW) return;
 
@@ -23949,14 +28709,18 @@
             insertContextCaptureHelper();
         }
         styleStudyPlannerTabs();
+        clearStudyplanModalInlineDarkBackgrounds(rootNode || document);
         fixEvalueringResultCharts();
         fixCampusnetHeaderStyling();
+        fixStudentPortalStyling(rootNode || document);
         applyKurserAccentElements();
         if (host === 'studieplan.dtu.dk' || host === 'campusnet.dtu.dk' || host === 'kurser.dtu.dk') {
             enforceDtuRedBackgroundZoneDark2();
         }
 
         if (host === 'learn.inside.dtu.dk') {
+            fixDTULearnLegacyDropboxStyling(rootNode || document);
+            removeDTULearnHelpDropdown();
             insertMojanglesText();
             if (isFeatureFlagEnabled(FEATURE_LEARN_NAV_RESOURCE_LINKS_KEY)) {
                 insertDTULearnNavResourceLinks();
@@ -23987,6 +28751,7 @@
             insertGPARow();
             insertECTSProgressBar();
             insertGPASimulator();
+            syncCampusnetActualGradeExclusionControls();
             insertParticipantIntelligence();
             insertCampusnetSemesterTwinWidget();
         }
@@ -24016,6 +28781,7 @@
         // Chrome can spend excessive time in mutation processing on these
         // highly dynamic pages; run feature checks from load/visibility hooks instead.
         var host = window.location.hostname;
+        if (isDTULearnLegacyDropboxPage()) return false;
         if (host === 'studieplan.dtu.dk' || host === 'kurser.dtu.dk') return false;
         return true;
     }
@@ -24378,7 +29144,7 @@
             setTimeout(function () { runDarkModeChecks(); runTopWindowFeatureChecks(null, true); try { runLessonsBulkDownloadChecks(); } catch (eLbdB) { } }, 1500);
             setTimeout(function () { try { replaceLogoImage(); } catch (eLogoA) { } }, 650);
             setTimeout(function () { try { replaceLogoImage(); } catch (eLogoB) { } }, 1850);
-            setTimeout(showOnboardingHint, 2000);
+            scheduleOnboardingHint();
             setTimeout(showBusSetupPrompt, 2500);
         });
     }
@@ -24429,7 +29195,7 @@
     });
 
     // Lightweight safety-net for late-created Brightspace shadow roots.
-    if (darkModeEnabled && IS_TOP_WINDOW) {
+    if (darkModeEnabled && IS_TOP_WINDOW && shouldUseBrightspaceShadowDomProcessing()) {
         setInterval(function () {
             if (document.hidden) return;
             sweepForLateShadowRoots();

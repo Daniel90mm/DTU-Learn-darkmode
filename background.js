@@ -34,7 +34,9 @@
     const CACHE_PREFIX_MYLINE = 'cache_myline_';
     const CACHE_PREFIX_LIB_EVENTS = 'cache_lib_events_';
     const CACHE_PREFIX_LIB_NEWS   = 'cache_lib_news_';
+    const CACHE_PREFIX_LIB_OCC    = 'cache_lib_occ_';
     const LIB_CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6 hours
+    const LIB_OCC_CACHE_TTL_MS = 1000 * 60; // 1 minute (near-live occupancy)
 
     function storageGet(key) {
         return new Promise(resolve => {
@@ -1420,14 +1422,21 @@
             const results = (json && (json.Results || json.results)) ? (json.Results || json.results) : [];
             const events = results.map(r => {
                 const d = r.Date ? new Date(r.Date) : null;
+                const toDate = r.ToDate ? new Date(r.ToDate) : null;
+                const location = decodeHtmlBasic(r.Location || '');
+                const formattedDate = decodeHtmlBasic(r.FormatedDate || '');
                 return {
                     url: r.Url || '',
                     title: decodeHtmlBasic(r.Title || ''),
                     excerpt: r.FormatedDate
-                        ? decodeHtmlBasic(r.FormatedDate) + (r.Location ? ' | ' + decodeHtmlBasic(r.Location) : '')
+                        ? formattedDate + (r.Location ? ' | ' + location : '')
                         : decodeHtmlBasic(r.Text || '').slice(0, 120),
                     day: d ? String(d.getDate()) : '',
-                    month: d ? d.toLocaleString('en', { month: 'short' }) : ''
+                    month: d ? d.toLocaleString('en', { month: 'short' }) : '',
+                    location: location,
+                    formattedDate: formattedDate,
+                    startIso: (d && !isNaN(d.getTime())) ? d.toISOString() : '',
+                    endIso: (toDate && !isNaN(toDate.getTime())) ? toDate.toISOString() : ''
                 };
             });
             return { ok: true, events };
@@ -1475,6 +1484,101 @@
             return { ok: true, news };
         } catch (e) {
             return { ok: false, error: 'fetch_error', message: String(e && e.message || e) };
+        }
+    }
+
+    function extractElementTextById(html, id) {
+        const pattern = new RegExp(`<[^>]+id=["']${id}["'][^>]*>([\\s\\S]*?)<\\/[^>]+>`, 'i');
+        const match = String(html || '').match(pattern);
+        return match && match[1] ? decodeHtmlBasic(stripTags(match[1])) : '';
+    }
+
+    function parseIntLoose(text) {
+        const digits = String(text || '').replace(/[^\d]/g, '');
+        if (!digits) return null;
+        const n = parseInt(digits, 10);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    function parseLibraryOccupancyHtml(html, seatsParam) {
+        const nowRaw = extractElementTextById(html, 'now');
+        const todayRaw = extractElementTextById(html, 'today');
+        const freeSeatsRaw = extractElementTextById(html, 'seats');
+
+        const now = parseIntLoose(nowRaw);
+        const today = parseIntLoose(todayRaw);
+        const freeSeats = parseIntLoose(freeSeatsRaw);
+        const capacity = parseIntLoose(seatsParam) || 800;
+
+        const infoMatch = String(html || '').match(/<div[^>]*class=["'][^"']*\binfo\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
+        const infoText = infoMatch && infoMatch[1] ? decodeHtmlBasic(stripTags(infoMatch[1])) : '';
+
+        if (now == null && today == null && freeSeats == null) {
+            return { ok: false, error: 'no_data', message: 'Occupancy placeholders/no values in HTML response.' };
+        }
+
+        return {
+            ok: true,
+            occupancy: {
+                now: now,
+                today: today,
+                freeSeats: freeSeats,
+                capacity: capacity,
+                source: 'https://findit.dtu.dk/screen?seats=' + capacity,
+                infoText: infoText,
+                fetchedAt: Date.now()
+            }
+        };
+    }
+
+    async function fetchLibraryOccupancy(seatsParam) {
+        const seats = parseIntLoose(seatsParam) || 800;
+        const zone = 'main';
+        const jsonUrl = 'https://findit.dtu.dk/screen_data.json?zone=' + zone;
+        const htmlUrl = 'https://findit.dtu.dk/screen?seats=' + seats;
+        try {
+            const resp = await fetch(jsonUrl, {
+                method: 'GET',
+                headers: { Accept: 'application/json, text/plain, */*' },
+                credentials: 'omit',
+                redirect: 'follow'
+            });
+            if (resp.ok) {
+                const json = await resp.json();
+                const now = parseIntLoose(json && json.now);
+                const today = parseIntLoose(json && json.today);
+                if (now != null || today != null) {
+                    return {
+                        ok: true,
+                        occupancy: {
+                            now: now,
+                            today: today,
+                            freeSeats: now == null ? null : Math.max(0, seats - now),
+                            capacity: seats,
+                            source: htmlUrl,
+                            infoText: 'DTU Smart Library',
+                            fetchedAt: Date.now()
+                        }
+                    };
+                }
+            }
+        } catch (e) {
+            // Fall through to HTML parse fallback below.
+        }
+
+        // Fallback: parse the screen HTML directly.
+        try {
+            const respHtml = await fetch(htmlUrl, {
+                method: 'GET',
+                headers: { Accept: 'text/html' },
+                credentials: 'omit',
+                redirect: 'follow'
+            });
+            if (!respHtml.ok) return { ok: false, error: 'http', status: respHtml.status };
+            const html = await respHtml.text();
+            return parseLibraryOccupancyHtml(html, seats);
+        } catch (e2) {
+            return { ok: false, error: 'fetch_error', message: String(e2 && e2.message || e2) };
         }
     }
 
@@ -1633,6 +1737,26 @@
                     fetchLibraryNews()
                         .then(result => {
                             if (result && result.ok) storageCacheSet(CACHE_PREFIX_LIB_NEWS, cacheId, result);
+                            sendResponse(result);
+                        })
+                        .catch(() => sendResponse({ ok: false, error: 'fetch_error' }));
+                });
+                return true;
+            }
+
+            if (message.type === 'dtu-library-occupancy') {
+                const seats = String(message.seats || '800').trim();
+                const seatsDigits = seats.replace(/[^\d]/g, '');
+                const cacheId = 'seats_' + (seatsDigits || '800');
+                storageCacheGet(CACHE_PREFIX_LIB_OCC, cacheId, LIB_OCC_CACHE_TTL_MS).then(cached => {
+                    if (cached && !message.forceRefresh) {
+                        cached.cached = true;
+                        sendResponse(cached);
+                        return;
+                    }
+                    fetchLibraryOccupancy(seats)
+                        .then(result => {
+                            if (result && result.ok) storageCacheSet(CACHE_PREFIX_LIB_OCC, cacheId, result);
                             sendResponse(result);
                         })
                         .catch(() => sendResponse({ ok: false, error: 'fetch_error' }));

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DTU After Dark",
-  "version": "5.4",
+  "version": "6.1",
   "description": "Dark mode, live bus departures, and GPA tools for DTU Learn, CampusNet, and other DTU sites.",
   "permissions": ["storage"],
   "icons": {
@@ -16,6 +16,7 @@
     "https://evaluering.dtu.dk/*",
     "https://sdb.dtu.dk/*",
     "https://student.dtu.dk/*",
+    "https://eksamensplan.dtu.dk/*",
     "https://sts.ait.dtu.dk/*",
     "https://www.dtu.dk/*",
     "https://www.bibliotek.dtu.dk/*"
@@ -43,7 +44,8 @@
         "*://kurser.dtu.dk/*",
         "*://karakterer.dtu.dk/*",
         "*://sites.dtu.dk/*",
-        "*://campusnet.dtu.dk/*"
+        "*://campusnet.dtu.dk/*",
+        "*://eksamensplan.dtu.dk/*"
       ]
     }
   ],
@@ -100,6 +102,12 @@
     },
     {
       "matches": ["*://campusnet.dtu.dk/*"],
+      "js": ["config.js", "darkmode.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": ["*://eksamensplan.dtu.dk/*"],
       "js": ["config.js", "darkmode.js"],
       "run_at": "document_start",
       "all_frames": true

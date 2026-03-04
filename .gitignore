@@ -14,3 +14,5 @@ chrome-unpacked-temp/
 dtu_recon_output/
 .claude/
 *.log
+node_modules/
+data/
