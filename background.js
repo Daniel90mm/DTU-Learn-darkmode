@@ -35,8 +35,10 @@
     const CACHE_PREFIX_LIB_EVENTS = 'cache_lib_events_';
     const CACHE_PREFIX_LIB_NEWS   = 'cache_lib_news_';
     const CACHE_PREFIX_LIB_OCC    = 'cache_lib_occ_';
+    const CACHE_PREFIX_LIB_CROWD  = 'cache_lib_crowd_';
     const LIB_CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6 hours
     const LIB_OCC_CACHE_TTL_MS = 1000 * 60; // 1 minute (near-live occupancy)
+    const LIB_CROWD_CACHE_TTL_MS = 1000 * 60; // 60 seconds
 
     function storageGet(key) {
         return new Promise(resolve => {
@@ -54,6 +56,11 @@
             runtime.storage.local.set(obj);
         } catch (e) { /* best-effort */ }
     }
+    function storageRemove(keys) {
+        try {
+            runtime.storage.local.remove(keys);
+        } catch (e) { /* best-effort */ }
+    }
     function storageCacheGet(prefix, id, ttlMs) {
         const key = prefix + id;
         return storageGet(key).then(entry => {
@@ -65,6 +72,8 @@
         const key = prefix + id;
         storageSet(key, { ts: Date.now(), data });
     }
+
+    storageRemove(['worker_usage_install_id_v1', 'worker_usage_last_day_v1']);
 
     function stripTags(html) {
         return String(html || '').replace(/<[^>]+>/g, ' ');
@@ -1582,6 +1591,115 @@
         }
     }
 
+    function sanitizeLibraryTrendApiUrl(rawUrl) {
+        const value = String(rawUrl || '').trim();
+        if (!value) return '';
+        try {
+            const url = new URL(value);
+            if (url.protocol !== 'https:') return '';
+            return url.toString();
+        } catch (e) {
+            return '';
+        }
+    }
+
+    async function fetchLibrarySharedTrends(apiUrl, lookbackDays) {
+        const sanitizedUrl = sanitizeLibraryTrendApiUrl(apiUrl);
+        if (!sanitizedUrl) return { ok: false, error: 'not_configured' };
+
+        let finalUrl = sanitizedUrl;
+        try {
+            const u = new URL(sanitizedUrl);
+            const lookback = parseIntLoose(lookbackDays);
+            if (lookback && !u.searchParams.has('lookbackDays')) {
+                u.searchParams.set('lookbackDays', String(Math.max(3, Math.min(365, lookback))));
+            }
+            finalUrl = u.toString();
+        } catch (e0) {
+            return { ok: false, error: 'invalid_url' };
+        }
+
+        try {
+            const resp = await fetch(finalUrl, {
+                method: 'GET',
+                headers: { Accept: 'application/json, text/plain, */*' },
+                credentials: 'omit',
+                redirect: 'follow'
+            });
+            if (!resp.ok) return { ok: false, error: 'http', status: resp.status };
+            const json = await resp.json();
+            if (!json || json.ok === false) {
+                return {
+                    ok: false,
+                    error: (json && json.error) ? json.error : 'invalid_payload'
+                };
+            }
+            const out = Object.assign({}, json);
+            out.ok = true;
+            out.sourceUrl = finalUrl;
+            return out;
+        } catch (e1) {
+            return { ok: false, error: 'fetch_error', message: String(e1 && e1.message || e1) };
+        }
+    }
+
+    async function fetchLibraryCrowding(apiUrl, lookbackDays) {
+        const shared = await fetchLibrarySharedTrends(apiUrl, lookbackDays);
+        if (!shared || shared.ok === false) return shared || { ok: false, error: 'fetch_error' };
+
+        const out = Object.assign({}, shared);
+
+        if (!out.current && out.latest) {
+            out.current = {
+                visitors: parseIntLoose(out.latest.now, null),
+                capacity: parseIntLoose(out.latest.capacity, null),
+                free_seats: parseIntLoose(out.latest.freeSeats, null),
+                timestamp: out.latest.fetchedAtIso || (out.latest.fetchedAt ? new Date(out.latest.fetchedAt).toISOString() : null)
+            };
+        }
+
+        if (!out.today) {
+            out.today = {
+                total_visits: (out.latest && parseIntLoose(out.latest.today, null) != null) ? parseIntLoose(out.latest.today, null) : null,
+                samples: []
+            };
+        }
+
+        if (!out.historical) {
+            out.historical = {
+                weekday_averages: {},
+                days_collected: null
+            };
+        }
+
+        try {
+            if ((!out.historical.weekday_averages || !Object.keys(out.historical.weekday_averages).length)
+                && out.trends && Array.isArray(out.trends.hourly)) {
+                const rows = out.trends.hourly.map(function (h) {
+                    return {
+                        hour: parseIntLoose(h && h.hour, null),
+                        avg_visitors: (h && typeof h.avgNow === 'number') ? h.avgNow : parseIntLoose(h && h.avgNow, null),
+                        min_visitors: parseIntLoose(h && h.minNow, null),
+                        max_visitors: parseIntLoose(h && h.maxNow, null),
+                        samples: parseIntLoose(h && h.samples, null)
+                    };
+                }).filter(function (h) {
+                    return h && h.hour != null && h.avg_visitors != null;
+                });
+                if (rows.length) {
+                    out.historical.weekday_averages = { generic: rows };
+                }
+            }
+        } catch (e0) { }
+
+        if (out.historical.days_collected == null && out.trends && parseIntLoose(out.trends.totalSamples, null) != null) {
+            const estDays = Math.max(1, Math.round(parseIntLoose(out.trends.totalSamples, 0) / (60 * 8)));
+            out.historical.days_collected = estDays;
+        }
+
+        return out;
+    }
+
     if (runtime && runtime.runtime && runtime.runtime.onMessage) {
         // Allowed origins: only accept messages from our own content scripts
         const ALLOWED_SENDER_HOSTS = [
@@ -1757,6 +1875,32 @@
                     fetchLibraryOccupancy(seats)
                         .then(result => {
                             if (result && result.ok) storageCacheSet(CACHE_PREFIX_LIB_OCC, cacheId, result);
+                            sendResponse(result);
+                        })
+                        .catch(() => sendResponse({ ok: false, error: 'fetch_error' }));
+                });
+                return true;
+            }
+
+            if (message.type === 'dtu-library-live-stats') {
+                const apiUrl = sanitizeLibraryTrendApiUrl(message.apiUrl);
+                const lookback = parseIntLoose(message.lookbackDays) || 28;
+                if (!apiUrl) {
+                    sendResponse({ ok: false, error: 'not_configured' });
+                    return;
+                }
+                const cacheId = (apiUrl + '|lb=' + String(Math.max(3, Math.min(365, lookback))))
+                    .replace(/[^a-zA-Z0-9]/g, '_')
+                    .slice(0, 180);
+                storageCacheGet(CACHE_PREFIX_LIB_CROWD, cacheId, LIB_CROWD_CACHE_TTL_MS).then(cached => {
+                    if (cached && !message.forceRefresh) {
+                        cached.cached = true;
+                        sendResponse(cached);
+                        return;
+                    }
+                    fetchLibraryCrowding(apiUrl, lookback)
+                        .then(result => {
+                            if (result && result.ok) storageCacheSet(CACHE_PREFIX_LIB_CROWD, cacheId, result);
                             sendResponse(result);
                         })
                         .catch(() => sendResponse({ ok: false, error: 'fetch_error' }));

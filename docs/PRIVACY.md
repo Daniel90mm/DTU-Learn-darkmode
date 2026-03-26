@@ -1,17 +1,18 @@
 # Privacy Policy - DTU After Dark
 
-**Last updated:** February 18, 2026
+**Last updated:** March 26, 2026
 
-## Security and Privacy Audit (February 18, 2026)
+## Security and Privacy Audit (March 26, 2026)
 
-A static audit of `manifest.json`, `manifest_chrome.json`, `background.js`, and `darkmode.js` was completed on February 18, 2026.
+A static audit of `manifest.json`, `manifest_chrome.json`, `background.js`, `darkmode.js`, and the public build scripts was completed on March 26, 2026.
 
 ### Summary
 
-- No analytics, telemetry, ad SDKs, or tracker integrations were found.
+- No analytics, heartbeat telemetry, ad SDKs, or tracker integrations were found in the public release.
 - No remote code loading, `eval`, or `new Function` execution was found.
 - Background cross-origin fetches are behind runtime message handlers with sender allowlisting and per-feature input checks.
 - Participant Intelligence data is stored locally only (not sent to third-party services).
+- Public source builds now ship with a tracked safe `config.js`; optional private overrides stay local-only.
 
 ### Findings
 
@@ -25,15 +26,16 @@ A static audit of `manifest.json`, `manifest_chrome.json`, `background.js`, and 
    - Impact: higher privacy risk on shared devices/profiles.
    - Recommendation: add a visible "clear participant data" action and optional retention window.
 
-3. **Low - Documentation scope mismatch (fixed in this update)**
-   - Permission/domain docs previously omitted some active fetch hosts.
-   - This file and `README.md` now match current manifests and code behavior.
+3. **Low - Optional private live-data overrides are local-only**
+   - Public builds include safe defaults, while any private live-data endpoints must be added locally through an untracked override file.
+   - Impact: public source builds may show reduced live bus/library enrichment until a private local override is supplied.
+   - Recommendation: keep private overrides untracked and document the split clearly for local maintainers.
 
 ## Data Collection
 
-DTU After Dark does **not** sell personal data and does **not** send personal data to advertising or analytics vendors.
+DTU After Dark does **not** sell personal data and does **not** send personal data to advertising, analytics, or telemetry vendors.
 
-The extension operates locally in your browser and stores settings/caches needed for features. If you enable Participant Intelligence, the extension stores participant metadata locally for overlap and history features.
+The public extension operates locally in your browser and stores settings/caches needed for features. It does not send heartbeat or usage telemetry. If you enable Participant Intelligence, the extension stores participant metadata locally for overlap and history features.
 
 ## What Is Stored Locally
 
@@ -46,6 +48,7 @@ The extension operates locally in your browser and stores settings/caches needed
   - FindIt availability cache (7d)
   - MyLine curriculum cache (7d)
   - Library events/news cache (6h)
+  - Legacy library occupancy/crowding cache entries when those features are used
 - Participant Intelligence dataset (if enabled), including:
   - Participant names, s-numbers, program labels
   - Course overlap/history metadata
@@ -78,6 +81,8 @@ Note: origin-scoped `localStorage` keys can be readable by scripts running on th
   - `https://www.dtu.dk/*`
   - `https://www.bibliotek.dtu.dk/*`
 
+Public builds do not contact any usage or heartbeat endpoint. Optional private live-data overrides are not part of the tracked public release.
+
 ### User-initiated external links
 
 Some features render optional outbound links (opened only when you click), including:
@@ -104,6 +109,7 @@ Some features render optional outbound links (opened only when you click), inclu
 - `https://evaluering.dtu.dk/*`
 - `https://sdb.dtu.dk/*`
 - `https://student.dtu.dk/*`
+- `https://eksamensplan.dtu.dk/*`
 - `https://sts.ait.dtu.dk/*`
 - `https://www.dtu.dk/*`
 - `https://www.bibliotek.dtu.dk/*`
@@ -119,6 +125,7 @@ Some features render optional outbound links (opened only when you click), inclu
 - `campusnet.dtu.dk`
 - `karakterer.dtu.dk`
 - `sites.dtu.dk`
+- `eksamensplan.dtu.dk`
 
 ## Security Controls
 

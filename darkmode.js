@@ -4,6 +4,7 @@
 
     // ===== DARK MODE TOGGLE =====
     const DARK_MODE_KEY = 'dtuDarkModeEnabled';
+    const URL_PAUSE_PATTERNS_KEY = 'dtuAfterDarkUrlPausePatterns';
     const IS_TOP_WINDOW = (() => {
         try {
             return window === window.top;
@@ -70,6 +71,162 @@
             // Fall back to raw path below.
         }
         return path;
+    }
+
+    function getCurrentUrlWithoutHash() {
+        try {
+            var u = new URL(window.location.href);
+            u.hash = '';
+            return u.toString();
+        } catch (e) {
+            return String(window.location.href || '').split('#')[0];
+        }
+    }
+
+    function normalizeUrlPausePattern(pattern) {
+        var value = String(pattern || '').trim();
+        if (!value) return '';
+        value = value.replace(/\s+/g, '');
+        if (value.charAt(0) === '/') value = window.location.origin + value;
+        value = value.split('#')[0];
+        return value;
+    }
+
+    function isPauseProtectedUrl(url) {
+        try {
+            var parsed = new URL(String(url || getCurrentUrlWithoutHash()), window.location.origin);
+            if (parsed.hostname !== 'learn.inside.dtu.dk') return false;
+            return /^\/d2l\/home\/?$/i.test(parsed.pathname || '');
+        } catch (e) {
+            var value = String(url || '');
+            return /learn\.inside\.dtu\.dk\/d2l\/home\/?$/i.test(value);
+        }
+    }
+
+    function isPauseProtectedPattern(pattern) {
+        var normalized = normalizeUrlPausePattern(pattern);
+        if (!normalized) return false;
+        if (!/learn\.inside\.dtu\.dk/i.test(normalized)) return false;
+        return /learn\.inside\.dtu\.dk\/d2l\/home(?:\/)?(?:\?.*)?$/i.test(normalized);
+    }
+
+    function getUrlPausePatterns() {
+        try {
+            var raw = localStorage.getItem(URL_PAUSE_PATTERNS_KEY);
+            if (!raw) return [];
+            var parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [];
+            var out = [];
+            var seen = Object.create(null);
+            parsed.forEach(function (entry) {
+                var normalized = normalizeUrlPausePattern(entry);
+                if (!normalized || seen[normalized]) return;
+                seen[normalized] = true;
+                out.push(normalized);
+            });
+            return out;
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function saveUrlPausePatterns(patterns) {
+        try {
+            localStorage.setItem(URL_PAUSE_PATTERNS_KEY, JSON.stringify(patterns || []));
+        } catch (e) { }
+    }
+
+    function wildcardPatternToRegExp(pattern) {
+        var escaped = String(pattern || '').replace(/[|\\{}()[\]^$+?.]/g, '\\$&');
+        escaped = escaped.replace(/\*/g, '.*');
+        return new RegExp('^' + escaped + '$', 'i');
+    }
+
+    function getMatchingUrlPausePatterns(url) {
+        var currentUrl = String(url || getCurrentUrlWithoutHash());
+        if (isPauseProtectedUrl(currentUrl)) return [];
+        var patterns = getUrlPausePatterns();
+        return patterns.filter(function (pattern) {
+            try {
+                return wildcardPatternToRegExp(pattern).test(currentUrl);
+            } catch (e) {
+                return false;
+            }
+        });
+    }
+
+    function buildSuggestedPausePatternsForCurrentUrl() {
+        var suggestions = [];
+        var seen = Object.create(null);
+        function add(value) {
+            var normalized = normalizeUrlPausePattern(value);
+            if (!normalized || seen[normalized] || isPauseProtectedPattern(normalized)) return;
+            seen[normalized] = true;
+            suggestions.push(normalized);
+        }
+
+        var origin = window.location.origin;
+        var pathname = window.location.pathname || '/';
+        var search = window.location.search || '';
+        add(origin + pathname + search);
+
+        if (/^\/d2l\/home\/\d+\/?$/i.test(pathname)) {
+            add(origin + pathname.replace(/\/?$/, '*'));
+        }
+
+        if (/^\/d2l\/lms\/[^/]+\//i.test(pathname)) {
+            var parts = pathname.split('/').filter(Boolean);
+            if (parts.length >= 4) {
+                add(origin + '/' + parts.slice(0, 3).join('/') + '/*');
+            }
+        }
+
+        var ou = '';
+        try { ou = new URL(window.location.href).searchParams.get('ou') || ''; } catch (e) { ou = ''; }
+        if (ou) {
+            add(origin + '/d2l/*?ou=' + ou + '*');
+            add(origin + pathname + '?ou=' + ou + '*');
+            add(origin + '/d2l/home/' + ou + '*');
+        }
+
+        if (!suggestions.length) add(origin + pathname + '*');
+        return suggestions;
+    }
+
+    function showUrlPausedBanner(matchingPatterns) {
+        if (!IS_TOP_WINDOW) return;
+        if (document.getElementById('dtu-after-dark-paused-banner')) return;
+
+        var mount = document.documentElement || document.body;
+        if (!mount) return;
+
+        var wrap = document.createElement('div');
+        wrap.id = 'dtu-after-dark-paused-banner';
+        wrap.style.cssText = 'position:fixed;top:12px;right:12px;z-index:2147483647;display:flex;align-items:center;gap:8px;'
+            + 'padding:10px 12px;border-radius:10px;background:rgba(26,26,26,0.96);border:1px solid rgba(255,255,255,0.18);'
+            + 'color:#f0f0f0;font:12px/1.35 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;box-shadow:0 10px 24px rgba(0,0,0,0.35);';
+
+        var text = document.createElement('span');
+        text.textContent = 'DTU After Dark is paused on this URL.';
+        text.title = (matchingPatterns || []).join('\n');
+
+        var resumeBtn = document.createElement('button');
+        resumeBtn.type = 'button';
+        resumeBtn.textContent = 'Resume';
+        resumeBtn.style.cssText = 'appearance:none;border:1px solid rgba(255,255,255,0.18);background:#2d2d2d;color:#ffffff;'
+            + 'padding:4px 10px;border-radius:999px;font:inherit;font-weight:700;cursor:pointer;';
+        resumeBtn.addEventListener('click', function () {
+            var allPatterns = getUrlPausePatterns();
+            var remaining = allPatterns.filter(function (pattern) {
+                return (matchingPatterns || []).indexOf(pattern) === -1;
+            });
+            saveUrlPausePatterns(remaining);
+            window.location.reload();
+        });
+
+        wrap.appendChild(text);
+        wrap.appendChild(resumeBtn);
+        mount.appendChild(wrap);
     }
 
     // Inject the dark mode CSS stylesheet via <link> element
@@ -159,7 +316,7 @@
             }
 
             /* Links (Generic content links) */
-            a,
+            a:not(.d2l-navigation-s-link),
             .groupLinksTable a:not(.arc-button) {
                 color: var(--dtu-ad-accent) !important;
                 text-decoration: none;
@@ -194,6 +351,18 @@
     }
 
     // Always inject accent overrides (even in light mode)
+    var _matchingUrlPausePatterns = getMatchingUrlPausePatterns();
+    if (_matchingUrlPausePatterns.length) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () {
+                showUrlPausedBanner(_matchingUrlPausePatterns);
+            }, { once: true });
+        } else {
+            showUrlPausedBanner(_matchingUrlPausePatterns);
+        }
+        return;
+    }
+
     injectAccentOverrides();
 
     // Synchronous check â€” inject CSS immediately if enabled (runs at document_start)
@@ -14491,6 +14660,10 @@
     // ===== BUS DEPARTURE TIMES (Rejseplanen 2.0 API) =====
     // Live bus departure information for DTU-area stops, shown on the DTU Learn homepage
 
+    const LIVE_TRANSIT_API_BASE = (typeof CONFIG !== 'undefined' && CONFIG.LIVE_TRANSIT_API_BASE) || '';
+    const REJSEPLANEN_API = 'https://www.rejseplanen.dk/api';
+    const REJSEPLANEN_KEY = (typeof CONFIG !== 'undefined' && CONFIG.REJSEPLANEN_API_KEY) || '';
+
     // Bus lines that serve DTU campuses.
     const DTU_BUS_LINES = [
         { line: '150S', name: 'Bus 150S' },
@@ -14988,6 +15161,11 @@
     function isDTULearnHomepage() {
         return window.location.hostname === 'learn.inside.dtu.dk'
             && /^\/d2l\/home\/?$/.test(window.location.pathname);
+    }
+
+    function isDTULearnLegacyHeavyCourseToolPage() {
+        return window.location.hostname === 'learn.inside.dtu.dk'
+            && /^\/d2l\/lms\/(dropbox|classlist|group|news)\//i.test(window.location.pathname);
     }
 
     function isDTULearnLegacyDropboxPage() {
@@ -15889,6 +16067,8 @@
         var linkBg = darkModeEnabled ? 'rgba(255,255,255,0.018)' : 'rgba(15,23,42,0.018)';
         var linkBgHover = darkModeEnabled ? 'rgba(255,255,255,0.045)' : 'rgba(15,23,42,0.045)';
         var sectionTitle = darkModeEnabled ? '#a3acb8' : '#667084';
+        var linkDivider = darkModeEnabled ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)';
+        var feedDivider = darkModeEnabled ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.09)';
         var stateBg = darkModeEnabled ? 'rgba(255,255,255,0.02)' : '#f8fafc';
         var actionBorder = darkModeEnabled ? '#4a4a4a' : '#d4dbe6';
         var actionBg = darkModeEnabled ? 'rgba(255,255,255,0.03)' : 'rgba(15,23,42,0.03)';
@@ -15933,11 +16113,22 @@
             '.dtu-library-actions{display:flex !important;align-items:center !important;gap:8px !important;background:transparent !important;}',
             'button.dtu-library-action-btn{appearance:none !important;border:1px solid ' + actionBorder + ' !important;background:' + actionBg + ' !important;color:' + panelText + ' !important;border-radius:7px !important;cursor:pointer !important;padding:4px 10px !important;font-size:11px !important;font-weight:650 !important;line-height:1.2 !important;white-space:nowrap !important;min-height:26px !important;}',
             'button.dtu-library-action-btn:hover{background:' + actionBgHover + ' !important;border-color:var(--dtu-ad-accent) !important;color:var(--dtu-ad-accent-soft) !important;}',
-            '.dtu-library-link-grid{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:6px !important;background:transparent !important;}',
-            'a.dtu-library-link-item{display:flex !important;align-items:center !important;justify-content:flex-start !important;gap:8px !important;min-height:34px !important;padding:6px 9px !important;border-radius:8px !important;background:' + linkBg + ' !important;border:1px solid ' + panelBorder + ' !important;color:' + panelText + ' !important;text-decoration:none !important;text-align:left !important;font-size:11.5px !important;font-weight:640 !important;line-height:1.2 !important;white-space:normal !important;overflow-wrap:anywhere !important;transition:background-color .14s ease,border-color .14s ease,transform .14s ease !important;}',
-            'a.dtu-library-link-item:hover{background:' + linkBgHover + ' !important;border-color:var(--dtu-ad-accent) !important;color:var(--dtu-ad-accent-soft) !important;transform:translateY(-1px) !important;}',
-            '.dtu-library-link-icon{display:inline-flex !important;align-items:center !important;justify-content:center !important;flex-shrink:0 !important;width:14px !important;min-width:14px !important;font-size:12px !important;line-height:1 !important;color:' + sectionTitle + ' !important;}',
-            '.dtu-library-link-label{display:block !important;min-width:0 !important;overflow-wrap:anywhere !important;}',
+            '.dtu-library-links-section{padding:2px 0 0 !important;background:transparent !important;border:0 !important;}',
+            '.dtu-library-links-header{margin:0 0 12px !important;padding:0 4px !important;}',
+            '.dtu-library-links-title-wrap{display:flex !important;flex-direction:column !important;gap:3px !important;min-width:0 !important;background:transparent !important;}',
+            '.dtu-library-links-subtitle{margin:0 !important;font-size:11px !important;font-weight:520 !important;line-height:1.35 !important;color:' + muted + ' !important;background:transparent !important;}',
+            '.dtu-library-link-grid{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:8px 20px !important;background:transparent !important;}',
+            'a.dtu-library-link-item{display:grid !important;grid-template-columns:18px minmax(0,1fr) 14px !important;align-items:center !important;gap:12px !important;min-height:58px !important;padding:10px 4px 10px 2px !important;border-radius:0 !important;background:transparent !important;border:0 !important;box-shadow:inset 0 -1px 0 ' + linkDivider + ' !important;color:' + panelText + ' !important;text-decoration:none !important;text-align:left !important;white-space:normal !important;overflow-wrap:anywhere !important;transition:all 0.2s ease-in-out !important;}',
+            'a.dtu-library-link-item:hover{background:' + linkBgHover + ' !important;border-radius:12px !important;box-shadow:inset 0 -1px 0 transparent !important;color:' + panelText + ' !important;transform:translateY(-2px) !important;}',
+            '.dtu-library-link-icon{display:inline-flex !important;align-items:center !important;justify-content:center !important;align-self:start !important;flex-shrink:0 !important;width:18px !important;min-width:18px !important;height:18px !important;color:var(--dtu-ad-accent) !important;}',
+            '.dtu-library-link-icon svg{display:block !important;width:18px !important;height:18px !important;stroke:currentColor !important;fill:none !important;stroke-width:1.9 !important;stroke-linecap:round !important;stroke-linejoin:round !important;}',
+            '.dtu-library-link-content{display:flex !important;flex-direction:column !important;gap:2px !important;min-width:0 !important;}',
+            '.dtu-library-link-label{display:block !important;min-width:0 !important;overflow-wrap:anywhere !important;font-size:13px !important;font-weight:700 !important;line-height:1.2 !important;color:' + panelText + ' !important;}',
+            '.dtu-library-link-meta{display:block !important;min-width:0 !important;overflow-wrap:anywhere !important;font-size:10.5px !important;font-weight:540 !important;line-height:1.3 !important;color:' + muted + ' !important;}',
+            '.dtu-library-link-arrow{display:inline-flex !important;align-items:center !important;justify-content:flex-end !important;align-self:center !important;width:14px !important;height:14px !important;color:' + sectionTitle + ' !important;transition:transform 0.2s ease-in-out,color 0.2s ease-in-out !important;}',
+            '.dtu-library-link-arrow svg{display:block !important;width:14px !important;height:14px !important;stroke:currentColor !important;fill:none !important;stroke-width:1.9 !important;stroke-linecap:round !important;stroke-linejoin:round !important;}',
+            'a.dtu-library-link-item:hover .dtu-library-link-icon,a.dtu-library-link-item:hover .dtu-library-link-arrow{color:var(--dtu-ad-accent) !important;}',
+            'a.dtu-library-link-item:hover .dtu-library-link-arrow{transform:translateX(2px) !important;}',
             '.dtu-library-crowd{display:flex !important;flex-direction:column !important;gap:10px !important;color:' + crowdText + ' !important;}',
             '.dtu-library-crowd-card{background:' + crowdBg + ' !important;border:1px solid ' + crowdBorder + ' !important;border-radius:10px !important;padding:8px !important;}',
             '.dtu-library-crowd-hero{display:flex !important;flex-direction:column !important;gap:6px !important;}',
@@ -15976,17 +16167,20 @@
             '.dtu-library-crowd-heatmap-cell{appearance:none !important;border:1px solid ' + crowdBorder + ' !important;border-radius:4px !important;min-height:16px !important;padding:0 !important;cursor:default !important;background:rgba(var(--dtu-ad-accent-rgb),0.08) !important;}',
             '.dtu-library-crowd-heatmap-cell:focus-visible{outline:2px solid var(--dtu-ad-accent) !important;outline-offset:1px !important;}',
             '.dtu-library-crowd-state{margin:0 !important;padding:10px !important;border-radius:8px !important;border:1px dashed ' + crowdBorder + ' !important;background:' + crowdInset + ' !important;font-size:11px !important;line-height:1.35 !important;color:' + crowdMuted + ' !important;}',
-            '.dtu-library-feed-list{display:flex !important;flex-direction:column !important;gap:8px !important;background:transparent !important;}',
-            'a.dtu-library-feed-item{display:flex !important;align-items:flex-start !important;gap:11px !important;padding:10px !important;border-radius:10px !important;background:' + rowBg + ' !important;border:1px solid ' + panelBorder + ' !important;text-decoration:none !important;color:' + panelText + ' !important;transition:background-color .16s ease,border-color .16s ease,transform .16s ease !important;}',
-            'a.dtu-library-feed-item:hover{background:' + rowBgHover + ' !important;border-color:var(--dtu-ad-accent) !important;transform:translateY(-1px) !important;}',
-            '.dtu-library-date-badge{position:relative !important;display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;flex-shrink:0 !important;min-width:46px !important;height:50px !important;border-radius:9px !important;overflow:hidden !important;background:' + dateBg + ' !important;border:1px solid ' + panelBorder + ' !important;}',
-            '.dtu-library-date-badge::before{content:\"\" !important;position:absolute !important;top:0 !important;left:0 !important;right:0 !important;height:3px !important;background:var(--dtu-ad-accent) !important;}',
-            '.dtu-library-date-day{margin:3px 0 1px !important;font-size:17px !important;font-weight:780 !important;line-height:1 !important;color:' + panelText + ' !important;}',
-            '.dtu-library-date-month{margin:0 !important;font-size:9px !important;font-weight:700 !important;line-height:1 !important;letter-spacing:0.55px !important;text-transform:uppercase !important;color:var(--dtu-ad-accent-soft) !important;}',
-            '.dtu-library-item-content{min-width:0 !important;flex:1 1 auto !important;background:transparent !important;}',
-            '.dtu-library-news-badge{display:inline-flex !important;align-items:center !important;padding:2px 7px !important;margin:0 0 4px !important;border-radius:999px !important;background:' + actionBg + ' !important;border:1px solid ' + actionBorder + ' !important;color:var(--dtu-ad-accent-soft) !important;font-size:9px !important;font-weight:760 !important;line-height:1.2 !important;letter-spacing:0.5px !important;text-transform:uppercase !important;}',
-            '.dtu-library-item-title{margin:0 0 4px !important;font-size:13px !important;font-weight:700 !important;line-height:1.35 !important;color:' + panelText + ' !important;display:-webkit-box !important;-webkit-line-clamp:2 !important;line-clamp:2 !important;-webkit-box-orient:vertical !important;overflow:hidden !important;}',
-            '.dtu-library-item-meta{margin:0 !important;font-size:11px !important;line-height:1.35 !important;color:' + muted + ' !important;white-space:normal !important;overflow-wrap:anywhere !important;}',
+            '.dtu-library-feed-section{padding:4px 0 0 !important;background:transparent !important;border:0 !important;}',
+            '.dtu-library-feed-header{margin:0 0 10px !important;padding:0 4px !important;}',
+            '.dtu-library-feed-list{display:flex !important;flex-direction:column !important;gap:0 !important;background:transparent !important;}',
+            'a.dtu-library-feed-item{display:flex !important;align-items:flex-start !important;gap:16px !important;padding:14px 4px 14px 0 !important;border-radius:0 !important;background:transparent !important;border:0 !important;box-shadow:inset 0 -1px 0 ' + feedDivider + ' !important;text-decoration:none !important;color:' + panelText + ' !important;transition:all 0.2s ease-in-out !important;}',
+            'a.dtu-library-feed-item:hover{background:' + rowBgHover + ' !important;border-radius:14px !important;box-shadow:inset 0 -1px 0 transparent !important;transform:translateY(-2px) !important;}',
+            '.dtu-library-date-badge{position:relative !important;display:flex !important;flex-direction:column !important;align-items:flex-start !important;justify-content:center !important;flex-shrink:0 !important;min-width:64px !important;height:auto !important;padding:2px 0 2px 14px !important;border-radius:0 !important;overflow:visible !important;background:transparent !important;border:0 !important;}',
+            '.dtu-library-date-badge::before{content:\"\" !important;position:absolute !important;top:6px !important;bottom:6px !important;left:0 !important;width:3px !important;border-radius:999px !important;background:var(--dtu-ad-accent) !important;}',
+            '.dtu-library-date-day{margin:0 !important;font-size:24px !important;font-weight:790 !important;line-height:0.95 !important;color:' + panelText + ' !important;}',
+            '.dtu-library-date-month{margin:2px 0 0 !important;font-size:10px !important;font-weight:760 !important;line-height:1 !important;letter-spacing:0.7px !important;text-transform:uppercase !important;color:var(--dtu-ad-accent) !important;}',
+            '.dtu-library-item-content{display:flex !important;flex-direction:column !important;gap:4px !important;min-width:0 !important;flex:1 1 auto !important;background:transparent !important;padding-top:1px !important;}',
+            '.dtu-library-news-badge{position:relative !important;display:inline-flex !important;align-items:center !important;padding:0 0 0 14px !important;margin:0 0 2px !important;border-radius:0 !important;background:transparent !important;border:0 !important;color:var(--dtu-ad-accent) !important;font-size:10px !important;font-weight:760 !important;line-height:1.25 !important;letter-spacing:0.8px !important;text-transform:uppercase !important;}',
+            '.dtu-library-news-badge::before{content:\"\" !important;position:absolute !important;left:0 !important;top:50% !important;width:8px !important;height:1.5px !important;transform:translateY(-50%) !important;background:currentColor !important;border-radius:999px !important;}',
+            '.dtu-library-item-title{margin:0 !important;font-size:14px !important;font-weight:720 !important;line-height:1.35 !important;color:' + panelText + ' !important;display:-webkit-box !important;-webkit-line-clamp:2 !important;line-clamp:2 !important;-webkit-box-orient:vertical !important;overflow:hidden !important;}',
+            '.dtu-library-item-meta{margin:0 !important;font-size:11px !important;line-height:1.45 !important;color:' + muted + ' !important;white-space:normal !important;overflow-wrap:anywhere !important;}',
             '.dtu-library-state-msg{margin:0 !important;padding:16px 12px !important;border-radius:9px !important;border:1px dashed ' + panelBorder + ' !important;background:' + stateBg + ' !important;text-align:center !important;color:' + muted + ' !important;font-size:12px !important;font-style:italic !important;}',
             '@media (max-width: 900px){.dtu-library-feed-grid{grid-template-columns:1fr !important;}.dtu-library-link-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}.dtu-library-header{align-items:flex-start !important;}.dtu-library-header-main{flex-wrap:wrap !important;align-items:flex-start !important;gap:10px !important;}.dtu-library-header-occupancy{width:100% !important;gap:10px !important;}.dtu-library-header-actions{width:100% !important;justify-content:flex-start !important;}}',
             '@media (max-width: 520px){.dtu-library-modal-overlay{padding:8px !important;}.dtu-library-panel{width:calc(100vw - 16px) !important;max-height:calc(100vh - 16px) !important;border-radius:12px !important;}.dtu-library-header{padding:12px 14px 10px !important;}.dtu-library-content{padding:12px 14px 14px !important;}.dtu-library-link-grid{grid-template-columns:1fr !important;}.dtu-library-header-occupancy{gap:8px !important;}.dtu-library-header-occ-value{font-size:19px !important;}.dtu-library-header-updated{display:none !important;}}'
@@ -16010,6 +16204,27 @@
     }
 
     function requestLibraryCrowding(cb, forceRefresh) {
+        var apiUrl = getLibrarySharedTrendApiUrl();
+        if (apiUrl) {
+            sendRuntimeMessage({
+                type: 'dtu-library-live-stats',
+                forceRefresh: !!forceRefresh,
+                apiUrl: apiUrl,
+                lookbackDays: getLibrarySharedTrendLookbackDays()
+            }, function (resp) {
+                if (resp && resp.ok) {
+                    _libraryCrowdingCache = resp;
+                    if (cb) cb(resp);
+                    return;
+                }
+                requestLibraryOccupancyFallback(cb, forceRefresh);
+            });
+            return;
+        }
+        requestLibraryOccupancyFallback(cb, forceRefresh);
+    }
+
+    function requestLibraryOccupancyFallback(cb, forceRefresh) {
         sendRuntimeMessage({
             type: 'dtu-library-occupancy',
             forceRefresh: !!forceRefresh,
@@ -16043,6 +16258,29 @@
             _libraryCrowdingCache = normalized;
             if (cb) cb(normalized);
         });
+    }
+
+    function getLibrarySharedTrendApiUrl() {
+        try {
+            if (typeof CONFIG === 'undefined' || !CONFIG) return '';
+            var url = String(CONFIG.LIVE_LIBRARY_TRENDS_URL || '').trim();
+            if (!url) return '';
+            if (!/^https:\/\//i.test(url)) return '';
+            return url;
+        } catch (e0) {
+            return '';
+        }
+    }
+
+    function getLibrarySharedTrendLookbackDays() {
+        try {
+            if (typeof CONFIG === 'undefined' || !CONFIG) return 28;
+            var n = parseInt(String(CONFIG.LIVE_LIBRARY_LOOKBACK_DAYS || '28').replace(/[^\d]/g, ''), 10);
+            if (!isFinite(n)) return 28;
+            return Math.max(3, Math.min(365, n));
+        } catch (e0) {
+            return 28;
+        }
     }
 
     function formatHourWindow(hour) {
@@ -17103,6 +17341,25 @@
         });
     }
 
+    function getLibraryQuickLinkIconSvg(iconName) {
+        switch (String(iconName || '')) {
+            case 'room':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V7.5A1.5 1.5 0 0 1 5.5 6h13A1.5 1.5 0 0 1 20 7.5V20"/><path d="M7.5 20v-5.5h9V20"/><path d="M8 10h.01"/><path d="M16 10h.01"/></svg>';
+            case 'bookings':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 6h13"/><path d="M7 12h13"/><path d="M7 18h13"/><path d="M3.5 6h.01"/><path d="M3.5 12h.01"/><path d="M3.5 18h.01"/></svg>';
+            case 'search':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>';
+            case 'print':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4"/><path d="M7 17H5.5A1.5 1.5 0 0 1 4 15.5v-4A1.5 1.5 0 0 1 5.5 10h13a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5H17"/><path d="M7 14h10v6H7z"/></svg>';
+            case 'events':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v3"/><path d="M17 4v3"/><path d="M4 9h16"/><path d="M5.5 6.5h13A1.5 1.5 0 0 1 20 8v10.5A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5V8a1.5 1.5 0 0 1 1.5-1.5Z"/><path d="M9 13h2"/><path d="M13 13h2"/><path d="M9 16h6"/></svg>';
+            case 'news':
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5.5h9.5A1.5 1.5 0 0 1 17 7v10.5A1.5 1.5 0 0 1 15.5 19h-9A1.5 1.5 0 0 1 5 17.5V6.5A1 1 0 0 1 6 5.5Z"/><path d="M17 8.5h1.5A1.5 1.5 0 0 1 20 10v7.5a1.5 1.5 0 0 1-1.5 1.5H17"/><path d="M8 9h6"/><path d="M8 12h6"/><path d="M8 15h4"/></svg>';
+            default:
+                return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>';
+        }
+    }
+
     function showLibraryPanel(anchorBtn) {
         hideLibraryPanel();
         ensureLibraryRuntimeStyles();
@@ -17172,25 +17429,34 @@
 
         // Quick Links section
         var linksSection = document.createElement('div');
-        linksSection.className = 'dtu-library-section';
+        linksSection.className = 'dtu-library-section dtu-library-links-section';
 
         var linksHeader = document.createElement('div');
-        linksHeader.className = 'dtu-library-section-header';
+        linksHeader.className = 'dtu-library-section-header dtu-library-links-header';
+
+        var linksTitleWrap = document.createElement('div');
+        linksTitleWrap.className = 'dtu-library-links-title-wrap';
 
         var linksTitle = document.createElement('div');
         linksTitle.className = 'dtu-library-section-title';
-        linksTitle.textContent = 'Quick Links';
+        linksTitle.textContent = 'Library Menu';
 
-        linksHeader.appendChild(linksTitle);
+        var linksSubtitle = document.createElement('div');
+        linksSubtitle.className = 'dtu-library-links-subtitle';
+        linksSubtitle.textContent = 'Bookings, search, printing, events, and updates.';
+
+        linksTitleWrap.appendChild(linksTitle);
+        linksTitleWrap.appendChild(linksSubtitle);
+        linksHeader.appendChild(linksTitleWrap);
         linksSection.appendChild(linksHeader);
 
         var links = [
-            { text: 'Book Study Room', url: 'https://www.supersaas.com/schedule/DTU_Library/Study_Areas_-_Lyngby', icon: '▣' },
-            { text: 'All Library Bookings', url: 'https://www.supersaas.com/schedule/DTU_Library/', icon: '☰' },
-            { text: 'DTU FindIt', url: 'https://findit.dtu.dk/', icon: '⌕' },
-            { text: 'Printing', url: 'https://databar.dtu.dk/print', icon: '⎙' },
-            { text: 'Events Calendar', url: 'https://www.bibliotek.dtu.dk/en/use-the-library/events/calendar', icon: '◷' },
-            { text: 'Library News', url: 'https://www.bibliotek.dtu.dk/en/news', icon: '✦' }
+            { text: 'Book Study Room', meta: 'Reserve a study space in Lyngby.', url: 'https://www.supersaas.com/schedule/DTU_Library/Study_Areas_-_Lyngby', icon: 'room' },
+            { text: 'All Library Bookings', meta: 'Open the full bookings overview.', url: 'https://www.supersaas.com/schedule/DTU_Library/', icon: 'bookings' },
+            { text: 'DTU FindIt', meta: 'Search books, journals, and databases.', url: 'https://findit.dtu.dk/', icon: 'search' },
+            { text: 'Printing', meta: 'Manage printing and print balance.', url: 'https://databar.dtu.dk/print', icon: 'print' },
+            { text: 'Events Calendar', meta: 'See workshops, talks, and sessions.', url: 'https://www.bibliotek.dtu.dk/en/use-the-library/events/calendar', icon: 'events' },
+            { text: 'Library News', meta: 'Read the latest library updates.', url: 'https://www.bibliotek.dtu.dk/en/news', icon: 'news' }
         ];
 
         var linksGrid = document.createElement('div');
@@ -17202,17 +17468,32 @@
             a.href = lnk.url;
             a.target = '_blank';
             a.rel = 'noopener noreferrer';
+            a.setAttribute('aria-label', lnk.meta ? (lnk.text + '. ' + lnk.meta) : lnk.text);
 
             var icon = document.createElement('span');
             icon.className = 'dtu-library-link-icon';
-            icon.textContent = lnk.icon || '•';
+            icon.innerHTML = getLibraryQuickLinkIconSvg(lnk.icon);
+
+            var contentWrap = document.createElement('span');
+            contentWrap.className = 'dtu-library-link-content';
 
             var label = document.createElement('span');
             label.className = 'dtu-library-link-label';
             label.textContent = lnk.text;
 
+            var meta = document.createElement('span');
+            meta.className = 'dtu-library-link-meta';
+            meta.textContent = lnk.meta || '';
+
+            var arrow = document.createElement('span');
+            arrow.className = 'dtu-library-link-arrow';
+            arrow.innerHTML = getLibraryQuickLinkIconSvg('arrow');
+
+            contentWrap.appendChild(label);
+            contentWrap.appendChild(meta);
             a.appendChild(icon);
-            a.appendChild(label);
+            a.appendChild(contentWrap);
+            a.appendChild(arrow);
             linksGrid.appendChild(a);
         });
 
@@ -17881,11 +18162,11 @@
 
     function createLibraryFeedSection(title, type) {
         var container = document.createElement('div');
-        container.className = 'dtu-library-section';
+        container.className = 'dtu-library-section dtu-library-feed-section';
         container.setAttribute('data-dtu-library-feed-type', type);
 
         var header = document.createElement('div');
-        header.className = 'dtu-library-section-header';
+        header.className = 'dtu-library-section-header dtu-library-feed-header';
 
         var h3 = document.createElement('div');
         h3.className = 'dtu-library-section-title';
@@ -18437,6 +18718,375 @@
         return 'mailto:daniel-yttesen@hotmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
     }
 
+    function removePausedUrlRulesModal() {
+        var existing = document.querySelector('.dtu-paused-url-rules-modal');
+        if (existing) existing.remove();
+    }
+
+    function showPausedUrlRulesModal(opts) {
+        if (!IS_TOP_WINDOW) return;
+        opts = opts || {};
+
+        var reopenSettingsOnClose = !!opts.reopenSettingsOnClose;
+        var initialFocus = opts.initialFocus === 'list' ? 'list' : 'add';
+        var isDark = !!darkModeEnabled;
+        var currentUrl = getCurrentUrlWithoutHash();
+        var theme = isDark
+            ? {
+                background: 'rgba(30,30,30,0.94)',
+                text: '#e0e0e0',
+                heading: '#f5f5f5',
+                muted: '#a3a3a3',
+                subtle: '#8b8b8b',
+                border: '#404040',
+                softBorder: '#4b5563',
+                panelBg: 'rgba(255,255,255,0.03)',
+                shadow: '0 18px 52px rgba(0,0,0,0.45)'
+            }
+            : {
+                background: 'rgba(255,255,255,0.96)',
+                text: '#1f2937',
+                heading: '#111827',
+                muted: '#6b7280',
+                subtle: '#4b5563',
+                border: '#d1d5db',
+                softBorder: '#cbd5e1',
+                panelBg: 'rgba(15,23,42,0.03)',
+                shadow: '0 18px 52px rgba(15,23,42,0.22)'
+            };
+
+        removePausedUrlRulesModal();
+        try { hideSettingsModal(); } catch (e0) { }
+
+        var overlay = document.createElement('div');
+        markExt(overlay);
+        overlay.className = 'dtu-paused-url-rules-modal';
+        overlay.tabIndex = -1;
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483001;display:flex;align-items:center;justify-content:center;'
+            + 'padding:18px;background:transparent !important;background-color:transparent !important;'
+            + 'backdrop-filter:blur(4px) !important;-webkit-backdrop-filter:blur(4px) !important;'
+            + 'opacity:0;transition:opacity .2s ease;font-family:sans-serif;';
+
+        var modal = document.createElement('div');
+        markExt(modal);
+        modal.style.cssText = 'width:min(720px,94vw);max-height:82vh;overflow:auto;border-radius:8px;padding:18px 18px 14px;'
+            + 'background:' + theme.background + ';color:' + theme.text + ';border:1px solid ' + theme.border + ';'
+            + 'box-shadow:' + theme.shadow + ';';
+
+        function applyTextActionStyle(btn, colorValue) {
+            btn.style.cssText = 'display:inline-flex;align-items:center;justify-content:flex-start;appearance:none;-webkit-appearance:none;'
+                + 'margin:0;padding:0;border:0;background:transparent;white-space:nowrap;text-decoration:none;'
+                + 'font-size:12px;font-weight:700;line-height:1.45;cursor:pointer;';
+            try {
+                btn.style.setProperty('color', colorValue || theme.text, 'important');
+                btn.style.setProperty('background', 'transparent', 'important');
+                btn.style.setProperty('background-color', 'transparent', 'important');
+                btn.style.setProperty('background-image', 'none', 'important');
+                btn.style.setProperty('border', '0', 'important');
+                btn.style.setProperty('box-shadow', 'none', 'important');
+                btn.style.setProperty('outline', 'none', 'important');
+                btn.style.setProperty('border-radius', '0', 'important');
+            } catch (e1) { }
+            btn.addEventListener('mouseenter', function () {
+                try { btn.style.textDecoration = 'underline'; } catch (e2) { }
+            });
+            btn.addEventListener('mouseleave', function () {
+                try { btn.style.textDecoration = 'none'; } catch (e3) { }
+            });
+        }
+
+        function closePausedUrlRulesModal(shouldReopenSettings) {
+            removePausedUrlRulesModal();
+            if (shouldReopenSettings) {
+                setTimeout(function () {
+                    try { showSettingsModal(); } catch (e4) { }
+                }, 0);
+            }
+        }
+
+        var header = document.createElement('div');
+        markExt(header);
+        header.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px;';
+
+        var headerCopy = document.createElement('div');
+        markExt(headerCopy);
+        headerCopy.style.cssText = 'min-width:0;flex:1;';
+
+        var title = document.createElement('div');
+        markExt(title);
+        title.textContent = 'Paused URLs';
+        title.style.cssText = 'font-size:18px;font-weight:700;color:' + theme.heading + ';margin-bottom:4px;';
+        headerCopy.appendChild(title);
+
+        var subtitle = document.createElement('div');
+        markExt(subtitle);
+        subtitle.textContent = 'Add or remove URL rules that temporarily pause DTU After Dark on matching pages. Use * as a wildcard.';
+        subtitle.style.cssText = 'font-size:12px;line-height:1.5;color:' + theme.muted + ';';
+        headerCopy.appendChild(subtitle);
+        header.appendChild(headerCopy);
+
+        var closeBtn = document.createElement('button');
+        markExt(closeBtn);
+        closeBtn.type = 'button';
+        closeBtn.textContent = 'Close';
+        applyTextActionStyle(closeBtn, isDark ? '#f3f4f6' : '#334155');
+        closeBtn.addEventListener('click', function () {
+            closePausedUrlRulesModal(reopenSettingsOnClose);
+        });
+        header.appendChild(closeBtn);
+        modal.appendChild(header);
+
+        var body = document.createElement('div');
+        markExt(body);
+        body.style.cssText = 'display:flex;flex-direction:column;gap:12px;';
+
+        var addSection = document.createElement('div');
+        markExt(addSection);
+        addSection.style.cssText = 'padding:2px 0 10px;border:0;background:transparent;';
+
+        var addTitle = document.createElement('div');
+        markExt(addTitle);
+        addTitle.textContent = 'Add paused URL rule';
+        addTitle.style.cssText = 'font-size:13px;font-weight:700;color:' + theme.heading + ';margin-bottom:4px;';
+        addSection.appendChild(addTitle);
+
+        var addHint = document.createElement('div');
+        markExt(addHint);
+        addHint.textContent = 'Examples: an exact lesson URL, a course homepage like https://learn.inside.dtu.dk/d2l/home/296283, or a legacy tool page with ?ou=296283.';
+        addHint.style.cssText = 'font-size:11px;line-height:1.45;color:' + theme.muted + ';margin-bottom:8px;';
+        addSection.appendChild(addHint);
+
+        var inputRow = document.createElement('div');
+        markExt(inputRow);
+        inputRow.style.cssText = 'display:flex;align-items:center;gap:12px;flex-wrap:nowrap;margin:0 0 8px;';
+        addSection.appendChild(inputRow);
+
+        var ruleInput = document.createElement('input');
+        markExt(ruleInput);
+        ruleInput.type = 'text';
+        ruleInput.value = buildSuggestedPausePatternsForCurrentUrl()[0] || normalizeUrlPausePattern(window.location.origin + window.location.pathname + '*');
+        ruleInput.placeholder = 'https://learn.inside.dtu.dk/d2l/home/296283';
+        ruleInput.style.cssText = 'min-width:0;flex:1;box-sizing:border-box;padding:9px 10px;border:1px solid ' + theme.softBorder + ';'
+            + 'background:' + (isDark ? 'rgba(17,17,17,0.92)' : '#ffffff') + ';color:' + theme.text + ';font-size:12px;'
+            + 'line-height:1.4;margin:0;';
+        inputRow.appendChild(ruleInput);
+
+        var saveRuleBtn = document.createElement('button');
+        markExt(saveRuleBtn);
+        saveRuleBtn.type = 'button';
+        saveRuleBtn.textContent = 'Save rule';
+        applyTextActionStyle(saveRuleBtn, 'var(--dtu-ad-accent)');
+        inputRow.appendChild(saveRuleBtn);
+
+        var suggestionWrap = document.createElement('div');
+        markExt(suggestionWrap);
+        suggestionWrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;margin-bottom:8px;';
+        buildSuggestedPausePatternsForCurrentUrl().slice(0, 4).forEach(function (pattern) {
+            var suggestionRow = document.createElement('div');
+            markExt(suggestionRow);
+            suggestionRow.style.cssText = 'display:block;padding:6px 0;border-top:1px solid ' + theme.softBorder + ';';
+
+            var suggestionText = document.createElement('code');
+            markExt(suggestionText);
+            suggestionText.textContent = pattern;
+            suggestionText.style.cssText = 'display:block;font-family:Consolas,Monaco,monospace;font-size:11px;line-height:1.5;color:' + theme.text + ';word-break:break-all;cursor:text;';
+            suggestionRow.appendChild(suggestionText);
+            suggestionRow.addEventListener('click', function () {
+                ruleInput.value = pattern;
+                try { ruleInput.focus(); } catch (e5) { }
+            });
+            suggestionWrap.appendChild(suggestionRow);
+        });
+        addSection.appendChild(suggestionWrap);
+
+        var statusText = document.createElement('div');
+        markExt(statusText);
+        statusText.style.cssText = 'font-size:11px;line-height:1.45;color:' + theme.muted + ';min-height:16px;';
+        addSection.appendChild(statusText);
+
+        function setStatus(message, tone) {
+            statusText.textContent = message || '';
+            statusText.style.color = tone || theme.muted;
+        }
+
+        body.appendChild(addSection);
+
+        var savedSection = document.createElement('div');
+        markExt(savedSection);
+        savedSection.style.cssText = 'padding:4px 0 0;border:0;background:transparent;';
+
+        var savedHead = document.createElement('div');
+        markExt(savedHead);
+        savedHead.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;';
+
+        var savedTitle = document.createElement('div');
+        markExt(savedTitle);
+        savedTitle.textContent = 'Saved paused URL rules';
+        savedTitle.style.cssText = 'font-size:13px;font-weight:700;color:' + theme.heading + ';';
+        savedHead.appendChild(savedTitle);
+
+        var savedMeta = document.createElement('div');
+        markExt(savedMeta);
+        savedMeta.style.cssText = 'font-size:11px;line-height:1.4;color:' + theme.muted + ';';
+        savedHead.appendChild(savedMeta);
+        savedSection.appendChild(savedHead);
+
+        var ruleList = document.createElement('div');
+        markExt(ruleList);
+        ruleList.style.cssText = 'display:flex;flex-direction:column;';
+        savedSection.appendChild(ruleList);
+        body.appendChild(savedSection);
+
+        function removeRule(pattern) {
+            var existingPatterns = getUrlPausePatterns();
+            var wasMatchingCurrentPage = getMatchingUrlPausePatterns(currentUrl).indexOf(pattern) !== -1;
+            var remaining = existingPatterns.filter(function (entry) {
+                return entry !== pattern;
+            });
+            if (remaining.length === existingPatterns.length) {
+                setStatus('That paused URL rule was already removed.', theme.muted);
+                refreshRuleList();
+                return;
+            }
+            saveUrlPausePatterns(remaining);
+            if (wasMatchingCurrentPage) {
+                closePausedUrlRulesModal(false);
+                window.location.reload();
+                return;
+            }
+            setStatus('Removed paused URL rule.', theme.muted);
+            refreshRuleList();
+        }
+
+        function refreshRuleList() {
+            var patterns = getUrlPausePatterns();
+            var currentMatches = getMatchingUrlPausePatterns(currentUrl);
+            ruleList.innerHTML = '';
+            savedMeta.textContent = patterns.length ? String(patterns.length) + ' saved' : 'No saved rules';
+
+            if (!patterns.length) {
+                var empty = document.createElement('div');
+                markExt(empty);
+                empty.textContent = 'No paused URL rules saved right now.';
+                empty.style.cssText = 'font-size:11px;line-height:1.5;color:' + theme.muted + ';padding:4px 0 2px;';
+                ruleList.appendChild(empty);
+                return;
+            }
+
+            patterns.forEach(function (pattern, index) {
+                var row = document.createElement('div');
+                markExt(row);
+                row.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;'
+                    + 'padding:' + (index === 0 ? '0 0 8px' : '8px 0') + ';border-top:' + (index === 0 ? '0' : '1px solid ' + theme.softBorder) + ';';
+
+                var copy = document.createElement('div');
+                markExt(copy);
+                copy.style.cssText = 'min-width:0;flex:1;';
+
+                var patternText = document.createElement('code');
+                markExt(patternText);
+                patternText.textContent = pattern;
+                patternText.style.cssText = 'display:block;font-family:Consolas,Monaco,monospace;font-size:11px;line-height:1.5;color:' + theme.text + ';word-break:break-all;';
+                copy.appendChild(patternText);
+
+                if (currentMatches.indexOf(pattern) !== -1) {
+                    var matchText = document.createElement('div');
+                    markExt(matchText);
+                    matchText.textContent = 'Matches this page';
+                    matchText.style.cssText = 'margin-top:3px;font-size:10px;line-height:1.4;color:var(--dtu-ad-accent);';
+                    copy.appendChild(matchText);
+                }
+
+                row.appendChild(copy);
+
+                var removeBtn = document.createElement('button');
+                markExt(removeBtn);
+                removeBtn.type = 'button';
+                removeBtn.textContent = 'Remove';
+                applyTextActionStyle(removeBtn, '#d14343');
+                removeBtn.addEventListener('click', function () {
+                    removeRule(pattern);
+                });
+                row.appendChild(removeBtn);
+                ruleList.appendChild(row);
+            });
+        }
+
+        function saveRule() {
+            var normalized = normalizeUrlPausePattern(ruleInput.value);
+            if (!normalized) {
+                setStatus('Enter a URL rule to pause first.', '#d14343');
+                return;
+            }
+            if (isPauseProtectedPattern(normalized)) {
+                setStatus('The main DTU Learn home entry stays active so the Settings menu cannot be paused away.', '#d14343');
+                return;
+            }
+            var patterns = getUrlPausePatterns();
+            if (patterns.indexOf(normalized) !== -1) {
+                setStatus('That URL rule is already paused.', theme.muted);
+                refreshRuleList();
+                return;
+            }
+            patterns.push(normalized);
+            saveUrlPausePatterns(patterns);
+            if (getMatchingUrlPausePatterns(currentUrl).indexOf(normalized) !== -1) {
+                closePausedUrlRulesModal(false);
+                window.location.reload();
+                return;
+            }
+            setStatus('Saved paused URL rule.', 'var(--dtu-ad-accent)');
+            refreshRuleList();
+        }
+
+        saveRuleBtn.addEventListener('click', saveRule);
+        ruleInput.addEventListener('keydown', function (e6) {
+            if (e6.key === 'Enter') {
+                e6.preventDefault();
+                saveRule();
+            }
+        });
+
+        modal.appendChild(body);
+        overlay.appendChild(modal);
+
+        overlay.addEventListener('click', function (e7) {
+            if (e7.target === overlay) closePausedUrlRulesModal(reopenSettingsOnClose);
+        });
+        overlay.addEventListener('keydown', function (e8) {
+            if (e8.key === 'Escape') {
+                e8.preventDefault();
+                closePausedUrlRulesModal(reopenSettingsOnClose);
+            }
+        });
+
+        document.body.appendChild(overlay);
+        refreshRuleList();
+
+        requestAnimationFrame(function () {
+            overlay.style.opacity = '1';
+            try { overlay.focus(); } catch (e9) { }
+            try {
+                if (initialFocus === 'list') {
+                    var firstRemove = ruleList.querySelector('button');
+                    if (firstRemove) firstRemove.focus();
+                    else ruleInput.focus();
+                } else {
+                    ruleInput.focus();
+                    ruleInput.select();
+                }
+            } catch (e10) { }
+        });
+    }
+
+    function promptToPauseCurrentUrlPattern() {
+        showPausedUrlRulesModal({ reopenSettingsOnClose: true, initialFocus: 'add' });
+    }
+
+    function promptToManagePausedUrlPatterns() {
+        showPausedUrlRulesModal({ reopenSettingsOnClose: true, initialFocus: 'list' });
+    }
+
     function createAfterDarkDisclaimerFooter() {
         var disclaimerFooter = document.createElement('div');
         markExt(disclaimerFooter);
@@ -18444,25 +19094,92 @@
 
         var textNode = document.createElement('span');
         markExt(textNode);
-        textNode.textContent = getAfterDarkDisclaimerText() + ' ';
+        textNode.textContent = getAfterDarkDisclaimerText();
         disclaimerFooter.appendChild(textNode);
+
+        var actionRow = document.createElement('div');
+        markExt(actionRow);
+        actionRow.style.cssText = 'display:flex;align-items:center;gap:18px;flex-wrap:nowrap;overflow-x:auto;margin-top:10px;padding-bottom:2px;';
+
+        function applyFooterActionTextStyle(btn) {
+            btn.style.cssText = 'display:inline-flex;align-items:center;justify-content:flex-start;'
+                + 'appearance:none;-webkit-appearance:none;margin:0;padding:0;border:0;background:transparent;'
+                + 'color:var(--dtu-am-active-text);font-size:11px;font-weight:700;line-height:1.45;cursor:pointer;'
+                + 'white-space:nowrap;text-decoration:none;';
+            try {
+                btn.style.setProperty('background', 'transparent', 'important');
+                btn.style.setProperty('background-color', 'transparent', 'important');
+                btn.style.setProperty('background-image', 'none', 'important');
+                btn.style.setProperty('border', '0', 'important');
+                btn.style.setProperty('box-shadow', 'none', 'important');
+                btn.style.setProperty('outline', 'none', 'important');
+            } catch (e00) { }
+            btn.addEventListener('mouseenter', function () {
+                try {
+                    btn.style.textDecoration = 'underline';
+                    btn.style.setProperty('background', 'transparent', 'important');
+                    btn.style.setProperty('background-color', 'transparent', 'important');
+                    btn.style.setProperty('box-shadow', 'none', 'important');
+                } catch (e0) { }
+            });
+            btn.addEventListener('mouseleave', function () {
+                try {
+                    btn.style.textDecoration = 'none';
+                    btn.style.setProperty('background', 'transparent', 'important');
+                    btn.style.setProperty('background-color', 'transparent', 'important');
+                    btn.style.setProperty('box-shadow', 'none', 'important');
+                } catch (e1) { }
+            });
+            btn.addEventListener('mousedown', function () {
+                try {
+                    btn.style.setProperty('background', 'transparent', 'important');
+                    btn.style.setProperty('background-color', 'transparent', 'important');
+                    btn.style.setProperty('box-shadow', 'none', 'important');
+                } catch (e2) { }
+            });
+            btn.addEventListener('mouseup', function () {
+                try {
+                    btn.style.setProperty('background', 'transparent', 'important');
+                    btn.style.setProperty('background-color', 'transparent', 'important');
+                    btn.style.setProperty('box-shadow', 'none', 'important');
+                } catch (e3) { }
+            });
+            btn.addEventListener('focus', function () {
+                try {
+                    btn.style.setProperty('background', 'transparent', 'important');
+                    btn.style.setProperty('background-color', 'transparent', 'important');
+                    btn.style.setProperty('box-shadow', 'none', 'important');
+                } catch (e4) { }
+            });
+        }
 
         var debugIdeasBtn = document.createElement('button');
         markExt(debugIdeasBtn);
         debugIdeasBtn.type = 'button';
-        debugIdeasBtn.textContent = 'Debug/Ideas';
-        debugIdeasBtn.setAttribute('aria-label', 'Send Debug/Ideas email');
-        debugIdeasBtn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;vertical-align:baseline;'
-            + 'appearance:none;-webkit-appearance:none;margin:0 0 0 6px;padding:2px 8px;border-radius:999px;'
-            + 'border:1px solid var(--dtu-am-border);background:var(--dtu-am-input-bg);color:var(--dtu-am-active-text);'
-            + 'font-size:10px;font-weight:700;line-height:1.6;cursor:pointer;white-space:nowrap;'
-            + 'min-height:0;min-width:0;max-width:none;width:auto !important;';
+        debugIdeasBtn.textContent = 'Send feedback or bug report';
+        debugIdeasBtn.setAttribute('aria-label', 'Send feedback or bug report by email');
+        applyFooterActionTextStyle(debugIdeasBtn);
         debugIdeasBtn.addEventListener('click', function (e) {
             try { if (e) e.preventDefault(); } catch (e0) { }
             try { if (e) e.stopPropagation(); } catch (e1) { }
             try { window.location.href = getAfterDarkDebugIdeasMailtoHref(); } catch (e2) { }
         });
-        disclaimerFooter.appendChild(debugIdeasBtn);
+        actionRow.appendChild(debugIdeasBtn);
+
+        var pausedUrlsBtn = document.createElement('button');
+        markExt(pausedUrlsBtn);
+        pausedUrlsBtn.type = 'button';
+        pausedUrlsBtn.textContent = 'Paused URLs...';
+        pausedUrlsBtn.setAttribute('aria-label', 'Manage paused URL rules');
+        applyFooterActionTextStyle(pausedUrlsBtn);
+        pausedUrlsBtn.addEventListener('click', function (e) {
+            try { if (e) e.preventDefault(); } catch (e0) { }
+            try { if (e) e.stopPropagation(); } catch (e1) { }
+            showPausedUrlRulesModal({ reopenSettingsOnClose: true, initialFocus: 'add' });
+        });
+        actionRow.appendChild(pausedUrlsBtn);
+
+        disclaimerFooter.appendChild(actionRow);
 
         return disclaimerFooter;
     }
@@ -19827,9 +20544,18 @@
         }
         var maxJourneys = parseInt(options && options.maxJourneys, 10);
         if (!Number.isFinite(maxJourneys) || maxJourneys <= 0) maxJourneys = 30;
-        const url = REJSEPLANEN_API + '/departureBoard?accessId=' + encodeURIComponent(REJSEPLANEN_KEY)
-            + '&format=json&id=' + encodeURIComponent(stopId)
-            + '&maxJourneys=' + encodeURIComponent(String(maxJourneys));
+        var url = '';
+        var useProxy = !!LIVE_TRANSIT_API_BASE;
+        if (useProxy) {
+            url = LIVE_TRANSIT_API_BASE + '/v1/transit/departures?stopId=' + encodeURIComponent(stopId)
+                + '&maxJourneys=' + encodeURIComponent(String(maxJourneys));
+        } else if (REJSEPLANEN_KEY) {
+            url = REJSEPLANEN_API + '/departureBoard?accessId=' + encodeURIComponent(REJSEPLANEN_KEY)
+                + '&format=json&id=' + encodeURIComponent(stopId)
+                + '&maxJourneys=' + encodeURIComponent(String(maxJourneys));
+        } else {
+            return { departures: [], ok: false, reason: 'not_configured' };
+        }
 
         var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
         var timeoutId = null;
@@ -19843,13 +20569,24 @@
         try {
             const fetchOptions = controller ? { signal: controller.signal } : undefined;
             const resp = await fetch(url, fetchOptions);
-            if (resp.status === 429 || resp.status === 403) {
-                setApiQuotaExhausted();
-                showQuotaExhaustedMessage('monthly');
-                return { departures: [], ok: false, reason: 'quota' };
+            if (!resp.ok) {
+                if (resp.status === 429 || resp.status === 403) {
+                    setApiQuotaExhausted();
+                    showQuotaExhaustedMessage('monthly');
+                    return { departures: [], ok: false, reason: 'quota' };
+                }
+                return { departures: [], ok: false, reason: 'http' };
             }
-            if (!resp.ok) return { departures: [], ok: false, reason: 'http' };
-            const data = await resp.json();
+            const rawData = await resp.json();
+            const data = useProxy ? (rawData && rawData.ok ? rawData.data : null) : rawData;
+            if (useProxy && (!rawData || !rawData.ok || !data)) {
+                if (rawData && rawData.error === 'upstream_quota') {
+                    setApiQuotaExhausted();
+                    showQuotaExhaustedMessage('monthly');
+                    return { departures: [], ok: false, reason: 'quota' };
+                }
+                return { departures: [], ok: false, reason: 'http' };
+            }
             const deps = data.DepartureBoard ? data.DepartureBoard.Departure : (data.Departure || []);
             const arr = !Array.isArray(deps) ? (deps ? [deps] : []) : deps;
             arr.forEach(d => {
@@ -20023,6 +20760,96 @@
     // Fetch departures sequentially, stopping early once we have 3 per configured line
     var DEPS_PER_LINE = 3;
 
+    function hasRestrictiveBusDirectionFilters(config) {
+        var lines = (config && Array.isArray(config.lines)) ? config.lines : [];
+        return lines.some(function (lineCfg) {
+            var dirs = Array.isArray(lineCfg && lineCfg.directions) ? lineCfg.directions : [];
+            return dirs.length > 0 && dirs.indexOf('*') === -1;
+        });
+    }
+
+    function buildAllDirectionsBusConfig(config) {
+        if (!config || !Array.isArray(config.lines)) return config;
+        return {
+            campuses: Array.isArray(config.campuses) ? config.campuses.slice() : [],
+            stopIds: Array.isArray(config.stopIds) ? config.stopIds.slice() : [],
+            lines: config.lines.map(function (lineCfg) {
+                return {
+                    line: String(lineCfg && lineCfg.line || ''),
+                    directions: ['*']
+                };
+            }).filter(function (lineCfg) {
+                return !!lineCfg.line;
+            })
+        };
+    }
+
+    async function fetchBusWidgetDepartures(config, opts) {
+        if (isApiQuotaExhausted()) return { departures: [], ok: false, reason: 'quota' };
+        if (!LIVE_TRANSIT_API_BASE) return { departures: [], ok: false, reason: 'not_configured' };
+        if (!config || !Array.isArray(config.stopIds) || !config.stopIds.length) {
+            return { departures: [], ok: true, reason: 'ok' };
+        }
+        if (!Array.isArray(config.lines) || !config.lines.length) {
+            return { departures: [], ok: true, reason: 'ok' };
+        }
+        if (!(opts && opts.consumeBudget === false) && !consumeBusApiRequestBudget()) {
+            return { departures: [], ok: false, reason: 'daily' };
+        }
+
+        var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        var timeoutId = null;
+        if (controller) registerBusFetchController(controller);
+        if (controller) {
+            timeoutId = setTimeout(function () {
+                controller.abort();
+            }, BUS_FETCH_TIMEOUT_MS);
+        }
+
+        try {
+            const resp = await fetch(LIVE_TRANSIT_API_BASE + '/v1/transit/widget', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    stopIds: config.stopIds,
+                    lines: config.lines,
+                    maxJourneys: 30,
+                    departuresPerLine: DEPS_PER_LINE
+                }),
+                signal: controller ? controller.signal : undefined
+            });
+            if (!resp.ok) {
+                if (resp.status === 429 || resp.status === 403) {
+                    setApiQuotaExhausted();
+                    showQuotaExhaustedMessage('monthly');
+                    return { departures: [], ok: false, reason: 'quota' };
+                }
+                return { departures: [], ok: false, reason: 'http' };
+            }
+            const wrapper = await resp.json();
+            if (!wrapper || !wrapper.ok) {
+                if (wrapper && wrapper.error === 'upstream_quota') {
+                    setApiQuotaExhausted();
+                    showQuotaExhaustedMessage('monthly');
+                    return { departures: [], ok: false, reason: 'quota' };
+                }
+                return { departures: [], ok: false, reason: 'http' };
+            }
+            var raw = wrapper.data && Array.isArray(wrapper.data.departures) ? wrapper.data.departures : [];
+            var departures = raw.map(mapBusDepartureForDisplay);
+            departures.sort(function (a, b) { return (a.minutes || 999) - (b.minutes || 999); });
+            return { departures: departures, ok: true, reason: 'ok' };
+        } catch (e) {
+            if (e && e.name === 'AbortError') {
+                return { departures: [], ok: false, reason: 'aborted' };
+            }
+            return { departures: [], ok: false, reason: 'network' };
+        } finally {
+            if (timeoutId) clearTimeout(timeoutId);
+            if (controller) unregisterBusFetchController(controller);
+        }
+    }
+
     async function fetchBusDeparturesLegacy(configOverride) {
         if (isApiQuotaExhausted()) return [];
         const config = configOverride || getBusConfig();
@@ -20088,6 +20915,23 @@
         const config = getBusConfig();
         if (!config || !config.stopIds || config.stopIds.length === 0) return [];
 
+        if (LIVE_TRANSIT_API_BASE) {
+            var widgetResult = await fetchBusWidgetDepartures(config);
+            if (widgetResult && widgetResult.ok && Array.isArray(widgetResult.departures) && widgetResult.departures.length) {
+                return widgetResult.departures;
+            }
+            if (widgetResult && widgetResult.ok && hasRestrictiveBusDirectionFilters(config)) {
+                var relaxedConfig = buildAllDirectionsBusConfig(config);
+                var relaxedResult = await fetchBusWidgetDepartures(relaxedConfig, { consumeBudget: false });
+                if (relaxedResult && relaxedResult.ok && Array.isArray(relaxedResult.departures) && relaxedResult.departures.length) {
+                    return relaxedResult.departures;
+                }
+            }
+            if (widgetResult && widgetResult.ok) return widgetResult.departures || [];
+            if (widgetResult && (widgetResult.reason === 'quota' || widgetResult.reason === 'daily')) return [];
+            if (!LIVE_TRANSIT_API_BASE && !REJSEPLANEN_KEY) return [];
+        }
+        if (!LIVE_TRANSIT_API_BASE && !REJSEPLANEN_KEY) return [];
         if (!consumeBusApiRequestBudget()) return [];
         return fetchBusDeparturesLegacy(config);
     }
@@ -23402,7 +24246,7 @@
     function shouldRunSmartRoomLinkerInThisWindow() {
         if (!isFeatureFlagEnabled(FEATURE_SMART_ROOM_LINKER_KEY)) return false;
         if (!isSmartRoomLinkerAllowedOnHost()) return false;
-        if (isDTULearnLegacyDropboxPage()) return false;
+        if (isDTULearnLegacyHeavyCourseToolPage()) return false;
         if (IS_TOP_WINDOW) return true;
         // DTU Learn Content uses same-origin iframes (smart-curriculum). Enable there too.
         return window.location.hostname === 'learn.inside.dtu.dk';
@@ -28348,6 +29192,62 @@
         }
     }
 
+    function applyDTULearnNavigationBandAccent(el) {
+        if (!el || !el.style) return;
+        el.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
+        el.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
+        el.style.setProperty('background-image', 'none', 'important');
+        el.style.setProperty('color', '#ffffff', 'important');
+    }
+
+    function forceDTULearnNavigationBandAccentElements(root) {
+        if (window.location.hostname !== 'learn.inside.dtu.dk') return;
+
+        function visit(scope, visited, depth) {
+            if (!scope || depth > 6) return;
+            if (!visited) visited = new WeakSet();
+
+            try {
+                if (scope.nodeType === 11 && scope.host && scope.host.matches && scope.host.matches('d2l-labs-navigation-band')) {
+                    applyDTULearnNavigationBandAccent(scope.host);
+                }
+            } catch (eHost) { }
+
+            try {
+                if (scope.querySelectorAll) {
+                    scope.querySelectorAll('d2l-labs-navigation-band').forEach(function (el) {
+                        applyDTULearnNavigationBandAccent(el);
+                        try {
+                            if (el.shadowRoot && !visited.has(el.shadowRoot)) {
+                                visited.add(el.shadowRoot);
+                                visit(el.shadowRoot, visited, depth + 1);
+                            }
+                        } catch (eBandShadow) { }
+                    });
+                }
+            } catch (eBand) { }
+
+            try {
+                if (scope.querySelectorAll) {
+                    scope.querySelectorAll('d2l-labs-navigation').forEach(function (el) {
+                        try {
+                            if (el.shadowRoot && !visited.has(el.shadowRoot)) {
+                                visited.add(el.shadowRoot);
+                                visit(el.shadowRoot, visited, depth + 1);
+                            }
+                        } catch (eNavShadow) { }
+                    });
+                }
+            } catch (eNav) { }
+        }
+
+        try {
+            var visited = new WeakSet();
+            visit(document, visited, 0);
+            if (root && root !== document) visit(root, visited, 0);
+        } catch (e0) { }
+    }
+
     function forceDTULearnAccentInRoot(root) {
         if (!root || !root.querySelectorAll) return;
         if (window.location.hostname !== 'learn.inside.dtu.dk') return;
@@ -28382,11 +29282,11 @@
         }
 
         try {
+            if (root.nodeType === 11 && root.host && root.host.matches && root.host.matches('d2l-labs-navigation-band')) {
+                applyDTULearnNavigationBandAccent(root.host);
+            }
             root.querySelectorAll('d2l-labs-navigation-band').forEach(function (el) {
-                if (!el || !el.style) return;
-                el.style.setProperty('background', 'var(--dtu-ad-accent-deep)', 'important');
-                el.style.setProperty('background-color', 'var(--dtu-ad-accent-deep)', 'important');
-                el.style.setProperty('color', '#ffffff', 'important');
+                applyDTULearnNavigationBandAccent(el);
             });
         } catch (e0) { }
 
@@ -28455,19 +29355,24 @@
             root.querySelectorAll('.uw-text').forEach(function (el) {
                 if (!el || !el.style) return;
                 // Dark mode: use the "soft" accent so it reads like a highlighted title on dark UI.
-                // Light mode: use the primary accent for better contrast on white backgrounds.
-                el.style.setProperty('color', darkModeEnabled ? 'var(--dtu-ad-accent-soft)' : 'var(--dtu-ad-accent)', 'important');
+                // Light mode: keep the course title neutral like native Brightspace.
+                el.style.setProperty('color', darkModeEnabled ? 'var(--dtu-ad-accent-soft)' : '#000000', 'important');
             });
         } catch (e2) { }
 
-        // DTU Learn light mode: keep key navigation/headline links neutral black
-        // instead of accent-colored blue.
+        // DTU Learn light mode: keep top-nav/course-title text neutral black
+        // instead of inheriting the sitewide accent-link override.
         try {
             if (!darkModeEnabled) {
                 root.querySelectorAll(
                     'a.d2l-homepage-heading-link, '
                     + 'a.d2l-homepage-heading-link h2, '
-                    + '.d2l-navigation-s-item a.d2l-navigation-s-link'
+                    + '.d2l-navigation-s-item a.d2l-navigation-s-link, '
+                    + '.d2l-navigation-s-item a.d2l-navigation-s-link *, '
+                    + '.d2l-navigation-s-item .d2l-navigation-s-group, '
+                    + '.d2l-navigation-s-item .d2l-navigation-s-group *, '
+                    + '.d2l-navigation-s-item .d2l-navigation-s-group-text, '
+                    + '.uw-text'
                 ).forEach(function (el) {
                     if (!el || !el.style) return;
                     el.style.setProperty('color', '#000000', 'important');
@@ -28544,7 +29449,11 @@
     function forceDTULearnAccentElements(root) {
         if (!root) return;
         if (window.location.hostname !== 'learn.inside.dtu.dk') return;
-        if (isDTULearnLegacyDropboxPage()) return;
+
+        // Legacy Dropbox/Classlist/Group/News pages skip the heavy accent sweep for
+        // responsiveness, but the top navigation band still needs the accent pass.
+        try { forceDTULearnNavigationBandAccentElements(root || document); } catch (eBand) { }
+        if (isDTULearnLegacyHeavyCourseToolPage()) return;
 
         // Always apply to the full document first. In our unified observer pipeline we often
         // call this with a small mutation root that doesn't include the badges.
@@ -28587,7 +29496,7 @@
 
     function shouldUseBrightspaceShadowDomProcessing() {
         if (!usesBrightspaceShadowDom()) return false;
-        if (isDTULearnLegacyDropboxPage()) return false;
+        if (isDTULearnLegacyHeavyCourseToolPage()) return false;
         return true;
     }
 
@@ -28656,13 +29565,8 @@
         });
     }
 
-    function fixDTULearnLegacyDropboxStyling(rootNode) {
-        if (window.location.hostname !== 'learn.inside.dtu.dk') return;
-        if (!isDTULearnLegacyDropboxPage()) return;
-
-        var scope = (rootNode && rootNode.querySelectorAll) ? rootNode : document;
-        var dark2 = '#2d2d2d';
-        var selectors = [
+    function getDTULearnLegacyLmsToolDarkSelectors() {
+        return [
             '.dco.d2l-foldername',
             '.dco.d2l-foldername > .dco_c',
             '.dco.d2l-foldername-medium-font',
@@ -28678,8 +29582,53 @@
             'td.d_gt',
             'td.d_gt > a.d2l-link.d2l-link-inline',
             'a.d2l-link.d2l-link-inline[href*="/d2l/lms/dropbox/user/folder_submit_files.d2l"]',
-            'a.d2l-link.d2l-link-inline[href*="/d2l/lms/dropbox/user/folders_history.d2l"]'
+            'a.d2l-link.d2l-link-inline[href*="/d2l/lms/dropbox/user/folders_history.d2l"]',
+            'a.d2l-link.d2l-link-inline[onclick*="EmailUser("]',
+            'a.d2l-link.d2l-link-inline[onclick*="ToggleSearch("]',
+            'a.d2l-link.d2l-link-inline#z_eh'
         ];
+    }
+
+    function clearDTULearnLegacyLmsToolInlineDarkBackgrounds(rootNode) {
+        if (window.location.hostname !== 'learn.inside.dtu.dk') return;
+        if (!isDTULearnLegacyHeavyCourseToolPage()) return;
+
+        var scope = (rootNode && rootNode.querySelectorAll) ? rootNode : document;
+        var selectors = getDTULearnLegacyLmsToolDarkSelectors();
+
+        selectors.forEach(function (selector) {
+            var nodes = [];
+            try {
+                nodes = scope.querySelectorAll(selector);
+            } catch (e0) {
+                nodes = [];
+            }
+            nodes.forEach(function (el) {
+                if (!el || !el.style) return;
+                var bg = String(el.style.getPropertyValue('background-color') || '').toLowerCase();
+                var bgShorthand = String(el.style.getPropertyValue('background') || '').toLowerCase();
+                var ownsDarkBg = /#2d2d2d|rgb\(\s*45\s*,\s*45\s*,\s*45\s*\)/i.test(bg)
+                    || /#2d2d2d|rgb\(\s*45\s*,\s*45\s*,\s*45\s*\)/i.test(bgShorthand);
+                if (!ownsDarkBg) return;
+                el.style.removeProperty('background');
+                el.style.removeProperty('background-color');
+                el.style.removeProperty('background-image');
+            });
+        });
+    }
+
+    function fixDTULearnLegacyLmsToolStyling(rootNode) {
+        if (window.location.hostname !== 'learn.inside.dtu.dk') return;
+        if (!isDTULearnLegacyHeavyCourseToolPage()) return;
+
+        if (!darkModeEnabled) {
+            clearDTULearnLegacyLmsToolInlineDarkBackgrounds(rootNode);
+            return;
+        }
+
+        var scope = (rootNode && rootNode.querySelectorAll) ? rootNode : document;
+        var dark2 = '#2d2d2d';
+        var selectors = getDTULearnLegacyLmsToolDarkSelectors();
 
         selectors.forEach(function (selector) {
             var nodes = [];
@@ -28719,7 +29668,7 @@
         }
 
         if (host === 'learn.inside.dtu.dk') {
-            fixDTULearnLegacyDropboxStyling(rootNode || document);
+            fixDTULearnLegacyLmsToolStyling(rootNode || document);
             removeDTULearnHelpDropdown();
             insertMojanglesText();
             if (isFeatureFlagEnabled(FEATURE_LEARN_NAV_RESOURCE_LINKS_KEY)) {
@@ -28781,7 +29730,7 @@
         // Chrome can spend excessive time in mutation processing on these
         // highly dynamic pages; run feature checks from load/visibility hooks instead.
         var host = window.location.hostname;
-        if (isDTULearnLegacyDropboxPage()) return false;
+        if (isDTULearnLegacyHeavyCourseToolPage()) return false;
         if (host === 'studieplan.dtu.dk' || host === 'kurser.dtu.dk') return false;
         return true;
     }

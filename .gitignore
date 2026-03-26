@@ -2,8 +2,20 @@
 dist/
 *.zip
 
-# API keys
-config.js
+# Secrets and API keys
+config.local.js
+.env
+.env.*
+*.env
+*.env.local
+secrets.json
+
+# AI assistant context (keep locally only)
+CLAUDE.md
+memory/
+
+# Private changelog (worker backend / internal notes — never commit)
+PRIVATE_changes.md
 
 # OS files
 Thumbs.db
@@ -14,5 +26,6 @@ chrome-unpacked-temp/
 dtu_recon_output/
 .claude/
 *.log
+worker-deps-*.json
 node_modules/
 data/

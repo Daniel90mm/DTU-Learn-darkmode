@@ -1,115 +1,114 @@
 # DTU After Dark
 
-The unofficial productivity suite for the Technical University of Denmark.
+The unofficial browser extension for making DTU's student-facing sites easier to use.
 
-DTU After Dark is a comprehensive browser extension that upgrades the DTU digital experience. It integrates disparate university systems (grades, schedules, and campus facilities) into a more unified workflow, while providing a consistent two-tier dark theme across DTU domains.
+DTU After Dark adds a consistent dark theme plus workflow tools across DTU Learn, CampusNet, Study Planner, the course catalog, grades, course evaluations, and related DTU pages. PDF viewers and video players are intentionally left untouched.
 
 ## Install
 
-**Firefox Add-ons:** https://addons.mozilla.org/en-US/firefox/addon/dtu-dark-mode/
+Firefox Add-ons: https://addons.mozilla.org/en-US/firefox/addon/dtu-dark-mode/
 
-**Chrome Web Store:** https://chromewebstore.google.com/detail/dtu-after-dark/hemonfanogjedclfjhmkhjbkknackiel?authuser=0&hl=da
+Chrome Web Store: https://chromewebstore.google.com/detail/dtu-after-dark/hemonfanogjedclfjhmkhjbkknackiel?authuser=0&hl=da
 
-## Key Features
+## Feature Overview
 
-### Academic Intelligence
-- **CampusNet GPA Toolkit:** Weighted GPA, projected GPA simulation, ECTS progress tracking, and ignore/restore controls for official grade rows that should not count.
-- **Study Planner Exam Timeline:** Exam clustering with countdown and gap-risk signaling, plus ambiguous-slot resolution and manual timeline editing from the widget header in a blurred modal editor with theme-neutral controls.
-- **Smarter Exam Mapping:** Period-aware matching with strict handling of explicit summer placements (`June`/`July`/`August`).
-- **Planned:** Prerequisite validator based on passed courses and stated requirements.
+### Theme and controls
 
-### Course Planning & Logistics (`kurser.dtu.dk`)
-- **Course Intelligence:** In-page pass/grade stats and latest course-evaluation summaries.
-- **Prerequisite + Workload Helper:** API-backed prerequisite groups, teaching hours, and teaching-team mix on course pages.
-- **MyLine Curriculum Badges:** Optional `Mandatory/Core/Elective/...` tagging from `sdb.dtu.dk/myline`.
-- **Room + Location Utilities:** Room finder, capacity hints, and smart MazeMap links.
-- **Schedule + Literature Helpers:** Schedule code annotation and literature/ISBN lookup with library links.
+- Two-tone dark theme across supported DTU sites using `rgb(26,26,26)` and `rgb(45,45,45)`.
+- Accent-color system with preset themes plus custom colors, applied across extension UI and key DTU navigation surfaces.
+- Central settings modal for feature toggles, accent selection, and per-feature edit flows.
+- `Paused URLs...` control for temporarily disabling the extension on specific pages without turning it off everywhere.
 
-### Campus Tools
-- **Live Bus Departures (DTU Learn):** Real-time departures on the homepage with campus-aware line setup and API-friendly request budgeting.
-- **Campus-Aware Bus Configuration:** Multi-campus setup (`DTU Lyngby`, `DTU Ballerup`, `DTU Riso`) with campus-tagged lines, API-friendly limits, and cleaned local/static direction selection in the edit modal.
-- **Deadlines Widget:** Timeline-style deadline view with caching and refresh.
-- **Library Panel:** Quick links plus live DTU Library occupancy, events, and news in an extension modal.
-- **Library Crowding Intelligence:** Occupancy status, live crowding chart surfaces, and DTU Library event-time overlays when data is available.
-- **Course Content Download:** Lessons section picker with bulk and optional single-ZIP download.
+### DTU Learn
 
-### Participant Intelligence (CampusNet)
-- **Course Composition:** Program distribution for student participants with outlier highlighting.
-- **Shared Course History:** Local history badges/cards showing where you have seen participants before.
-- **Semester Twins:** Similar-student matching with semester/all-time scopes.
-- **Retention Radar:** Enrollment trend tracking by course over time.
-- **Archive Backfill + Granular Toggles:** Optional archive scanning and per-module on/off controls.
+- Homepage widgets for live bus departures, upcoming DTU course/exam deadlines, and quick course search.
+- Bus departures with multi-campus support (`DTU Lyngby`, `DTU Ballerup`, `DTU Risø`), per-line direction filters, caching, and automatic refresh.
+- Library panel with live occupancy, crowding trends, upcoming events, news, and quick-access links.
+- Course-card `Content` shortcut with per-course override management.
+- Course content download tools for Lessons pages, including section picking and optional single-ZIP bundling.
+- Book Finder that detects textbook references on Learn pages and links out to relevant sources.
+- Smart Room Links that turn room mentions into click-to-resolve MazeMap links.
 
-### Interface Enhancements
-- **Global Dark + Accent System:** Two-tier dark palette (`rgb(26,26,26)` / `rgb(45,45,45)`) with DTU-style accent presets and custom colors.
-- **Cross-Site Accent Theming:** Consistent accent behavior across DTU Learn, CampusNet, and Study Planner.
-- **DTU Learn Visual Cleanup:** Better contrast for sidebars, mobile navigation, selected states, badges, notifications, and action areas.
-- **DTU Learn Legacy Assignments Stability:** Legacy Assignments/Dropbox pages avoid the heaviest Brightspace shadow/observer passes so they stay responsive, and assignment title/status rows are kept on dark 2 for readable contrast.
-- **DTU Learn Upload Area Override:** File drop/add panel (`.d2l-fileinput-add`) now supports explicit forced background styling when Brightspace/default darkening overrides normal selectors.
-- **DTU Learn File-Link Exception:** Direct file download links (`/d2l/common/viewFile.d2lfile/...`) are excluded from boxed breadcrumb-link background styling to preserve normal link appearance.
-- **Configurable Navigation & Shortcuts:** Quick links, content shortcut button, and per-course content overrides.
-- **Unified Settings Experience:** Grouped settings, edit modals, feedback shortcut, and a first-run Learn homepage hint that points new users to the settings/toggles entry point.
-- **Performance + Sync:** Optimized mutation handling and cross-tab theme/toggle sync.
+### CampusNet
 
-## Supported Domains
+- GPA toolkit on the Grades page: weighted GPA, projected GPA simulation, ECTS progress, and ignore/restore controls for official grade rows.
+- Participant intelligence features: course composition, shared course history, Semester Twins, and Retention Radar.
+- Dark mode and accent cleanup across Grades, courses, groups, participant pages, and other student-facing CampusNet views.
 
-### Content script domains (theme/features run directly on page)
+### Study Planner
 
-- `learn.inside.dtu.dk` (DTU Learn)
-- `s.brightspace.com` (Brightspace static assets/iframes)
-- `sts.ait.dtu.dk` (DTU login)
-- `studieplan.dtu.dk` (Study Planner)
-- `kurser.dtu.dk` (Course catalog)
-- `evaluering.dtu.dk` (Course evaluations)
-- `campusnet.dtu.dk` (CampusNet)
-- `karakterer.dtu.dk` (Grades)
-- `eksamensplan.dtu.dk` (Exam plan portal)
-- `sites.dtu.dk` (Department sites)
+- `Exam Schedule & Gaps` widget that maps planned courses to DTU exam dates and surfaces tight exam clusters.
+- Exam-choice resolver and modal editor for switching valid exam slots, adding manual entries, or removing bad matches without losing the main timeline.
+- Grade-deadline badges based on DTU's 20-workday grading window after each exam.
+- Accent-aware cleanup for the top bar, planning tables, and navigation elements.
 
-### Data-source/API domains (fetched by extension features)
+### kurser.dtu.dk and course info
 
-- `findit.dtu.dk` (FindIt availability checks and library links)
-- `student.dtu.dk` (Deadlines and exam-date sources)
-- `sdb.dtu.dk` (Study line data for MyLine Curriculum Badges)
-- `www.bibliotek.dtu.dk` (Library events/news API)
-- `www.dtu.dk` (exam-date fallback sources)
-- `api.mazemap.com` (Smart Room Links POI resolution)
-- `www.rejseplanen.dk` (bus departure API)
+- Grade statistics panel with pass-rate and grade-distribution data.
+- Course evaluation summary panel with satisfaction/workload snapshots and a link to the full evaluation.
+- MyLine curriculum badges such as `Mandatory`, `Core`, `Elective pool`, and `Approved elective`.
+- Room Finder row with room/location enrichment plus MazeMap deep links.
+- Textbook Links that parse course literature sections and add direct library and book-source links.
+- Smart room linking for recognizable building/room mentions on supported pages.
 
-## Privacy & Security
+### Integrations and data sources
 
-Security/privacy audit completed on **February 18, 2026**.
+- Deadline and exam-calendar parsing from `student.dtu.dk` and DTU exam pages.
+- Library occupancy, events, and news from DTU Library and FindIt.
+- MazeMap room/building resolution for smart room links.
+- Rejseplanen live departure data for the bus widget.
+- Local caching throughout the extension to avoid refetching on every page load.
 
-- **Audit Result:** No analytics/telemetry SDKs found. No remote code loading (`eval`/`new Function`) found.
-- **Local Storage:** Preferences and caches are stored locally. If Participant Intelligence is enabled, local participant metadata (names, s-numbers, programs, overlap/snapshot data) may be stored for those features.
-- **Direct Connections:** The extension fetches feature data from DTU domains plus Rejseplanen and MazeMap, and does not send participant metadata to third-party analytics services.
-- **Known Risk (Open):** Rejseplanen uses a bundled API key in release builds. This can be extracted and abused for quota exhaustion; mitigation is tracked in the audit notes.
-- **Open Source:** Full source is available for inspection.
+## Supported Sites
 
-See `docs/PRIVACY.md`.
+Directly enhanced in the browser:
+
+- `learn.inside.dtu.dk`
+- `campusnet.dtu.dk`
+- `studieplan.dtu.dk`
+- `kurser.dtu.dk`
+- `karakterer.dtu.dk`
+- `evaluering.dtu.dk`
+- `eksamensplan.dtu.dk`
+- `sts.ait.dtu.dk`
+- `sites.dtu.dk`
+
+Used as data sources and integrations:
+
+- `student.dtu.dk`
+- `findit.dtu.dk`
+- `www.bibliotek.dtu.dk`
+- `sdb.dtu.dk`
+- `api.mazemap.com`
+- `www.rejseplanen.dk`
+- `www.dtu.dk`
+
+## Privacy and storage
+
+- Preferences, caches, and feature state are stored locally in extension storage.
+- If Participant Intelligence is enabled, participant metadata used by those features is stored locally on the device.
+- Public releases do not send heartbeat or usage telemetry.
+- Live features fetch data from DTU services and selected transport/map providers. See `docs/PRIVACY.md` for details.
 
 ## Disclaimer
 
-DTU After Dark is an unofficial, community-built extension. It is not affiliated with, endorsed by, or supported by DTU, Arcanic, D2L/Brightspace, Rejseplanen, MazeMap, or any other service provider.
+DTU After Dark is unofficial and is not affiliated with, endorsed by, or supported by DTU, D2L/Brightspace, Rejseplanen, MazeMap, or any other provider.
 
-Information displayed by this extension (exam dates, deadlines, grades, GPA calculations, bus times, course evaluations, room locations, library data) is derived from publicly available sources and may be inaccurate, incomplete, or outdated. **Always verify critical information through official DTU channels.** The developer(s) accept no responsibility for missed exams, wrong grades, missed buses, or any other consequences. This extension is provided "as is" without warranty of any kind.
+Information shown by the extension, including exam dates, deadlines, grades, room locations, library data, and bus departures, may be inaccurate, incomplete, or outdated. Always verify critical information through official DTU channels.
 
-## Build Instructions
+## Build
 
-1. **Firefox:** `powershell -ExecutionPolicy Bypass -File .\\scripts\\build-firefox.ps1`
-2. **Chrome:** `powershell -ExecutionPolicy Bypass -File .\\scripts\\build-chrome.ps1`
+1. Firefox: `powershell -ExecutionPolicy Bypass -File .\scripts\build-firefox.ps1`
+2. Chrome: `powershell -ExecutionPolicy Bypass -File .\scripts\build-chrome.ps1`
 
-Output artifacts are generated in `dist/`.
-Before building release zips and bumping version numbers, update `changes.md` with shipped changes/reviewer notes.
+Build artifacts are written to `dist/`.
+Public source builds work as-is with the tracked safe `config.js`.
+For local-only overrides, create an untracked `config.local.js`; the build scripts will overlay it into the packaged `config.js` and add the extra local host permission only to those private build artifacts.
 
-## Notes / Ideas
+## Notes
 
-- FTP-like sync is tracked in `docs/IDEAS.md`.
+Future ideas are tracked in `docs/IDEAS.md`.
 
 ## License
 
 MIT
-
-
-
-
